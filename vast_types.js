@@ -88,7 +88,9 @@ var l_area = exports.area = function (center, radius) {
     if (radius === undefined)
         radius = 0;
 
-    this.center = center;
+    // store center & radius, with potential error checking
+    this.center = new l_pos(0, 0);
+    this.center.parse(center);    
     this.radius = radius;
 
     this.equals = function (other_area) {

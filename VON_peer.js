@@ -114,9 +114,7 @@ var NodeState = {
     ABSENT:         0,
     QUERYING:       1,           // finding / determing certain thing
     JOINING:        2,           // different stages of join
-    JOINING_2:      3,
-    JOINING_3:      4,
-    JOINED:         5,    
+    JOINED:         3,    
 };
 
 // status on known nodes in the neighbor list, can be either just inserted / deleted / updated
@@ -142,12 +140,6 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     // public methods
     //
     
-    // callback to use once join is successful
-    var _join_done_CB = undefined;
-    
-    // interval id for removing periodic ticking
-    var _interval_id = undefined;
-
     // join a VON network with a given gateway (entry)    
     var _join = this.join = function (GW_addr, aoi, done_CB) {
         
@@ -200,7 +192,7 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
                 // send out join request
                 // TODO: if id is not correct, remote host will send back correct one
                 _net.storeMapping(VAST_ID_GATEWAY, GW_addr);                
-                _sendMessage(VAST_ID_GATEWAY, VON_Message.VON_QUERY, _self, VON_Priority.HIGHEST); 
+                _sendMessage(VAST_ID_GATEWAY, VON_Message.VON_QUERY, _self, VON_Priority.HIGHEST);
                         
             }); 
         });             
@@ -344,11 +336,7 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     }
     
     // check if a given ID is an existing neighbor  
-    var _isNeighbor = this.isNeighbor = function (id) {
-        // list all neighbors
-        //for (var key in _neighbors)
-        //    LOG.debug('isNeighbor: ' + _neighbors[key].id);
-    
+    var _isNeighbor = this.isNeighbor = function (id) {    
         return _neighbors.hasOwnProperty(id);    
     }
 
@@ -381,7 +369,6 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     //
     
     var _isSelf = function (id) {
-        //LOG.debug(typeof _self.id + ' self.id: ' + _self.id + ' ' + typeof id + ' id: ' + id);
         return (_self.id == id);
     }
     
@@ -389,7 +376,6 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     // NOTE: right now we only consider circular AOI, not rectangular AOI.. 
     // NOTE: l_aoi_buffer is a paramter passed to VON_peer when creating instance    
     var _isAOINeighbor = function (id, neighbor) {
-        //LOG.debug('_isAOINeighbor called');
         return _voro.overlaps(id, neighbor.aoi.center, neighbor.aoi.radius + l_aoi_buffer, OVERLAP_CHECK_ACCURATE);
     }
 
@@ -414,7 +400,6 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         var timeout = period * _net.getTimestampPerSecond ();   
         return ((_tick_count - _neighbors[id].endpt.lastAccessed) < timeout);
 */
-        //return true;                
     }
 
     //
@@ -452,7 +437,7 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         // update node status
         _updateStatus[node.id] = NeighborUpdateStatus.INSERTED;
 
-        LOG.debug('insertNode neighbor (after insert) size: ' + Object.keys(_neighbors).length + ' voro: ' + _voro.size());
+        LOG.debug('[' + _self.id + '] insertNode neighbor (after insert) size: ' + Object.keys(_neighbors).length + ' voro: ' + _voro.size());
         
         return true;
     }
@@ -516,11 +501,8 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         var center = new VAST.pos();
         center.parse(node.aoi.center);
         node.aoi.center = center;
-        //delete node.aoi.center['id'];
-        //delete node.aoi.center['voronoiId'];
         return node;
     }
-
     
     //
     // regular processing (done periodically)
@@ -569,7 +551,7 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         var new_list = [];      // list of new, unknown nodes               
         var target;
 
-        LOG.debug('voro nodes before insertion: ' + _voro.size());
+        //LOG.debug('voro nodes before insertion: ' + _voro.size());
         
         // loop through each notified neighbor and see if it's unknown
         for (var target in _new_neighbors) {
@@ -591,7 +573,7 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
             }
         }
         
-        LOG.debug('voro nodes after insertion: ' + _voro.size());
+        //LOG.debug('voro nodes after insertion: ' + _voro.size());
         
         // check through each newly inserted Voronoi for relevance                      
         for (var i=0; i < new_list.length; ++i) {
@@ -688,13 +670,6 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
             // TODO: determine whether clear or new is better / faster (?)
             notify_list = [];
 
-            /*
-            map<id_t, int> *known_list = new map<id_t, int>;    // current neighbor states
-            map<id_t, int>::iterator it;                        // iterator for neighbor states
-            
-            id_t id;
-            int state, known_state;
-            */
             var known_list = {};            // current neighbor's states
             var state, known_state;
             
@@ -1123,8 +1098,6 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
                 if (_potential_neighbors.hasOwnProperty(from_id) === true) {
                 
                     // insert the new node as a confirmed neighbor with updated position
-                    //var pos = new VAST.pos();
-                    //pos.parse(pack.msg);
                     var neighbor = _potential_neighbors[from_id];                    
                     neighbor.aoi.center.parse(pack.msg); 
                     
@@ -1326,7 +1299,13 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     //
     // internal states
     //
+   
+    // callback to use once join is successful
+    var _join_done_CB = undefined;
     
+    // interval id for removing periodic ticking
+    var _interval_id = undefined;
+   
     // node state definition
     var _state; 
     
