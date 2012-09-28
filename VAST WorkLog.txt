@@ -20,6 +20,7 @@ BUG (*) denotes design bug:
 2012-07-23: voro.overlaps returns 'false' always when there's only one region for any point
 2012-08-29: scaling many nodes will cause TCP connection errors
 2012-09-03: EADDRINUSE crash bug (after running a while with >50 nodes)
+2012-09-24: send_msg in vast_net does not necessarily send out in FIFO order
 
 
 
@@ -48,12 +49,268 @@ BUG (*) denotes design bug:
 - join retry timeout is buggy
 - 2010-10-06 after repeated join/leave of worlds, cannot join again (gateway could not assign origin matcher)
 
+Overall Goals:
+extract non-VON-specific code from VON_peer as common code for handlers
+build VSS server (to take & respond RESTful pub/sub commands)
+connect VSS functions with VON peer
+debug VON peer usage from VSS server
+allow ident be queried when get subscribers
+
+
+2012-09-28 (5)
+--------------
+goal: debug & test JSON response
+      debug node register / revoke
+
+      
+      
+
+2012-09-27 (4)
+--------------
+goal: debug & test JSON response
+      debug node register / revoke
+
+- review current code & procedure.
+      
+
+2012-09-26 (3)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for handlers
+      build VSS server (to take & respond RESTful pub/sub commands)
+      connect VSS functions with VON peer
+      debug VON peer usage from VSS server
+      allow ident be queried when get subscribers
+      add revokeNode to VSS function
+      
+- revokeNode & registerNode added
+
+2012-09-25 (2)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for handlers
+      build VSS server (to take & respond RESTful pub/sub commands)
+      connect VSS functions with VON peer
+      debug VON peer usage from VSS server
+      debug send_msg mis-ordering
+      
+for the 2012-09-24 bug:      
+- add queuing up messages to be sent, if connection is not yet established.
+  can run till 50 nodes ok (on PC), but crash due to EADDINUSE for 100 nodes
+  but we still get remote id is NaN error
+
+- might consider add explicit id exchange during handshake, to ensure remote id is always available.
+
+- seems the NaN id is reduced (for 50 nodes), but some nodes still get NaN id
+  at times (esp. as the # of nodes increases). 
+  
+  
+      
+2012-09-24 (1)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for handlers
+      build VSS server (to take & respond RESTful pub/sub commands)
+      connect VSS functions with VON peer
+      debug VON peer usage from VSS server
+      
+- test again test_VON_scale for scaling VON server @ dev server. can run up to 50+100 = 150 nodes. 
+  however, client movement in browser stops when all nodes are joined
+
+  when all existing nodes at server are closed:
+  gateway (test_VON_peer) experience this: connect ECONNREFUSED and it'll crash
+  
+- test run 100 VON nodes @ dev server, seems to continously moving notice the following:
+  * CPU is used at 100%, RAM 10 - 15% (out of 512MB, left 168 MB)
+  * CPU is used by the test_VON_scale 
+  * movement becomes slow after a while (data accumulated?)
+  * file handles were in the range of 10,000.. while after termination, only 700 file handles are used normally  
+
+BUG:    found a bug caused by the asyncrous nature of js function calls
+        when a newly joined VON peer tries to send HELLO / EN to a newly learned neighbor,
+        the EN message can be sent *BEFORE* the HELLO is sent (or before the connection is established)
+        the reason is that when sending the first HELLO message, connection is yet established,
+        so an attempt is made to connect. 
+        but this is returned directly, so the next message is sent and stored.
+        when the connection is finally made, the 2nd message gets delivered first before the first message.
+
+        basically we cannot assume that two messages will be sent in a FIFO order.
+          
+  
+2012-09-23 (7)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for handlers
+      build VSS server (to take & respond RESTful pub/sub commands)
+      connect VSS functions with VON peer
+      test VON peer usage from VSS server
+      
+- done integrate
+  publishPos
+  subscribeNearby
+  unsubscribeNearby
+  querySubscribers      
+      
+
+2012-09-22 (6)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for handlers
+      build VSS server (to take & respond RESTful pub/sub commands)
+      connect VSS functions with VON peer
+      
+- done parameter extraction from RESTful request      
+- publishPos, subscribeNearby done preliminary integration with VON peer      
+
+2012-09-21 (5)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for handlers
+      build VSS server (to take & respond RESTful pub/sub commands)
+      connect VSS functions with VON peer
+      
+- implement basic functions wtih VSS server, will now need to use & connect them with VON peer      
+
+
+2012-09-20 (4)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for handlers
+      build VSS server (to take & respond RESTful pub/sub commands)
+      parameter breakout & analysis
+      
+- done parameter breakout
+      
+
+2012-09-19 (3)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for handlers
+      build VSS server (to take & respond RESTful pub/sub commands)
+
+- done creating basic layout for VSS server
+
+2012-09-18 (2)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for handlers
+
+- add VSS server binding to provide pub/sub functions
+- study about js inhertance & prototype mechanism
+
+2012-09-17 (1)
+--------------
+goal: VAST porting
+      basic pub/sub functions
+      implement VASTClient
+      implement join()
+      build sharable network layer (for VASTClient & VON)
+      extract non-VON-specific code from VON_peer as common code for handlers
+
+- still stuck at not sure how to extract net layer so the following effects are achieved:
+  * multiple logics supportable on same net layer
+  * logic are independent of each other (can be modularly inserted/removed)
+  * do not use a singleton (so that multiple net instance can exist in same process)
+      
+
+2012-09-16 (7)
+--------------
+goal: VAST porting
+      basic pub/sub functions
+      implement VASTClient
+      implement join()
+      build sharable network layer (for VASTClient & VON)
+
+- evaluate and decide to follow original VAST C++ approach (message handler) 
+  for message processing, pending fixes for js-specific behaviors.
+      
+
+2012-09-15 (6)
+--------------
+goal: VAST porting
+      basic pub/sub functions
+      implement VASTClient
+      implement join()
+      build sharable network layer (for VASTClient & VON)
+
+- create message_handler.js
+  can plugin independent logic to handler, while sharing a common network layer for send/recv
+  
+  required methods:
+  
+  processPack()     handle incoming messages relevant to this handler
+  sendMessage()     send a message to one or more targets at a different handler
+  tick()            perform incoming message processing
+  
+
+2012-09-14 (5)
+--------------
+goal: VAST porting
+      basic pub/sub functions
+      implement VASTClient
+      implement join()
+      build sharable network layer (for VASTClient & VON)
+
+- need to consider:
+  whether functions of VON/VSO/SPS (& possibly future VoroCast) can be completely de-couple?
+  also the net layer can be physical or simulated
+  in other words, any one of them can be enabled/disabled.  
+
+a possible division of labor:
+
+VON:    peer connectivity, neighbor discovery within peer's AOI
+        - find gateway and join network
+        - position movement
+        - update from neighbors
+        
+SPS:    pub/sub record keeping, pub/sub matching, request passing
+        - pub/sub request
+        - sub record storage
+        - pub request passing to neighbors
+        - pub/sub matching
+        - delivery of messages
+
+VSO:    region resizing, pub/sub record migration, fault-tolerance (?)
+        - load detection
+        - overload handling (resize)
+        - overload handling (join)
+        - underload handling (resize)
+        - underload handling (leave)
+        - load migration (ensure consistency & fault-tolerance)
+        
+VCAST:  request forwarding
+
+
+Dependencies: 
+VSO -> VON
+VCAST -> VON/VSO
+SPS -> VON/VSO/VCAST
+
+
+2012-09-13 (4)
+--------------
+goal: VAST porting
+      basic pub/sub functions
+      implement VASTClient
+      implement join()
+      build sharable network layer (for VASTClient & VON)
+
+- reorganize join procedure. 
+- decide to use singleton mode for net layer sharing
+
+2012-09-12 (3)
+--------------
+goal: VAST porting
+      basic pub/sub functions
+      implement VASTClient
+      implement join()
+
+
+- see that the network layer needs to be shared by VON, VAST, VSO...
+- might need to pass in net layer to VON (and also VASTClient), 
+  and create a separate MessageHandler class (any other way?)
+  
+  
 
 2012-09-11 (2)
 --------------
 goal: VAST porting
       basic pub/sub functions
       layout modular framework (for independent features)
+
+
+- upload vast.js codebase to github
 
 - basic idea for making VASTClient, VASTRelay, VASTMatcher modular:
 

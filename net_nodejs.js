@@ -62,25 +62,32 @@
     // all received messages are delivered to 'onReceive'
     // return port binded, or 0 to indicate error 
     listen(port, onDone)
+    
+    // check if I'm a listening server    
+    isServer()
+                 
+    // check if a client socket is currently connected
+    isConnected()
                  
     history:
         2012-06-30              initial version (start from stretch)
-        
+        2012-09-24              add is_connected()
 */
+
 require('./common.js');
 var l_net = require('net');   // allow using network
 
 function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
+
+    // flag to indicate connectedness
+    var _connected = false;
 
     // a server object for listening to incoming connections
     var _server = undefined;
     
     // a client object for making connection 
     var _client = undefined;
-    
-    // the IP & port of a host to be connected
-    //var _target = undefined;
-            
+                
     // check for connection validity and send to it)
     // ip_port is an object with 'host' and 'port' parameter
     this.connect = function (host_port) {
@@ -103,11 +110,14 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
             
             // store remote address & port
             _client.host = host_port.host;
-            _client.port = host_port.port;                          
+            _client.port = host_port.port;
+            
+            _connected = true;
         
-            setupSocket(_client);
             if (typeof onConnect === 'function')
                 onConnect(_client);
+                
+            setupSocket(_client);            
         });       
     }
     
@@ -118,7 +128,8 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
             
         try {
             LOG.debug('disconnecting from ' + _client.host + ':' + _client.port);
-            _client.end();
+            _connected = false;
+            _client.end();            
         }
         catch (e) {
             LOG.error('net_nodejs: disconnect error: ' + e); 
@@ -196,6 +207,12 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
     this.isServer = function () {
         return (_server !== undefined);
     }
+    
+    // check if the socket is currently connected
+    this.isConnected = function () {
+        //LOG.debug('connected: ' + _connected);
+        return _connected;
+    }
         
 	// setup a new usable socket with a socket handler    
 	//-----------------------------------------
@@ -209,8 +226,8 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
         // this is important to allow messages be delivered immediately after sending
         socket.setNoDelay(true);
         
-        // flag to indicate socket is already disconnected
-        socket.disconnected = false;
+        // flag to indicate whether socket is connected
+        socket.connected = false;
         
         // call data callback to process data, if exists 
         // (this happens when setupSocket is called by a listening server for setup new socket)
@@ -226,6 +243,7 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
             socket.resume();
         });
 
+        // NOTE: this won't be triggered for out-going connections, only incoming (i.e., when a listening server calls this)
         socket.on('connect', function () {
         
             // NOTE: remoteAddress & remotePort are available for incoming connection, but not outgoing sockets
@@ -235,11 +253,11 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
             socket.port = socket.remotePort;
             LOG.debug('connection created: ' + socket.host + ':' + socket.port);
             
+            socket.connected = true;
+            
             // notify connection, pass the connecting socket
             if (typeof onConnect === 'function')            
-                onConnect(socket);
-                
-            socket.disconnected = false;
+                onConnect(socket);                
         });
                 
 		// handle connection error or close
@@ -252,16 +270,16 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
             // if we've already fire disconnect for this socket, ignore it
             // NOTE: as both 'close' and 'end' event could cause this callback be called
             // so we need to prevent a 2nd firing of the disconnect callback to application
-            if (socket.disconnected === true)
+            if (socket.connected === false)
                 return;
                 
             LOG.debug('connection ended. remote host is ' + socket.host + ':' + socket.port);
+                        
+            socket.connected = false;
             
             // notify application, if callback exists
             if (typeof onDisconnect === 'function')
-                onDisconnect(socket);
-                
-            socket.disconnected = true;              
+                onDisconnect(socket);                            
         }
         
         // NOTE:: if remote host calls 'disconnect' to send a FIN packet, 

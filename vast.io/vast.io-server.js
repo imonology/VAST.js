@@ -6,8 +6,7 @@ process.on('uncaughtException', function(err) {
 */
 
 // include VAST
-require('./common');
-
+require('../common');
 LOG.setLevel(2);
 
 /*
@@ -157,7 +156,7 @@ io.sockets.on('connection', function (socket) {
         for (var i=0; i < edges.length; i++)
             edge_list.push({a: edges[i].va, b: edges[i].vb});
             
-        LOG.debug('list sends back ' + neighbor_list.length + ' neighbors');
+        //LOG.debug('list sends back ' + neighbor_list.length + ' neighbors and ' + edge_list.length + ' edges');
         
         // return to client
         socket.emit('neighbors', {nodes: neighbor_list, edges:edge_list});        
