@@ -93,6 +93,11 @@ var l_area = exports.area = function (center, radius) {
     this.center.parse(center);    
     this.radius = radius;
 
+    this.covers = function (pos) {
+        // NOTE: current check allows nodes even at AOI boundary to be considered as covered
+        return (this.center.distance(pos) <= this.radius);
+    }
+    
     this.equals = function (other_area) {
         return (this.center.equals(other_area.center) && this.radius === other_area.radius);
     }

@@ -20,6 +20,10 @@ var _nodes_created = 0;
 // NOTE: it's a 3-dimensional array
 var _keys = {};
 
+// node id -> ident mapping
+var _id2ident = {};
+
+
 //
 // actual execution code
 //
@@ -63,7 +67,11 @@ var _registerNode = function (pos, info, done_CB) {
                 _keys[info.apikey][info.layer] = {};
                 
             _keys[info.apikey][info.layer][info.ident] = new_node;
-            
+
+            // store id to ident mapping
+            LOG.debug('store mapping for node id: ' + self_id + ' ident: ' + info.ident);
+            _id2ident[self_id] = info.ident;
+             
             // check content
             LOG.debug('new_node (after join): ' + new_node.getSelf().toString());
             
@@ -79,7 +87,9 @@ var _revokeNode = function (info, done_CB) {
     
     if (node === undefined || node === null) 
         return done_CB(false);
-        
+    
+    var node_id = node.getSelf().id;
+    
     //destroy node
     node.leave();
     node = null;
@@ -90,6 +100,10 @@ var _revokeNode = function (info, done_CB) {
         delete _keys[info.apikey][info.layer];
     if (Object.keys(_keys[info.apikey]).length === 0)
         delete _keys[info.apikey];
+        
+    // remove id to ident mapping
+    LOG.debug('remove mapping for node id: ' + node_id + ' ident: ' + info.ident);
+    delete _id2ident[node_id];    
         
     done_CB(true);
 }
@@ -151,6 +165,14 @@ var _getNode = function (req, res) {
     return null;
 }
 
+// check if a given node is a direct area subscriber for a center point
+var _isSubscriber = function (node, aoi) {
+
+    var result = node.aoi.covers(aoi.center);
+    LOG.debug('check if node [' + node.toString() + '] covers ' + aoi.center.toString() + ': ' + result);
+    return result;
+}
+ 
 function publish(words, res) {
     LOG.debug("Request handler 'publish' was called.");
     
@@ -336,8 +358,12 @@ function query(words, res) {
                 var list = [];
                 
                 // TODO: send only those who's AOI covers me (as true subscribers, not simply enclosing neighbors)
-                for (var id in neighbors)
-                    list.push(id);
+                for (var id in neighbors) {
+                    // convert node id to node ident (only for those registered here)
+                    // NOTE: current approach can only do ident translation for nodes created via this VSS server
+                    if (_id2ident.hasOwnProperty(id) && _isSubscriber(neighbors[id], node.getSelf().aoi))
+                        list.push(_id2ident[id]);
+                }
                                 
                 // return success
                 _reply(res, list);
