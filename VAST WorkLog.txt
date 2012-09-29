@@ -21,7 +21,8 @@ BUG (*) denotes design bug:
 2012-08-29: scaling many nodes will cause TCP connection errors
 2012-09-03: EADDRINUSE crash bug (after running a while with >50 nodes)
 2012-09-24: send_msg in vast_net does not necessarily send out in FIFO order
-
+2012-09-29a: EPERM crashing error when other nodes shutdown with Ctrl-C (unexpectedly)
+2012-09-29b: VON topology not updated when VSS/vast.io server shutdowns
 
 
 ----
@@ -57,14 +58,34 @@ debug VON peer usage from VSS server
 allow ident be queried when get subscribers
 
 
+2012-09-29 (6)
+--------------
+goal: ident discovery among neighbors
+      limit get subscriber result within AOI
+
+- ident discovery & AOI limiting done
+
+BUG:    when VSS server or vast.io server shutdown, it seems like the VON topology is not
+        updated accordingly (correctly), and ghost nodes are still left on the system
+        (disconnection not handled correctly?)
+        
+BUG:    when VSS server shutdowns sometimes other still existing nodes (gateway)
+        will get EPERM error and crash
+        
+        
+
 2012-09-28 (5)
 --------------
 goal: debug & test JSON response
       debug node register / revoke
 
-      
-      
+MILESTONE
+- fix response format to JSON and deploy to dev server       
+- functions still missing: 
+  need to support neighbor node's ident discovery
+  need to respond neighbor list whenever doing publishPos
 
+  
 2012-09-27 (4)
 --------------
 goal: debug & test JSON response
