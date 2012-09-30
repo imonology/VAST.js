@@ -79,9 +79,6 @@ var l_net = require('net');   // allow using network
 
 function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
 
-    // flag to indicate connectedness
-    var _connected = false;
-
     // a server object for listening to incoming connections
     var _server = undefined;
     
@@ -96,29 +93,37 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
  
         try {
             // connect to the given host & port, while providing a connection listener
-            _client = l_net.createConnection(host_port.port, host_port.host);           
+            _client = l_net.createConnection(host_port.port, host_port.host);       
+
+            _client.on('connect', function () {
+            
+                LOG.debug('out connect success for: ' + host_port.host + ':' + host_port.port);
+                
+                // store remote address & port
+                _client.host = host_port.host;
+                _client.port = host_port.port;                
+                _client.connected = true;
+            
+                if (typeof onConnect === 'function')
+                    onConnect(_client);
+                    
+                // NOTE: the handler for 'connect' inside setupSocket won't be called, 
+                // as 'connect' event is already triggered here, so whatever task needs to be duplicated here
+                // TODO: more elegant approach?
+                setupSocket(_client);            
+            });  
+
+            // if there's error on the connection, 'close' will follow
+            _client.on('error', function(err){
+                LOG.error('out connect socket error: ' + err);
+            });
+        
         }
         catch (e) {
             LOG.error('net_nodejs: connect error: ' + e); 
             if (typeof onError === 'function')
                 onError('connect');            
-        }
-        
-        _client.on('connect', function () {
-        
-            LOG.debug('out connect success for: ' + host_port.host + ':' + host_port.port);
-            
-            // store remote address & port
-            _client.host = host_port.host;
-            _client.port = host_port.port;
-            
-            _connected = true;
-        
-            if (typeof onConnect === 'function')
-                onConnect(_client);
-                
-            setupSocket(_client);            
-        });       
+        }         
     }
     
     // disconnect from a given socket id
@@ -128,7 +133,6 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
             
         try {
             LOG.debug('disconnecting from ' + _client.host + ':' + _client.port);
-            _connected = false;
             _client.end();            
         }
         catch (e) {
@@ -181,12 +185,14 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
             
             _server = l_net.createServer(setupSocket);
             
-            // attempt to re-try if bind fail
+            // pass back error for further processing
             _server.on('error', function (e) {        
-                LOG.error('net_nodejs: listen error caught: ' + e);
+                //LOG.error('net_nodejs: listen error caught: ' + e);
                 
+                //if (typeof onError === 'function')
+                //    onError(e);
                 if (typeof onDone === 'function')
-                    onDone(0);
+                    onDone(0);                
             });
   
             _server.listen(port, function () {
@@ -210,8 +216,8 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
     
     // check if the socket is currently connected
     this.isConnected = function () {
-        //LOG.debug('connected: ' + _connected);
-        return _connected;
+        //LOG.warn('connected: ' + _client.connected);
+        return (_client !== undefined && _client.connected === true);
     }
         
 	// setup a new usable socket with a socket handler    
@@ -225,9 +231,6 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
 
         // this is important to allow messages be delivered immediately after sending
         socket.setNoDelay(true);
-        
-        // flag to indicate whether socket is connected
-        socket.connected = false;
         
         // call data callback to process data, if exists 
         // (this happens when setupSocket is called by a listening server for setup new socket)
@@ -257,19 +260,16 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
             
             // notify connection, pass the connecting socket
             if (typeof onConnect === 'function')            
-                onConnect(socket);                
+                onConnect(socket);            
         });
                 
 		// handle connection error or close
-        var disconnect_handler = function (has_error) {
-
-            // print error, if any
-            if (has_error)                
-                LOG.error('socket closed due to error');	
-            
+        var disconnect_handler = function () {
+           
             // if we've already fire disconnect for this socket, ignore it
             // NOTE: as both 'close' and 'end' event could cause this callback be called
             // so we need to prevent a 2nd firing of the disconnect callback to application
+            //LOG.debug('disconnect_handler, socket.connected: ' + socket.connected);
             if (socket.connected === false)
                 return;
                 
@@ -283,10 +283,11 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
         }
         
         // NOTE:: if remote host calls 'disconnect' to send a FIN packet, 
-        // this host will receive 'end'
+        // this host will receive 'end' directly (without getting a 'close' event)
         // see: http://nodejs.org/api/net.html#net_event_close_1
         socket.on('end', function () {
-            LOG.debug('connection closed by remote host');
+            //LOG.warn('socket [end] called');
+            
             // NOTE: should not end connection here, as default behavior would close it
             //       this allows still some messages to be sent over by this host,
             //       even if remote hosts closes the connection
@@ -294,7 +295,14 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
         });
         
         // NOTE: this is called if an existing connection is fully closed (by itself or remote host)
-        socket.on('close', disconnect_handler);
+        socket.on('close', function (has_error) {
+            //LOG.warn('socket [close] called');            
+            // print error, if any
+            if (has_error)                
+                LOG.error('socket close error: ' + has_error);                           
+                
+            disconnect_handler();
+        });
                 
         // if there's error on the connection, 'close' will follow
         socket.on('error', function(err){

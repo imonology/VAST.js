@@ -61,9 +61,20 @@ allow ident be queried when get subscribers
 --------------
 goal: disconnection handling when nodes abnormally depart
 
+- fix connect/disconnect handling in net_nodejs.js
 
+DEBUG   when a 50 node simulation process shutdowns, the gateway crashes with ECONNREFUSED error
+        > fixed by catching 'error' event when making out-going connections
 
+DEBUG    after 50 node simu ends, the gateway can no longer accepts new clients,
+       as gateway still thinks those already disconnected peers exist..
+       appearantly disconnection is not handled correctly
+       > fixed by re-ordering when disconnect_handler is called
+         (should be called in 'close' not 'end')
 
+MILESTONE:
+    can now run 50 nodes, and shutdown 50 nodes (then re-join) without problems.         
+       
 
 2012-09-29 (6)
 --------------
