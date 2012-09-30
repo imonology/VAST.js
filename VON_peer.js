@@ -512,9 +512,14 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     var _tick = function () {
     
         //_sendKeepAlive();
-        _contactNewNeighbors();
-        _checkNeighborDiscovery();
-        _removeNonOverlapped();
+        try {
+            _contactNewNeighbors();
+            _checkNeighborDiscovery();
+            _removeNonOverlapped();
+        }
+        catch (e) {
+            LOG.error('tick error: ' + e);
+        }
     }
     
     // set current node to be 'joined'

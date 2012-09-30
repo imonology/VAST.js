@@ -57,6 +57,13 @@ connect VSS functions with VON peer
 debug VON peer usage from VSS server
 allow ident be queried when get subscribers
 
+2012-09-30 (7)
+--------------
+goal: disconnection handling when nodes abnormally depart
+
+
+
+
 
 2012-09-29 (6)
 --------------
