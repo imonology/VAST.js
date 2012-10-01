@@ -52,10 +52,17 @@ BUG (*) denotes design bug:
 
 Overall Goals:
 extract non-VON-specific code from VON_peer as common code for handlers
-build VSS server (to take & respond RESTful pub/sub commands)
-connect VSS functions with VON peer
-debug VON peer usage from VSS server
-allow ident be queried when get subscribers
+
+
+2012-10-01 (1)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for msg handlers
+      identify logical separation for matcher/relay/client/VON
+
+- modify VSS server response for publishPos as subscriber list      
+
+BUG   50 node simu still crashes wtih error: EMFILE, EFAULT
+      when nodes are suddenly terminated (under windows)
 
 2012-09-30 (7)
 --------------
