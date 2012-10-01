@@ -125,6 +125,31 @@ var _reply = function (res, res_obj) {
     }
 }
 
+// send back subscriber list to client
+var _replySubscribers = function (request, res) {
+
+    var node = _getNode(request, res);
+
+    if (typeof node === 'object') {
+    
+        // get a list of current neighbors's id
+        var neighbors = node.list();
+        var list = [];
+        
+        // TODO: send only those who's AOI covers me (as true subscribers, not simply enclosing neighbors)
+        for (var id in neighbors) {
+            // convert node id to node ident (only for those registered here)
+            // NOTE: current approach can only do ident translation for nodes created via this VSS server
+            if (_id2ident.hasOwnProperty(id) && _isSubscriber(neighbors[id], node.getSelf().aoi))
+                list.push(_id2ident[id]);
+        }
+                        
+        // return success
+        _reply(res, list);
+    }
+}
+
+
 // get a specific node given its API key, layer, and node ident
 // returns 'undefined' if key info is missing
 // returns 'null' if not found
@@ -221,7 +246,9 @@ function publish(words, res) {
                         LOG.debug('new_node: ' + JSON.stringify(new_node));
                     
                         // send back node creation response                    
-                        _reply(res, ["OK", []]);            
+                        //_reply(res, ["OK", []]);            
+                        
+                        _replySubscribers(request, res); 
                     });            
                     break;
                 }
@@ -229,7 +256,9 @@ function publish(words, res) {
                 // publish pos
                 default: {
                     _publishPos(node, request, node.getSelf().aoi.radius);
-                    _reply(res, ["OK", []]);            
+                    
+                    //_reply(res, ["OK", []]);            
+                    _replySubscribers(request, res);
                     break;
                 }
             }  
@@ -350,26 +379,10 @@ function query(words, res) {
                       };       
 
             // check if node exists, return error if not yet exist (need to publishPos first)
-            var node = _getNode(request, res);
-
-            if (typeof node === 'object') {
-                // get a list of current neighbors's id
-                var neighbors = node.list();
-                var list = [];
-                
-                // TODO: send only those who's AOI covers me (as true subscribers, not simply enclosing neighbors)
-                for (var id in neighbors) {
-                    // convert node id to node ident (only for those registered here)
-                    // NOTE: current approach can only do ident translation for nodes created via this VSS server
-                    if (_id2ident.hasOwnProperty(id) && _isSubscriber(neighbors[id], node.getSelf().aoi))
-                        list.push(_id2ident[id]);
-                }
-                                
-                // return success
-                _reply(res, list);
-            }               
-            break;        
-        }
+            _replySubscribers(request, res);
+                                      
+            break;          
+        }            
         default: {
             _reply(res, JSON.stringify(request));
             break;
