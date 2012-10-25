@@ -11,6 +11,9 @@ var logger = require('./common/logger');
 global.LOG = new logger();
 global.UTIL = require('./common/util');
 
+// set default error level
+LOG.setLevel(2);
+
 //
 // VAST & VON
 //
