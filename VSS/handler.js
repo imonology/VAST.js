@@ -70,10 +70,15 @@ var _registerNode = function (pos, info, done_CB) {
 
             // store id to ident mapping
             LOG.debug('store mapping for node id: ' + self_id + ' ident: ' + info.ident);
-            _id2ident[self_id] = info.ident;
+            _id2ident[self_id] = info;
              
             // check content
             LOG.debug('new_node (after join): ' + new_node.getSelf().toString());
+
+            // perform initial publish pos
+            // (so we can get a list of neighbors)
+            // NOTE: doesn't appear to work...
+            //_publishPos(new_node, info, new_node.getSelf().aoi.radius);
             
             done_CB(new_node);
         }
@@ -136,16 +141,30 @@ var _replySubscribers = function (request, res) {
         var neighbors = node.list();
         var list = [];
         
+        var self = node.getSelf();
+        
         // TODO: send only those who's AOI covers me (as true subscribers, not simply enclosing neighbors)
         for (var id in neighbors) {
             // convert node id to node ident (only for those registered here)
             // NOTE: current approach can only do ident translation for nodes created via this VSS server
-            if (_id2ident.hasOwnProperty(id) && _isSubscriber(neighbors[id], node.getSelf().aoi))
-                list.push(_id2ident[id]);
+            
+            LOG.debug('checking neighbor id: ' + id + ' against self id: ' + self.id);
+            // do not return if:
+            //    1. is self
+            //    2. no mapping for ident
+            //    3. is not a subscriber to myself (subscribed area does not cover me)
+            if (self.id == id ||
+                _id2ident.hasOwnProperty(id) === false || 
+                _isSubscriber(neighbors[id], self.aoi) === false)
+                continue;
+                
+            var info = _id2ident[id]; 
+            list.push(info.apikey + ':' + info.layer + ':' + info.ident);            
         }
                         
         // return success
-        _reply(res, list);
+        var error = (list.length === 0 ? ["no subscribers"] : []);
+        _reply(res, [list, error]);
     }
 }
 
@@ -247,7 +266,7 @@ function publish(words, res) {
                     
                         // send back node creation response                    
                         //_reply(res, ["OK", []]);            
-                        
+                                                
                         _replySubscribers(request, res); 
                     });            
                     break;

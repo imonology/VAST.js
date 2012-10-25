@@ -26,7 +26,7 @@ var start = function (route, handle) {
          
     }).listen(serverPort);
 
-    LOG.debug('Server running at http://127.0.0.1:' + serverPort + '/');
+    LOG.warn('Server running at http://127.0.0.1:' + serverPort + '/');
 }
 
 exports.start = start;

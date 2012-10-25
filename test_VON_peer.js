@@ -15,8 +15,11 @@ var AUTOMATIC_LEAVE_PERIOD = 3;     // number of seconds
 
 require('./common');
 
+//var curr = new Date();
+//LOG.debug(curr.toLocaleString());
+
 // do not show debug
-LOG.setLevel(2);
+LOG.setLevel(3);
 
 // set default IP/port
 var ip_port = {host: "127.0.0.1", port: 37700};
@@ -68,7 +71,6 @@ peer.join(ip_port, aoi,
         // try to move around once in a while...  (if not gateway)        
         if (id !== VAST_ID_GATEWAY) {
             interval_id = setInterval(function(){ moveAround() }, 1000); 
-        }
-        
+        }        
     }
 );
