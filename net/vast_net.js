@@ -408,7 +408,7 @@ function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
     
 	var _processData = function (socket, data) {
         
-        console.log('vast_net id: ' + _self_id + ' processData: ' + data);
+        //console.log('vast_net id: ' + _self_id + ' processData: ' + data);
         
 		// create buffer for partially received message, if not exist
         if (typeof socket.recv_buf === 'undefined') {

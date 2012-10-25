@@ -1267,7 +1267,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         that.sendPack.apply(that, arguments);
     }
     
-    LOG.warn('_net: ' + _net + ' this.net: ' + this.net);
+    //LOG.warn('_net: ' + _net + ' this.net: ' + this.net);
     
     // set default AOI buffer size
     if (l_aoi_buffer === undefined)
