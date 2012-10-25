@@ -163,7 +163,7 @@ var _replySubscribers = function (request, res) {
         }
                         
         // return success
-        var error = (list.length === 0 ? ["no subscribers"] : []);
+        var error = [];
         _reply(res, [list, error]);
     }
 }
