@@ -19,7 +19,7 @@ require('./common');
 //LOG.debug(curr.toLocaleString());
 
 // do not show debug
-LOG.setLevel(3);
+//LOG.setLevel(2);
 
 // set default IP/port
 var ip_port = {host: "127.0.0.1", port: 37700};

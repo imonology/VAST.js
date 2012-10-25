@@ -7,7 +7,8 @@ process.on('uncaughtException', function(err) {
 
 // include VAST
 require('../common');
-LOG.setLevel(3);
+
+//LOG.setLevel(2);
 
 /*
     NOTE:
