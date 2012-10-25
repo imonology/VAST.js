@@ -59,6 +59,10 @@
 */
 
 require('./common.js');
+
+// to be inherited by VON.peer
+var msg_handler = msg_handler || require('./net/msg_handler.js');
+
 var Voronoi = require('./vast_voro.js');
 
 // config
@@ -102,6 +106,7 @@ var VON_Message_String = [
     'VON_BYE'
 ];
 
+// TODO: msg priority is probably not VON-specific
 var VON_Priority = {
     HIGHEST:        0,
     HIGH:           1,
@@ -110,6 +115,7 @@ var VON_Priority = {
     LOWEST:         4
 };
 
+// TODO: node state is probably not VON-specific
 var NodeState = {
     ABSENT:         0,
     QUERYING:       1,           // finding / determing certain thing
@@ -132,10 +138,9 @@ var NeighborState = {
     NEIGHBOR_ENCLOSED:      2 
 };
 
-
 // definition of a VON peer
-exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
-    
+function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
+        
     /////////////////////
     // public methods
     //
@@ -164,7 +169,9 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         
         // set self AOI
         _self.aoi.update(aoi);
-                        
+                     
+        LOG.debug('calling getHost()');
+        
         // create self object
         _net.getHost(function (local_IP) {
         
@@ -540,7 +547,7 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         // simply move a little to indicate keepalive
         if (_isJoined() && _isTimelyNeighbor (_self.id, MAX_TIMELY_PERIOD/2) == false) {
             LOG.debug('[' + _self.id + '] sendKeepAlive ()', _self.id);
-            move (_self.aoi);
+            move(_self.aoi);
         }    
     }
         
@@ -802,34 +809,6 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     // send helpers
     //
     
-    // send a javascript object to a SINGLE target node (given message 'type' and 'priority')
-    var _sendMessage = function (target, msg_type, js_obj, priority, is_reliable) {
-
-        // create a delivery package to send
-        var pack = new VAST.pack(
-            msg_type,
-            js_obj,
-            priority);
-            
-        pack.targets.push(target);
-        
-        // convert pack to JSON or binary string
-        return _sendPack(pack, is_reliable);
-    }
-
-    // send a pack object to its destinated targets
-    // TODO: this previously exist at the network layer, should move it there?
-    var _sendPack = function (pack, is_reliable) {
-    
-        // serialize string
-        var encode_str = JSON.stringify(pack);
-        
-        // go through each target and send        
-        // TODO: optimize so only one message is sent to each physical host target        
-        for (var i=0; i < pack.targets.length; i++)            
-            _net.send(pack.targets[i], encode_str, is_reliable);
-    }
-    
     // send node infos (NODE message) to a particular target
     // target:   destination node id
     // list:     a list of neighbor id to be sent
@@ -898,36 +877,16 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     // handlers for incoming messages, connect/disconnect
     //
     
-    // handler for incoming messages
-    var _msgHandler = function (from_id, msg) {
-            
-        LOG.debug('[' + _self.id + '] handles msg from [' + from_id + '] msg: ' + msg);
-                
-        // prevent processing invalid msg
-        // NOTE: we allow for empty message (?) such as VON_DISCONNECT
-        if (msg == '' || msg === null || msg === undefined) {
-            LOG.error('[' + _self.id + '] msgHandler got invalid msg, skip processing');
-            return;
-        }
+    var _handlePacket = function (from_id, pack) {
 
-        var pack;
-        try {
-            // convert msg back to js_obj
-            pack = JSON.parse(msg);
-        }
-        catch (e) {
-            LOG.error('convert to js_obj fail: ' + e + ' msg: ' + msg);
-            return;
-        }
- 
-        LOG.debug('[' + _self.id + '] ' + VON_Message_String[pack.type] + ' from [' + from_id + '], neighbor size: ' + Object.keys(_neighbors).length);        
-        
         // if join is not even initiated, do not process any message        
         if (_state == NodeState.ABSENT) {
             LOG.error('node not yet join, should not process any messages');
-            return;
+            return false;
         }
-                
+        
+        LOG.debug('[' + _self.id + '] ' + VON_Message_String[pack.type] + ' from [' + from_id + '], neighbor size: ' + Object.keys(_neighbors).length);        
+
         switch (pack.type) {
                        
             // VON's query, to find an acceptor that can take in a joining node
@@ -949,7 +908,9 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
                 }
                  
                 // find the node closest to the joiner
-                var closest = _voro.closest_to (joiner.aoi.center);
+                var closest = _voro.closest_to(joiner.aoi.center);
+                
+                LOG.debug('closest node found: ' + closest);
                 
                 // if this is gateway receiving its own request
                 if (closest === VAST_ID_UNASSIGNED && Object.keys(_neighbors).length === 1) {
@@ -1018,6 +979,7 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
                 
                 // if VON_NODE is received, we're considered joined
                 // NOTE: do this first as we need to update our self ID for later VON_NODE process to work
+                LOG.warn('checking joining state: ' + _state);
                 if (_state === NodeState.JOINING) {
 
                     // check if we're getting new ID
@@ -1092,7 +1054,7 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
                 _sendMessage(from_id, VON_Message.VON_HELLO_R, pos, VON_Priority.HIGH, true);
 
                 // check if enclosing neighbors need any update
-                _checkConsistency (from_id);
+                _checkConsistency(from_id);
             }
             break;
             
@@ -1107,7 +1069,7 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
                     neighbor.aoi.center.parse(pack.msg); 
                     
                     LOG.debug('got latest pos: ' + neighbor.aoi.center.toString() + ' id: ' + from_id);                    
-                    _insertNode (neighbor);
+                    _insertNode(neighbor);
                     
                     delete _potential_neighbors[from_id];
                 }                
@@ -1223,30 +1185,16 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
             }
             break;
                                               
-            default: {
-                LOG.error('cannot recongize message type: ' + pack.type + ' msg: ' + msg);
-            }
+            default: 
+                // packet unhandled
+                return false;
             break; 
         }
-    }
-    
-    var _connHandler = function (id) {
-        LOG.debug('VON_peer [' + id + '] connected');
-    }
-    
-    var _disconnHandler = function (id) {
-        LOG.debug('VON_peer [' + id + '] disconnected');
-        
-        // generate a VON_DISCONNECT message 
-        var pack = new VAST.pack(
-            VON_Message.VON_DISCONNECT,
-            {},
-            VON_Priority.HIGHEST);
 
-        var encode_str = JSON.stringify(pack);
-        _msgHandler(id, encode_str);
+        // successfully handle packet
+        return true;
     }
-    
+          
     // clean up all internal states for a new fresh join
     var _initStates = function () {
     
@@ -1274,13 +1222,53 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         
         // init stat collection for selected messsage types
         _stat = {};
-        _stat[VON_Message.VON_NODE] = new VAST.ratio();    
+        _stat[VON_Message.VON_NODE] = new VAST.ratio();                   
     }
+    
+    var _connHandler = function (id) {
+        LOG.debug('VON peer [' + id + '] connected');
+    }
+    
+    var _disconnHandler = function (id) {
+        LOG.debug('VON peer [' + id + '] disconnected');
+        
+        // generate a VON_DISCONNECT message 
+        var pack = new VAST.pack(
+            VON_Message.VON_DISCONNECT,
+            {},
+            VON_Priority.HIGHEST);
+
+        _handlePacket(id, pack);            
+    }    
 
     /////////////////////
     // constructor
     //
-
+    LOG.debug('VON_peer constructor called');
+    
+    // call parent class's constructor
+    //this.init(_connHandler, _disconnHandler, _handlePacket, l_self_id);
+    msg_handler.call(this, _connHandler, _disconnHandler, _handlePacket, l_self_id);
+    
+    // make a local reference to the parent class (msg_handler)'s net object
+    // need to create reference here because within functions (such as callbacks)
+    // 'this' refers to the function itself
+    
+    // TODO: a cleaner approach?
+    var _net = this.net;
+    var that = this;
+    
+    // convenience functions with the right executation context (the desirable 'this')
+    var _sendMessage = function () {
+        that.sendMessage.apply(that, arguments);
+    }
+    
+    var _sendPack = function () {
+        that.sendPack.apply(that, arguments);
+    }
+    
+    LOG.warn('_net: ' + _net + ' this.net: ' + this.net);
+    
     // set default AOI buffer size
     if (l_aoi_buffer === undefined)
         l_aoi_buffer = AOI_DETECTION_BUFFER;
@@ -1292,11 +1280,7 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     
     if (l_port === undefined)
         l_port = VON_DEFAULT_PORT;
-    
-    // create network layer & start listening
-    // NOTE: internal handlers must be defined before creating the VAST.net instance
-    var _net = new VAST.net(_msgHandler, _connHandler, _disconnHandler, l_self_id);
-    
+        
     // reference to self
     // NOTE: other info of 'self' may be empty at this moment (e.g., endpt, aoi, etc.)
     var _self = new VAST.node(l_self_id);
@@ -1337,3 +1321,11 @@ exports.peer = function (l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     _initStates();
     
 } // end of peer
+
+VONPeer.prototype = new msg_handler();
+
+// NOTE: it's important to export VONPeer after the prototype declaration
+//       otherwise the exported method will not have unique msg_handler instance
+//       (that is, all msg_handler variables will become singleton, only one instance globally)
+if (typeof module !== 'undefined')
+	module.exports = VONPeer;

@@ -15,7 +15,7 @@ var _yellow = '\033[33m';
 var _ERR = _red + 'ERR -';
 var _ERREND = _white;
 
-var _WARN = _yellow + 'WARN -';
+var _WARN = _yellow + '-';
 
 function logger() {
 

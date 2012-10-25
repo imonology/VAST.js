@@ -74,7 +74,7 @@
         2012-09-24              add is_connected()
 */
 
-require('./common.js');
+require('../common.js');
 var l_net = require('net');   // allow using network
 
 function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
@@ -180,7 +180,7 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
     // listen to a given port, while processing incoming messages at a callback
     this.listen = function (port, onDone) {
 
-        LOG.debug('listening at: ' + port); 
+        LOG.debug('net_nodejs, listening: ' + port); 
         try {
             
             _server = l_net.createServer(setupSocket);
@@ -196,7 +196,7 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
             });
   
             _server.listen(port, function () {
-                LOG.debug('server started at port: ' + port);
+                LOG.debug('net_nodejs. server started at port: ' + port);
                 
                 if (typeof onDone === 'function')
                     onDone(port);

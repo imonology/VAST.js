@@ -1,0 +1,77 @@
+
+
+Main Functions
+==============
+
+VON:    peer connectivity, neighbor discovery within peer's AOI
+        - find gateway and join network
+        - position movement
+        - update from neighbors
+        
+        assumes: 
+        - net_layer (send/recv)
+        
+        implemented by:
+        - VON_peer
+        
+SPS:    pub/sub record keeping, pub/sub matching, request passing
+        - pub/sub request
+        - sub record storage
+        - pub request passing to neighbors
+        - pub/sub matching
+        - delivery of messages
+        
+        assumes:
+        - net_layer (send/recv)
+        - region
+        - neighboring region
+        
+        implemented by:
+        - VASTMatcher
+        - VASTClient
+        
+
+VSO:    region resizing, pub/sub record migration, fault-tolerance (?)
+        - load detection
+        - overload handling (resize)
+        - overload handling (join)
+        - underload handling (resize)
+        - underload handling (leave)
+        - load migration (ensure consistency & fault-tolerance)
+        
+VCAST:  request forwarding
+
+
+Dependencies 
+============
+VSO -> VON
+VCAST -> VON/VSO
+SPS -> VON/VSO/VCAST
+
+
+Modular Work Division
+=====================
+VASTMatcher:
+  support for pub/sub matching should exist at VASTMatcher
+  it deals with pub/sub record keeping & matching
+  VASTMatcher can be implemented with either VON or VSO,
+  the latter will provide dynamic load balancing among matchers.
+  if only the former is used, then only static partitioning is available.
+
+  basic matcher functions:
+  * accept subscribe request (from VASTClient)
+  * accept publish request (from VASTClient)
+  * forward publish request to neighbors
+  * deliver publications to relevant subscribers within own region
+  * list currently known subscribers
+  * join a VON network and maintain topology with neighbors
+
+
+VASTRelay:
+  support physical coordniate identification and connection to closest Relay
+
+VASTClient:
+  basic client functions to forward all requests to current "owner matcher"
+  and get all responses from "owner matcher" (possibly via Relay)
+
+

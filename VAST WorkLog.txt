@@ -54,11 +54,193 @@ Overall Goals:
 extract non-VON-specific code from VON_peer as common code for handlers
 
 
+
+2012-10-25 (4)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for msg_handler     
+      make multiple handlers work with same network layer
+      modify VSS response
+
+      
+      
+      
+
+2012-10-24 (3)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for msg_handler     
+      make multiple handlers work with same network layer
+      modify VSS response
+      debug msg_handler mechanism (only one 'net' instance)
+
+DEBUG: 2012-10-23
+      > bug solved by making sure we don't use any variable within the parent class,
+      all variables in a prototype-inherted parent have only one instance and are shared
+      so we need to make sure instance-specific variables can all be independent      
+      this is resolved by passing instance-specific functions via the parent class's constructor
+
+      
+2012-10-23 (2)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for msg_handler     
+      make multiple handlers work with same network layer
+      modify VSS response
+      debug msg_handler mechanism (only one 'net' instance)
+      
+- found out one problem is that by using 'prototype', only one copy of the variable
+  exists, thus causing problems if multiple instances may access the variable.
+  solution is to make the variable 'instance-based' (making it 'this.xxx')
+  but then it may not be accessible from callback functions (scope problem)
+  
+- after applying right context (using 'apply') seems to work with prototype
+
+BUG   2nd node via VSS cannot properly join & obtain VON_NODE response from gateway
+      appearantly gateway forward VON_QUERY to not an existing node, but the new node
+
+
+
+2012-10-22 (1)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for msg_handler     
+      make multiple handlers work with same network layer
+      modify VSS response
+      debug msg_handler mechanism (_net not found)
+      
+- modify all public methods & variable in msg_handler to adopt 'prototype'-style definition
+  can run, but 'net' reference is still shared by ALL created msg_handler instances
+  (desired behavior is that each msg_handler instance has its own 'network' layer)
+            
+2012-10-21 (7)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for msg_handler     
+      make multiple handlers work with same network layer
+      modify VSS response
+      
+BUG:  _net reference is not found (when VON_peer called a 2nd time) 
+      while creating VON_peer via the VSS server
+      
+      
+
+2012-10-20 (6)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for msg_handler
+      modify VSS response
+      debug using msg_handler class (js inhertance work)
+
+- modify to pass packetHandler as part of the init() parameter to parent class
+  > solve the issue of parent class cannot call override function in child class
+    (issue found on 2012-10-17).
+    
+    
+      
+2012-10-17 (3)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for msg_handler
+      modify VSS response
+      debug using msg_handler class (js inhertance work)
+
+- tested out using msg_handler successfully, in progress of converting
+- found out an issue: parent class cannot call / use methods override by child class
+
+2012-10-14 (7)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for msg_handler
+      modify VSS response
+      debug using msg_handler class (js inhertance work)
+      
+- msg_handler inhertance works under test_vast_net      
+
+
+2012-10-13 (6)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for msg_handler
+      debug using msg_handler class (js inhertance work)
+      identify why inhertance doesn't work
+
+- made sample code inhertance work with prototype
+      
+2012-10-12 (5)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for msg_handler
+      debug using msg_handler class (js inhertance work)
+
+- verified js inhertance indeed work in small test program
+      
+      
+2012-10-11 (4)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for msg_handler
+      debug using msg_handler class (js inhertance work)
+
+- will try base = prototype approach (suggested by Shine)      
+  did not seem to work... 
+
+2012-10-09 (2)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for msg_handler
+      debug using msg_handler class (js inhertance work)
+
+- study js inhertance
+
+2012-10-08 (1)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for msg_handler
+      debug using msg_handler class (js inhertance work)
+
+- study js inhertance      
+
+2012-10-07 (7)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for msg_handler
+      debug using msg_handler class
+    
+- study javascript inhertance approaches
+
+2012-10-06 (6)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for msg_handler
+      debug /net directory layout & using msg_handler class
+    
+- done test_vast_net debug
+
+
+2012-10-05 (5)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for msg_handler
+
+- start moving network code to /net directory (will crash)
+
+
+2012-10-04 (4)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for msg_handler
+
+- init order in VAST C++
+  - create net
+  - create & join relay
+  - create & join matcher
+  - init done
+  
+  ordering, dependency, consistency  
+
+
+2012-10-03 (3)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for handlers
+
+- start making msg_handler.js class
+
+2012-10-02 (2)
+--------------
+goal: extract non-VON-specific code from VON_peer as common code for handlers
+
+- still stuck & consider how to do module separation
+      
 2012-10-01 (1)
 --------------
 goal: extract non-VON-specific code from VON_peer as common code for msg handlers
       identify logical separation for matcher/relay/client/VON
 
+- recheck 9-14 & 9-11 notes
 - modify VSS server response for publishPos as subscriber list      
 
 BUG   50 node simu still crashes wtih error: EMFILE, EFAULT

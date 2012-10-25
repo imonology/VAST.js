@@ -37,7 +37,7 @@
     storeMapping(id, addr);     store mapping from id to a particular host IP/port
     setID(new_id, old_id);      set self ID or change the id -> socket mapping for incoming connections
     getID();                    get self ID (which may be assigned by remote host)
-    send(id, msg, is_reliable); send a message to an target 'id'
+    send(id, msg, is_reliable); send a message to a target 'id'
     listen(port, CB_done);      start a server at a given 'port', port binded is returned via 'CB_done', 0 indicates error
     disconnect(id)              disconnect connection to a remote node
     
@@ -62,8 +62,9 @@
         2012-07-20              rename switchID -> setID (can set self ID)
 */
 
-require('./common.js');
+//require('../common.js');
 var l_net = require('./net_nodejs');   // implementation-specific network layer
+//var VAST_ID_UNASSIGNED = 0;
 
 //
 // input: 
@@ -84,14 +85,16 @@ function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
     // return the host IP for the current machine
     this.getHost = function (CB_done) {
 
+        var hostname = require('os').hostname();
+        LOG.debug('getHost called, hostname: ' + hostname);
+        
         // if already available, return directly
         if (_localIP !== undefined)
             return CB_done(_localIP);
                     
-        require('dns').lookup(require('os').hostname(), function (err, addr, fam) {
-    
-            LOG.debug('hostname: ' + require('os').hostname());
-        
+                    
+        require('dns').lookup(hostname, function (err, addr, fam) {
+            
             if (err) {
                 LOG.warn(err + '. Assign 127.0.0.1 to host');
                 _localIP = "127.0.0.1";
@@ -296,7 +299,8 @@ function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
     
         if (port === undefined || port < 0 || port >= 65536) {
             LOG.error('port not provided, cannot start listening');
-            CB_done(0);
+            if (typeof CB_done === 'function')
+                CB_done(0);
             return;
         }
     
@@ -344,7 +348,8 @@ function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
             if (port_binded != 0) {
                 //LOG.debug('port bind successful: ' + port_binded);
                 // return the actual port binded
-                CB_done(port_binded);
+                if (typeof CB_done === 'function') 
+                    CB_done(port_binded);
                 return;
             }
             
@@ -403,7 +408,7 @@ function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
     
 	var _processData = function (socket, data) {
         
-        //console.log('processData: ' + data);
+        console.log('vast_net id: ' + _self_id + ' processData: ' + data);
         
 		// create buffer for partially received message, if not exist
         if (typeof socket.recv_buf === 'undefined') {

@@ -8,6 +8,7 @@
 
 
 var vast_net = require('./vast_net');  
+
 var net = undefined; 
 
 // set default IP/port
@@ -16,12 +17,16 @@ var ip_port = {host: "127.0.0.1", port: 37};
 // get input IP / port
 // check port input, if any
 var port = process.argv[2];    
-if (port !== undefined)
+if (port !== undefined) {
+    console.log('custom port: ' + port);
     ip_port.port = port;
+}
 
 var host = process.argv[3];
-if (host !== undefined)
+if (host !== undefined) {
+    console.log('custom host: ' + host);
     ip_port.host = host;
+}
     
 // check whether to run server or not
 // server
@@ -46,10 +51,14 @@ if (process.argv.length <= 3) {
         }        
     );
     
-    net.listen(ip_port.port);
+    net.listen(ip_port.port, function (port) {
+        console.log('listen success, port binded: ' + port);
+    });
 }
 // client
 else {
+
+    console.log('client host: ' + ip_port.host + ' port: ' + ip_port.port);
     
     net = new vast_net(
         function (id, msg) {

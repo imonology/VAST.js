@@ -1,7 +1,7 @@
 
 // include VAST
 require('../common');
-LOG.setLevel(2);
+LOG.setLevel(3);
 
 var server = require("./server");
 var router = require("./router");
