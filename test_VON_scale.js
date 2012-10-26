@@ -26,6 +26,7 @@ var node_radius     = 200;
 // set default IP/port
 var gateway_addr = {host: "127.0.0.1", port: 37700};
 
+// IP/port
 if (process.argv[2] !== undefined) {
     var ip_port = process.argv[2];
     // check if this is port only

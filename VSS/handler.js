@@ -149,9 +149,9 @@ var _replySubscribers = function (request, res) {
             // NOTE: current approach can only do ident translation for nodes created via this VSS server
             
             LOG.debug('checking neighbor id: ' + id + ' against self id: ' + self.id);
-            // do not return if:
+            // do not return a node if:
             //    1. is self
-            //    2. no mapping for ident
+            //    2. no mapping for ident (the node is not created via VSS)
             //    3. is not a subscriber to myself (subscribed area does not cover me)
             if (self.id == id ||
                 _id2ident.hasOwnProperty(id) === false || 

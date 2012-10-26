@@ -52,6 +52,14 @@ BUG (*) denotes design bug:
 
 Overall Goals:
 extract non-VON-specific code from VON_peer as common code for handlers
+make multiple handlers work with same network layer
+
+
+2012-10-26 (5)
+--------------
+goal: make subscriber list available upon first registerNode
+
+
 
 
 
@@ -61,7 +69,9 @@ goal: extract non-VON-specific code from VON_peer as common code for msg_handler
       make multiple handlers work with same network layer
       modify VSS response
 
-      
+- fixed response & deploy
+- found a small issue: after initial publishPos, (registerNode), subscriber list is not
+  obtained (only valid after 2nd publishPos call).       
       
       
 

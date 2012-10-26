@@ -65,7 +65,7 @@ function msg_handler(l_connHandler, l_disconnHandler, l_packetHandler, l_self_id
     //
       
     // constructor
-    LOG.debug('msg_handler init, l_packetHandler: ' + typeof l_packetHandler);
+    //LOG.debug('msg_handler init, l_packetHandler: ' + typeof l_packetHandler);
   
     // NOTE: packet & message handlers cannot be of prototype-style, 
     //       as they need to occupy memory independently for each msg handler instance
@@ -75,7 +75,7 @@ function msg_handler(l_connHandler, l_disconnHandler, l_packetHandler, l_self_id
     
     // keep local reference for 'this'
     var _that = this;    
-    
+        
     // handler for incoming messages
     this.msgHandler = function (from_id, msg) {
                         
@@ -136,7 +136,6 @@ function msg_handler(l_connHandler, l_disconnHandler, l_packetHandler, l_self_id
     // create network layer & start listening
     // NOTE: internal handlers must be defined before creating the VAST.net instance        
     this.net = new VAST.net(this.msgHandler, l_connHandler, l_disconnHandler, l_self_id);    
-
     
 } // end msg_handler
 
