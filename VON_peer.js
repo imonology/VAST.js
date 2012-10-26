@@ -63,6 +63,7 @@ require('./common.js');
 // to be inherited by VON.peer
 var msg_handler = msg_handler || require('./net/msg_handler.js');
 
+// voronoi computation
 var Voronoi = require('./vast_voro.js');
 
 // config
@@ -474,15 +475,15 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     
     var _updateNode = function (node) {    
 
-        if (_isNeighbor (node.id) === false)
+        if (_isNeighbor(node.id) === false)
             return false;
         
-        // only update the node if it's at a later time
+        // only update the node if it's the same or a later time
         if (node.time < _neighbors[node.id].time)
             return false;
 
-        _voro.update (node.id, node.aoi.center);
-        _neighbors[node.id].update (node);
+        _voro.update(node.id, node.aoi.center);
+        _neighbors[node.id].update(node);
 
         // NOTE: should not reset drop counter here, as it might make irrelevant neighbor 
         //       difficult to get disconnected
@@ -587,6 +588,9 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         
         //LOG.debug('voro nodes after insertion: ' + _voro.size());
         
+        // record a list of relevant neighbors to be inserted
+        var relevant_neighbors = [];
+        
         // check through each newly inserted Voronoi for relevance                      
         for (var i=0; i < new_list.length; ++i) {
         
@@ -601,8 +605,13 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
                 
                 // store new node as a potential neighbor, pending confirmation from the new node 
                 // this is to ensure that a newly discovered neighbor is indeed relevant
-                _potential_neighbors[target] = node;
-
+                //_potential_neighbors[target] = node;
+                
+                // add a new relevant neighbor
+                // NOTE: we record first without inserting because we need to remove
+                //       the new neighbor positions from Voronoi first
+                relevant_neighbors.push(node);
+                
                 // notify mapping for sending Hello message
                 // TODO: a cleaner way (less notifymapping call?)
                 _net.storeMapping(node.id, node.endpt.addr);
@@ -623,6 +632,10 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         // clear up the temporarily inserted test node from Voronoi (if not becoming neighbor)
         for (var i=0; i < new_list.length; ++i)            
             _voro.remove(new_list[i]);
+            
+        // insert new neighbors
+        for (var i=0; i < relevant_neighbors.length; i++)
+            _insertNode(relevant_neighbors[i]);
         
         // NOTE: erase new neighbors seems to bring better consistency 
         //       (rather than keep to next round, as in previous version)
@@ -979,7 +992,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
                 
                 // if VON_NODE is received, we're considered joined
                 // NOTE: do this first as we need to update our self ID for later VON_NODE process to work
-                LOG.warn('checking joining state: ' + _state);
+                //LOG.warn('checking joining state: ' + _state);
                 if (_state === NodeState.JOINING) {
 
                     // check if we're getting new ID
@@ -992,8 +1005,9 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
                     _deleteNode(_self.id);
                     _self.id = selfID;
                     _insertNode(_self);
-                                    
-                    _setJoined();                    
+
+                    // NOTE: we don't notify join success until neighbor list is processed
+                    //       so that upon join success, the client already has a list of neighbors                    
                 }                                      
                             
                 var nodelist = pack.msg;
@@ -1028,10 +1042,12 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
                     }
                 } // end going through node list                
                                 
-                // process new neighbors
-                // NOTE: do this collectively during tick
-                //_contactNewNeighbors();
-                                
+                // process new neighbors if we just joined, 
+                // otherwise, do this periodically & collectively during tick                
+                if (_state === NodeState.JOINING) {
+                    _contactNewNeighbors();                
+                    _setJoined();     
+                }                
             }
             break;            
    
@@ -1061,18 +1077,19 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
             // VON's hello response
             case VON_Message.VON_HELLO_R: {
                 
-                // check if it's a response from new neighbor
-                if (_potential_neighbors.hasOwnProperty(from_id) === true) {
+                // check if it's a response from an existing neighbor
+                if (_neighbors.hasOwnProperty(from_id) === true) {
                 
-                    // insert the new node as a confirmed neighbor with updated position
-                    var neighbor = _potential_neighbors[from_id];                    
+                    // update the neighbor's position
+                    // NOTE: that 'time' is not updated here
+                    var neighbor = _neighbors[from_id];                    
                     neighbor.aoi.center.parse(pack.msg); 
                     
                     LOG.debug('got latest pos: ' + neighbor.aoi.center.toString() + ' id: ' + from_id);                    
-                    _insertNode(neighbor);
-                    
-                    delete _potential_neighbors[from_id];
-                }                
+                    _updateNode(neighbor);                    
+                }
+                else
+                    LOG.warn('got VON_HELLO_R from unknown neighbor [' + from_id + ']');
             }
             break;
             
@@ -1213,7 +1230,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         _neighbor_states = {}; 
         
         _updateStatus = {};
-        _potential_neighbors = {};
+        //_potential_neighbors = {};
         _req_nodes = {};
         _time_drop = {};
                 
@@ -1304,7 +1321,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     // TODO: combine these structures into one?
     var _new_neighbors;             // nodes worth considering to connect (learned via VON_NODE messages)
     var _neighbor_states;           // neighbors' knowledge of my neighbors (for neighbor discovery check)
-    var _potential_neighbors;       // neighbors to be discovered
+    //var _potential_neighbors;       // neighbors to be discovered
     var _req_nodes;                 // nodes requesting neighbor discovery check
     
     var _updateStatus;              // status about whether a neighbor is: 1: inserted, 2: deleted, 3: updated
