@@ -135,7 +135,7 @@ var _replySubscribers = function (request, res) {
 
     var node = _getNode(request, res);
 
-    if (typeof node === 'object') {
+    if (node !== undefined && node !== null) {
     
         // get a list of current neighbors's id
         var neighbors = node.list();
@@ -324,7 +324,7 @@ function subscribe(words, res) {
             // check if node exists, return error if not yet exist (need to publishPos first)
             var node = _getNode(request, res);
             
-            if (typeof node === 'object') {
+            if (node != undefined && node !== null) {
                 // update AOI radius for area subscription
                 _publishPos(node, node.getSelf().aoi.center, request.radius);
                 

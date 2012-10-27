@@ -55,12 +55,23 @@ extract non-VON-specific code from VON_peer as common code for handlers
 make multiple handlers work with same network layer
 
 
+2012-10-27 (6)
+--------------
+goal: test whether VSS server can scale on different machines
+
+
+
+
+
 2012-10-26 (5)
 --------------
 goal: make subscriber list available upon first registerNode
 
-
-
+CHANGE:  modify join behavior in VON: neighbor list is build immediately after VON_NODE is received.
+         not after VON_HELLO_R is received. This makes it quicker to discover initial list of neighbors
+         (save one less round-trip). 
+         
+- subscribe list available upon join finished & tested.          
 
 
 2012-10-25 (4)
