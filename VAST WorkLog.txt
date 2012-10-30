@@ -54,13 +54,38 @@ Overall Goals:
 extract non-VON-specific code from VON_peer as common code for handlers
 make multiple handlers work with same network layer
 
+2012-10-30 (2)
+--------------
+goal: VSS server to support ident exchange
+
+
+
+
+2012-10-29 (1)
+--------------
+goal: VSS server to support ident exchange
+
+- fix 'meta' field exchange in VON peer (now storing & sending via HELLO & HELLO_R works correctly)
+
+
+2012-10-28 (7)
+--------------
+goal: add put() & get() functions to VON Peer
+
+- implemented & tested storing & sending meta-data via VON_HELLO/VON_HELLO_R.
+- still to do: storing & retriving node ident as meta-data at VSS servers
+
 
 2012-10-27 (6)
 --------------
 goal: test whether VSS server can scale on different machines
 
+- setup VSS servers on both dev & prod servers, found that node discovery works correctly ^^
+  however, node ident is not shared across different VSS servers, so
+  subscriber list did not return correctly (need to find a solution for this...)
 
-
+- try to transfer node-specific info along with HELLO / HELLO_R messages
+  add put() and get() to VON_peer's interface... 
 
 
 2012-10-26 (5)

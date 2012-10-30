@@ -43,8 +43,10 @@
     join(addr, aoi, done_CB)            join a VON network with a given gateway (entry) 
     leave()                             leave the VON network
     move(aoi, send_time)                move the AOI to a new position (or change radius)
-    list();                             get a list of AOI neighbors
-    send(id, msg);                      send a message to a given node
+    list()                              get a list of AOI neighbors    
+    send(id, msg)                       send a message to a given node
+    put(obj)                            store a app-specific data along with the node (will pass during node discovery)                      
+    get()                               retrieve app-specific data for this node
     
     // accessors
     isJoined();                         check if we've joined the VON network
@@ -152,7 +154,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         // check if already joined
         if (_state === NodeState.JOINED) {
             LOG.warn('VON_peer.join(): node already joined');
-            if (done_CB !== undefined)
+            if (typeof done_CB === 'function')
                 done_CB(_self.id);
             return;
         }
@@ -332,6 +334,18 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     // send a message to a given node
     var _send = this.send = function (id, msg) {
 
+    }
+
+    // store a app-specific data along with the node (will pass during node discovery)                      
+    var _put = this.put = function (obj) {
+        _meta = obj;
+        LOG.debug('after put() meta keys: ' + Object.keys(_meta).length);
+    }
+    
+    // retrieve app-specific data for this node
+    var _get = this.get = function () {
+        LOG.debug('get() meta keys: ' + Object.keys(_meta).length);    
+        return _meta;
     }
     
     /////////////////////
@@ -536,7 +550,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         _state = NodeState.JOINED;
 
         // notify callback
-        if (_join_done_CB !== undefined)
+        if (typeof _join_done_CB === 'function')
             _join_done_CB(_self.id);         
             
         // start ticking
@@ -848,11 +862,21 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     // list:     a list of id to be sent
     var _sendHello = function (target) {
                     
-        LOG.debug('sendHello target: ' + target); 
-           
+        LOG.debug('sendHello target: ' + target);
+        
+        var node = _getNode(_self.id);
+     
+        LOG.debug('meta keys: ' + Object.keys(_meta).length);
+        
+        // add app-specific attributes, if exist
+        if (Object.keys(_meta).length > 0) {
+            LOG.warn('storing meta data to node to be sent for VON_HELLO');
+            node.meta = _meta;
+        }
+        
         // prepare HELLO message
         // TODO: do not create new HELLO message every time? (local-side optimization)
-        _sendMessage(target, VON_Message.VON_HELLO, _getNode(_self.id), VON_Priority.HIGHEST, true);
+        _sendMessage(target, VON_Message.VON_HELLO, node, VON_Priority.HIGHEST, true);
     }
 
     // send a particular node its perceived enclosing neighbors
@@ -1057,17 +1081,33 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
                 var node = new VAST.node();
                 node.parse(pack.msg);                
                 LOG.debug('node: ' + node.toString());
-                               
+                    
+                // store meta data, if any
+                if (pack.msg.hasOwnProperty('meta') && typeof pack.msg.meta === 'object') {
+                    LOG.warn('VON_HELLO storing to node meta keys: ' + Object.keys(pack.msg.meta).length);
+                    node.meta = pack.msg.meta;
+                }
+                    
                 // update existing or new neighbor status                                            
                 if (_isNeighbor (from_id))
                     _updateNode(node);
                 else                                      
                     _insertNode(node);
-
+                                        
                 // send HELLO_R as response (my own position, reliably)
-                var pos = new VAST.pos();
+                // NOTE: we need to create a new pos as self.aoi.center has other properties (put by Voronoi)
+                // TODO: this should be clean-up
+                var pos = new VAST.pos;
                 pos.parse(_self.aoi.center);
-                _sendMessage(from_id, VON_Message.VON_HELLO_R, pos, VON_Priority.HIGH, true);
+                var res_obj = {
+                    pos: pos
+                };
+                
+                // add meta-data, if any
+                if (Object.keys(_meta).length > 0)
+                    res_obj.meta = _meta;
+                    
+                _sendMessage(from_id, VON_Message.VON_HELLO_R, res_obj, VON_Priority.HIGH, true);
 
                 // check if enclosing neighbors need any update
                 _checkConsistency(from_id);
@@ -1083,10 +1123,16 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
                     // update the neighbor's position
                     // NOTE: that 'time' is not updated here
                     var neighbor = _neighbors[from_id];                    
-                    neighbor.aoi.center.parse(pack.msg); 
+                    neighbor.aoi.center.parse(pack.msg.pos); 
+                    
+                    // store meta data, if any
+                    if (pack.msg.hasOwnProperty('meta') && typeof pack.msg.meta === 'object') {
+                        LOG.warn('meta keys received: ' + Object.keys(pack.msg.meta).length);
+                        neighbor.meta = pack.msg.meta;
+                    }
                     
                     LOG.debug('got latest pos: ' + neighbor.aoi.center.toString() + ' id: ' + from_id);                    
-                    _updateNode(neighbor);                    
+                    _updateNode(neighbor);        
                 }
                 else
                     LOG.warn('got VON_HELLO_R from unknown neighbor [' + from_id + ']');
@@ -1240,6 +1286,9 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         // init stat collection for selected messsage types
         _stat = {};
         _stat[VON_Message.VON_NODE] = new VAST.ratio();                   
+    
+        // clear meta data
+        _meta = {};
     }
     
     var _connHandler = function (id) {
@@ -1334,6 +1383,9 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     // init stat collection for selected messsage types
     var _stat;
 
+    // app-specific meta data
+    var _meta;
+    
     // clean all states
     _initStates();
     

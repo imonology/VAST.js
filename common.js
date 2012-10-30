@@ -12,7 +12,7 @@ global.LOG = new logger();
 global.UTIL = require('./common/util');
 
 // set default error level
-LOG.setLevel(2);
+LOG.setLevel(3);
 
 //
 // VAST & VON

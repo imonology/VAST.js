@@ -234,6 +234,7 @@ var l_node = exports.node = function (id, endpt, aoi, time) {
     this.endpt = endpt;         // a node's contact endpoint (host_id & address)
     this.aoi  = aoi;            // a node's AOI (center + radius)
     this.time = time;           // a node's last updated time (used to determine whether it contains newer info)
+    //this.meta = {};             // a node's meta-data, default to empty 
         
     // update node info from another node
     // NOTE: this is powerful as it replaces almost everything (perhaps ID shouldn't be replaced?)
@@ -242,6 +243,9 @@ var l_node = exports.node = function (id, endpt, aoi, time) {
         
         if (new_info.id !== 0)
             this.id     = new_info.id;
+                
+        //if (typeof new_info.meta === 'object' && Object.keys(new_info.meta).length > 0)
+        //    this.meta = new_info.meta;
             
         this.endpt.update(new_info.endpt);
         this.aoi.update(new_info.aoi);
@@ -262,6 +266,9 @@ var l_node = exports.node = function (id, endpt, aoi, time) {
             this.aoi     = new l_area();
             this.aoi.parse(js_obj.aoi);
             this.time    = js_obj.time;
+            
+            //if (typeof js_obj.meta === 'object')
+            //    this.meta = js_obj.meta;            
         }
         catch (e) {
             console.log('node parse error: ' + e);
@@ -270,7 +277,8 @@ var l_node = exports.node = function (id, endpt, aoi, time) {
     
     // print out node info
     this.toString = function () {
-        return '[' + this.id + '] ' + this.endpt.toString() + ' ' + this.aoi.toString(); 
+        //return '[' + this.id + '] ' + this.endpt.toString() + ' ' + this.aoi.toString() + ' meta: ' + Object.keys(this.meta).length; 
+        return '[' + this.id + '] ' + this.endpt.toString() + ' ' + this.aoi.toString();
     }
 }
 
