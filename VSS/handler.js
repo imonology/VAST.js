@@ -8,8 +8,8 @@ require('../common');
 
 // default port for connecting / creating VON nodes
 var _VON_port = 37700;
-var _VON_gateway = '127.0.0.1';
-//var _VON_gateway = 'dev.imonology.com';
+//var _VON_gateway = '127.0.0.1';
+var _VON_gateway = 'dev.imonology.com';
 
 // default radius when first joined
 // TODO: need to have default radius?
@@ -148,6 +148,8 @@ var _replySubscribers = function (request, res) {
 
     var node = _getNode(request, res);
 
+    LOG.debug('replySubscribers called, node id: ' + node.getSelf().id);
+    
     if (node !== undefined && node !== null) {
     
         // get a list of current neighbors's id
@@ -158,28 +160,33 @@ var _replySubscribers = function (request, res) {
                        
         // TODO: send only those who's AOI covers me (as true subscribers, not simply enclosing neighbors)
         for (var id in neighbors) {
+            
+            LOG.debug('checking neighbor id: ' + id + ' against self id: ' + self.id);
+            
             // convert node id to node ident (only for those registered here)
             // NOTE: current approach can only do ident translation for nodes created via this VSS server
             
             var neighbor = neighbors[id];
-            if (neighbor.hasOwnProperty('meta')) {
-                LOG.warn('neighbor [' + id + '] has meta!');
-                var info = neighbor.meta;
-                for (var i in info) 
-                    LOG.debug(i + ': ' + info[i]);
-            }
             
-            LOG.debug('checking neighbor id: ' + id + ' against self id: ' + self.id);
+            for (var i in neighbor) 
+                LOG.debug(i + ': ' + typeof neighbor[i]);
+            
+            // get node ident (from either 'meta' field or from mapping)
+            var info = undefined;
+            if (neighbor.hasOwnProperty('meta'))
+                info = neighbor.meta;
+            else if (_id2ident.hasOwnProperty(id))
+                info = _id2ident[id];
+                                        
             // do not return a node if:
             //    1. is self
             //    2. no mapping for ident (the node is not created via VSS)
             //    3. is not a subscriber to myself (subscribed area does not cover me)
             if (self.id == id ||
-                _id2ident.hasOwnProperty(id) === false || 
+                info === undefined || 
                 _isSubscriber(neighbors[id], self.aoi) === false)
                 continue;
                 
-            var info = _id2ident[id]; 
             list.push(info.apikey + ':' + info.layer + ':' + info.ident);            
         }
                         
@@ -234,7 +241,7 @@ var _getNode = function (req, res) {
 var _isSubscriber = function (node, aoi) {
 
     var result = node.aoi.covers(aoi.center);
-    LOG.debug('check if node [' + node.toString() + '] covers ' + aoi.center.toString() + ': ' + result);
+    LOG.debug('isSubscriber check if node ' + node.toString() + ' covers ' + aoi.center.toString() + ': ' + result);
     return result;
 }
  

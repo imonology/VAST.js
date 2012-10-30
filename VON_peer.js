@@ -339,12 +339,15 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     // store a app-specific data along with the node (will pass during node discovery)                      
     var _put = this.put = function (obj) {
         _meta = obj;
-        LOG.debug('after put() meta keys: ' + Object.keys(_meta).length);
+        LOG.warn('after put() meta keys: ' + Object.keys(_meta).length);
+        
+        // update to self (so that it can be sent over)
+        _self.meta = _meta;
     }
     
     // retrieve app-specific data for this node
     var _get = this.get = function () {
-        LOG.debug('get() meta keys: ' + Object.keys(_meta).length);    
+        LOG.warn('get() meta keys: ' + Object.keys(_meta).length);    
         return _meta;
     }
     
@@ -430,21 +433,21 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
   
     var _insertNode = function (node) {
     
-        //LOG.debug('insertNode [' + node.id + '] isNeighbor: ' + _isNeighbor(node.id));
+        LOG.debug('insertNode [' + node.id + '] isNeighbor: ' + _isNeighbor(node.id));
         
         // check for redundency
         if (_isNeighbor(node.id))     
             return false;
           
         // notify network layer about connection info, no need to actually connect for now
-        _net.storeMapping (node.id, node.endpt.addr);
+        _net.storeMapping(node.id, node.endpt.addr);
         
         // update last access time
         node.endpt.lastAccessed = UTIL.getTimestamp();
         //LOG.debug('last accessed: ' + node.endpt.lastAccessed);
  
         // store the new node to 
-        _voro.insert (node.id, node.aoi.center);
+        _voro.insert(node.id, node.aoi.center);
         
         // store to neighbors
         _neighbors[node.id] = node; 
@@ -459,7 +462,10 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         // update node status
         _updateStatus[node.id] = NeighborUpdateStatus.INSERTED;
 
-        LOG.debug('[' + _self.id + '] insertNode neighbor (after insert) size: ' + Object.keys(_neighbors).length + ' voro: ' + _voro.size());
+        var meta_keys = node.hasOwnProperty('meta') ? Object.keys(node.meta).length : 0;
+        LOG.warn('[' + _self.id + '] insertNode neighbor (after insert) size: ' + Object.keys(_neighbors).length + 
+                  ' voro: ' + _voro.size() + 
+                  ' meta: ' + meta_keys);
         
         return true;
     }
@@ -498,6 +504,10 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
 
         _voro.update(node.id, node.aoi.center);
         _neighbors[node.id].update(node);
+        
+        // update meta, if available
+        if (node.hasOwnProperty('meta'))
+            _neighbors[node.id].meta = node.meta;
 
         // NOTE: should not reset drop counter here, as it might make irrelevant neighbor 
         //       difficult to get disconnected
@@ -514,8 +524,8 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         return true;
     }
 
-    // get a clean node to send (no extra stuff in 'node.aoi.center')
-    // TODO: remove this?
+    // get a clean node to send (no extra stuff in 'node.aoi.center', for example)
+    // TODO: remove this? (will need to make sure all nodes are clean)
     // do not keep anything else besides the original attributes
     var _getNode = function (id) {
         var node = new VAST.node();
@@ -868,9 +878,10 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
      
         LOG.debug('meta keys: ' + Object.keys(_meta).length);
         
-        // add app-specific attributes, if exist
+        // add app-specific attributes, if exist 
+        // TODO: find a cleaner way (for example, meta already exists in the node returned by getNode)
         if (Object.keys(_meta).length > 0) {
-            LOG.warn('storing meta data to node to be sent for VON_HELLO');
+            LOG.warn('storing meta keys ' + Object.keys(_meta).length + ' to node to be sent for VON_HELLO');
             node.meta = _meta;
         }
         
@@ -1076,6 +1087,10 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
             break;            
    
             // VON's hello, to let a newly learned node to be mutually aware
+            // NOTE: it's found a node may already knows a neighbor even if it receives 
+            //       VON_HELLO for the first time
+            //       this occurs when the current node first receives VON_QUERY and had inserted
+            //       the joining node before
             case VON_Message.VON_HELLO: {
                                 
                 var node = new VAST.node();
@@ -1089,7 +1104,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
                 }
                     
                 // update existing or new neighbor status                                            
-                if (_isNeighbor (from_id))
+                if (_isNeighbor(from_id))
                     _updateNode(node);
                 else                                      
                     _insertNode(node);
