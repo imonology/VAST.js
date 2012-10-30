@@ -8,6 +8,8 @@ require('../common');
 
 // default port for connecting / creating VON nodes
 var _VON_port = 37700;
+var _VON_gateway = '127.0.0.1';
+//var _VON_gateway = 'dev.imonology.com';
 
 // default radius when first joined
 // TODO: need to have default radius?
@@ -46,12 +48,21 @@ var _registerNode = function (pos, info, done_CB) {
     var aoi = new VAST.area(pos, _default_radius);
     
     // specify where to locate VON gateway
-    var ip_port = new VAST.addr('127.0.0.1', _VON_port);                
+    var ip_port = new VAST.addr(_VON_gateway, _VON_port);                
     var new_node = new VON.peer(VAST_ID_UNASSIGNED, ip_port.port + _nodes_created);
     _nodes_created++;
                     
     LOG.debug('new_node (before join): ' + new_node.getSelf().toString());
-                        
+    
+    // store node ident for ident discovery across different VSS servers
+    var ident_info = {
+        apikey: info.apikey,
+        layer:  info.layer,
+        ident:  info.ident
+    };
+    
+    new_node.put(ident_info);
+                       
     // join in the network        
     new_node.join(ip_port, aoi,
     
@@ -71,7 +82,9 @@ var _registerNode = function (pos, info, done_CB) {
             // store id to ident mapping
             LOG.debug('store mapping for node id: ' + self_id + ' ident: ' + info.ident);
             _id2ident[self_id] = info;
-             
+            
+            //new_node.put(info);
+            
             // check content
             LOG.debug('new_node (after join): ' + new_node.getSelf().toString());
 
@@ -142,11 +155,19 @@ var _replySubscribers = function (request, res) {
         var list = [];
         
         var self = node.getSelf();
-        
+                       
         // TODO: send only those who's AOI covers me (as true subscribers, not simply enclosing neighbors)
         for (var id in neighbors) {
             // convert node id to node ident (only for those registered here)
             // NOTE: current approach can only do ident translation for nodes created via this VSS server
+            
+            var neighbor = neighbors[id];
+            if (neighbor.hasOwnProperty('meta')) {
+                LOG.warn('neighbor [' + id + '] has meta!');
+                var info = neighbor.meta;
+                for (var i in info) 
+                    LOG.debug(i + ': ' + info[i]);
+            }
             
             LOG.debug('checking neighbor id: ' + id + ' against self id: ' + self.id);
             // do not return a node if:
