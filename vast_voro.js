@@ -197,7 +197,7 @@ function VAST_Voronoi(bbox) {
 
     // check if the node 'id' is an enclosing neighbor of 'center_node_id'
     this.is_enclosing = function (id, center_node_id) {
-
+    
         // get index for the input node id        
         var idx = check_id(center_node_id);
         if (idx == -1)
@@ -501,13 +501,17 @@ function VAST_Voronoi(bbox) {
         //       we thus print 'debug' instead of 'error' here
         if (id2idx.hasOwnProperty(id) === false) {
             if (isNaN(id))                
-                LOG.error('get_idx () cannot find index for id: ' + id);
+                LOG.error('get_idx () cannot find index for id: ' + id + ' (not a number)');
             else
                 LOG.debug('get_idx () cannot find index for id: ' + id);
             
             // check if index list and site list have equal length
-            if (Object.keys(id2idx).length !== Object.keys(sites).length)
+            if (Object.keys(id2idx).length !== Object.keys(sites).length) {
                 LOG.debug('list size mismatch! there may be overlapped site coords. id2idx size: ' + Object.keys(id2idx).length + ' sites size: ' + Object.keys(sites).length);
+                //throw new Error("list size mismatch, potential overlapped site coords");
+
+                //LOG.stack();
+            }
                 
             return (-1);
         }

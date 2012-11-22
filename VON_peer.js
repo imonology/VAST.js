@@ -36,18 +36,18 @@
     pack    = {type, msg, group, priority, targets}  // message package during delivery
     vast_net (see definition in vast_net.js)
     
-    // constructor
-    VON_peer(aoi_buffer, aoi_use_strict)
-    
-    // basic functions
-    init(id, port, addr, done_CB)       init a VON peer with id, listen port & gateway's address
-    query(center, acceptor_CB)          find the acceptor for a given center point 
+    // constructoracceptor for a given center point 
     join(aoi, done_CB)                  join a VON network with a given aoi 
     leave()                             leave the VON network
     move(aoi, send_time)                move the AOI to a new position (or change radius)
     list()                              get a list of AOI neighbors    
     send(id, msg)                       send a message to a given node
-    put(obj)                            store a app-specific data along with the node (will pass during node discovery)                      
+    put(obj)                            sto
+    VON_peer(aoi_buffer, aoi_use_strict)
+    
+    // basic functions
+    init(id, port, addr, done_CB)       init a VON peer with id, listen port & gateway's address
+    query(center, acceptor_CB)          find the re a app-specific data along with the node (will pass during node discovery)                      
     get()                               retrieve app-specific data for this node
     
     // accessors
@@ -592,7 +592,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
             _removeNonOverlapped();
         }
         catch (e) {
-            LOG.error('tick error: ' + e);
+            LOG.error('tick error:\n' + e.stack);
         }
     }
     
@@ -1106,7 +1106,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
                     // TODO: more efficient check (EN of joiner is calculated multiple times now)
                     
                     var is_relevant = _isRelevantNeighbor(neighbor, joiner);
-                    //LOG.debug('is relevant: ' + is_relevant);
+                    LOG.debug('is relevant: ' + is_relevant);
                     if (neighbor.id != joiner.id && 
                         is_relevant &&
                         _isTimelyNeighbor(neighbor.id)) {
@@ -1234,8 +1234,13 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
                         neighbor.meta = pack.msg.meta;
                     }
                     
-                    LOG.debug('got latest pos: ' + neighbor.aoi.center.toString() + ' id: ' + from_id);                    
-                    _updateNode(neighbor);        
+                    LOG.debug('got latest pos: ' + neighbor.aoi.center.toString() + ' id: ' + from_id);  
+                    try {                    
+                        _updateNode(neighbor);        
+                    }
+                    catch(e) {
+                        LOG.debug(e.stack);
+                    }
                 }
                 else
                     LOG.warn('[' + _self.id + '] got VON_HELLO_R from unknown neighbor [' + from_id + ']');

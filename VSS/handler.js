@@ -49,53 +49,56 @@ var _registerNode = function (pos, info, done_CB) {
     
     // specify where to locate VON gateway
     var ip_port = new VAST.addr(_VON_gateway, _VON_port);                
-    var new_node = new VON.peer(VAST_ID_UNASSIGNED, ip_port.port + _nodes_created);
-    _nodes_created++;
-                    
-    LOG.debug('new_node (before join): ' + new_node.getSelf().toString());
-    
-    // store node ident for ident discovery across different VSS servers
-    var ident_info = {
-        apikey: info.apikey,
-        layer:  info.layer,
-        ident:  info.ident
-    };
-    
-    new_node.put(ident_info);
-                       
+    var new_node = new VON.peer();
+                           
     // join in the network        
-    new_node.join(ip_port, aoi,
+    new_node.init(VAST_ID_UNASSIGNED, ip_port.port + _nodes_created, ip_port, function () {
     
-        // done callback
-        function (self_id) {
-                            
-            LOG.warn('\njoined successfully! id: ' + self_id + ' self id: ' + new_node.getSelf().id);
-            
-            // keep track of newly joined node in internal record
-            if (_keys.hasOwnProperty(info.apikey) === false)
-                _keys[info.apikey] = {};
-            if (_keys[info.apikey].hasOwnProperty(info.layer) === false)
-                _keys[info.apikey][info.layer] = {};
+        _nodes_created++;                   
+        LOG.debug('new_node (before join): ' + new_node.getSelf().toString());
+        
+        // store node ident for ident discovery across different VSS servers
+        var ident_info = {
+            apikey: info.apikey,
+            layer:  info.layer,
+            ident:  info.ident
+        };
+        
+        new_node.put(ident_info);
+        
+        new_node.join(aoi,
+        
+            // done callback
+            function (self_id) {
+                                
+                LOG.warn('\njoined successfully! id: ' + self_id + ' self id: ' + new_node.getSelf().id);
                 
-            _keys[info.apikey][info.layer][info.ident] = new_node;
-
-            // store id to ident mapping
-            LOG.debug('store mapping for node id: ' + self_id + ' ident: ' + info.ident);
-            _id2ident[self_id] = info;
-            
-            //new_node.put(info);
-            
-            // check content
-            LOG.debug('new_node (after join): ' + new_node.getSelf().toString());
-
-            // perform initial publish pos
-            // (so we can get a list of neighbors)
-            // NOTE: doesn't appear to work...
-            //_publishPos(new_node, info, new_node.getSelf().aoi.radius);
-            
-            done_CB(new_node);
-        }
-    );
+                // keep track of newly joined node in internal record
+                if (_keys.hasOwnProperty(info.apikey) === false)
+                    _keys[info.apikey] = {};
+                if (_keys[info.apikey].hasOwnProperty(info.layer) === false)
+                    _keys[info.apikey][info.layer] = {};
+                    
+                _keys[info.apikey][info.layer][info.ident] = new_node;
+    
+                // store id to ident mapping
+                LOG.debug('store mapping for node id: ' + self_id + ' ident: ' + info.ident);
+                _id2ident[self_id] = info;
+                
+                //new_node.put(info);
+                
+                // check content
+                LOG.debug('new_node (after join): ' + new_node.getSelf().toString());
+    
+                // perform initial publish pos
+                // (so we can get a list of neighbors)
+                // NOTE: doesn't appear to work...
+                //_publishPos(new_node, info, new_node.getSelf().aoi.radius);
+                
+                done_CB(new_node);
+            }
+        );              
+    });    
 }
 
 var _revokeNode = function (info, done_CB) {
@@ -168,8 +171,8 @@ var _replySubscribers = function (request, res) {
             
             var neighbor = neighbors[id];
             
-            for (var i in neighbor) 
-                LOG.debug(i + ': ' + typeof neighbor[i]);
+            //for (var i in neighbor) 
+            //    LOG.debug(i + ': ' + typeof neighbor[i]);
             
             // get node ident (from either 'meta' field or from mapping)
             var info = undefined;
@@ -240,7 +243,8 @@ var _getNode = function (req, res) {
 // check if a given node is a direct area subscriber for a center point
 var _isSubscriber = function (node, aoi) {
 
-    var result = node.aoi.covers(aoi.center);
+    // NOTE: if subscription radius is 0, then we consider it's not subscribing anything
+    var result = (node.aoi.radius != 0 && node.aoi.covers(aoi.center));
     LOG.debug('isSubscriber check if node ' + node.toString() + ' covers ' + aoi.center.toString() + ': ' + result);
     return result;
 }
