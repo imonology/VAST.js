@@ -61,10 +61,15 @@ goal: make VON_peer to work with VON_PING to obtain initial ID
 - add support of VON_PING and modify join procedure
 - modify relevant programs that use VON_peer for new interface (vast.io-server, test_VON_peer, test_VON_scale)
 
+- modify behavior: if a node unsubscribe (with vast.io) it will not be listed as subscriber even when node positions 
+  overlap (previously it simply set subscription radius to 0).
+
+KNOWN ISSUES:
 - seems working for up to 50 nodes via test_VON_scale. but there are many
   "got VON_HELLO_R from unknown neighbor [xx]" warnings
   also many remote id is NaN & negative ID are received... many are VON_HELLO, VON_EN, VON_MOVE & VON_MOVE_B
 
+- continous debug msg being printed when nodes have overlapped position
 
 
 2012-11-21 (3)
