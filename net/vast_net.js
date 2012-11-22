@@ -451,7 +451,7 @@ function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
                     // TODO: try to determine the cause & fix this 
                     // NOTE: if this happens, the message is simply ignored
                     if (isNaN(remote_id)) {
-                        LOG.error('[' + _self_id + '] remote_id is NaN, str: ' + str + ' from id: ' + socket.id);                              
+                        LOG.error('[' + _self_id + '] remote_id is NaN, str: ' + str + ' from socket id: ' + socket.id);                              
                     }
                     else {
                                        
@@ -486,6 +486,8 @@ function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
                 // otherwise is a real msg, notify custom callback of incoming data (if provided)
                 else if (typeof CB_receive === 'function') {                    
                     //LOG.debug('recv from [' + socket.id + '] str: ' + str);
+                    
+                    // TODO: queue-up message to be processed later?
                     CB_receive(socket.id, str);
                 }
             }

@@ -19,29 +19,39 @@ require('./common');
 //LOG.debug(curr.toLocaleString());
 
 // do not show debug
-//LOG.setLevel(2);
+LOG.setLevel(2);
 
 // set default IP/port
-var ip_port = {host: "127.0.0.1", port: 37700};
-
-var port = process.argv[2];
-if (port !== undefined)
-    ip_port.port = port;
-
-var host = process.argv[3];
+var gateway_addr = {host: "127.0.0.1", port: 37700};
 var is_client = false;
-if (host !== undefined) {
-    ip_port.host = host;
-    is_client = true;
+
+// IP/port
+if (process.argv[2] !== undefined) {
+    var ip_port = process.argv[2];
+    // check if this is port only
+    var idx = ip_port.search(':');
+    
+    // ':' not found, port only
+    if (idx === (-1))
+        gateway_addr.port = parseInt(ip_port);       
+    else {
+        var ip = ip_port.slice(0, idx);
+        var port = ip_port.slice(idx+1, ip_port.length);
+        gateway_addr.host = ip;
+        gateway_addr.port = parseInt(port);        
+        
+        is_client = true;
+    }
 }
 
-LOG.debug('host: ' + ip_port.host + ' port: ' + ip_port.port + ' is_client: ' + is_client);
+LOG.debug('GW ip: ' + gateway_addr.host + ' port: ' + gateway_addr.port);
+LOG.debug('is_client: ' + is_client);
 
 var x = Math.floor(Math.random() * 100);
 var y = Math.floor(Math.random() * 100);
 
 // create GW or a connecting client;
-var peer = new VON.peer((is_client ? VAST_ID_UNASSIGNED : VAST_ID_GATEWAY), ip_port.port);
+var peer = new VON.peer();
 var aoi  = new VAST.area(new VAST.pos(x, y), 100);
         
 var moveAround = function () {
@@ -62,15 +72,20 @@ var moveAround = function () {
 // NOTE: interesting idea to always be able to "join self" (i.e., everyone is a gateway)
 var interval_id = undefined;
 
-peer.join(ip_port, aoi, 
+// after init the peer will bind to a local port
+peer.init((is_client ? VAST_ID_UNASSIGNED : VAST_ID_GATEWAY), gateway_addr.port, gateway_addr, function () {
 
-    // done callback
-    function (id) {
-        LOG.warn('joined successfully! id: ' + id + '\n');
-        
-        // try to move around once in a while...  (if not gateway)        
-        if (id !== VAST_ID_GATEWAY) {
-            interval_id = setInterval(function(){ moveAround() }, 1000); 
-        }        
-    }
-);
+    peer.join(aoi, 
+
+        // done callback
+        function (id) {
+            LOG.warn('joined successfully! id: ' + id + '\n');
+            
+            // try to move around once in a while...  (if not gateway)        
+            if (id !== VAST_ID_GATEWAY) {
+                interval_id = setInterval(function(){ moveAround() }, 1000); 
+            }        
+        }
+    );
+});
+

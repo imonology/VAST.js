@@ -37,10 +37,12 @@
     vast_net (see definition in vast_net.js)
     
     // constructor
-    VON_peer(id, port, aoi_buffer, aoi_use_strict)
+    VON_peer(aoi_buffer, aoi_use_strict)
     
     // basic functions
-    join(addr, aoi, done_CB)            join a VON network with a given gateway (entry) 
+    init(id, port, addr, done_CB)       init a VON peer with id, listen port & gateway's address
+    query(center, acceptor_CB)          find the acceptor for a given center point 
+    join(aoi, done_CB)                  join a VON network with a given aoi 
     leave()                             leave the VON network
     move(aoi, send_time)                move the AOI to a new position (or change radius)
     list()                              get a list of AOI neighbors    
@@ -77,27 +79,29 @@ var NONOVERLAP_MULTIPLIER   = 1.25;     // multiplier for aoi buffer for determi
 var TICK_INTERVAL           = 100;      // interval (in milliseconds) to perform tick tasks
 
 // flags
-var OVERLAP_CHECK_ACCURATE = false;     // whether VON overlap checks are accurate
+var OVERLAP_CHECK_ACCURATE  = false;     // whether VON overlap checks are accurate
 
 // enumation of VON message
-// TODO: combine DISCONNECT & BYE?
 var VON_Message = {
-    VON_DISCONNECT: 0, // VON's disconnect
-    VON_QUERY:      1, // VON's query, to find an acceptor that can take in a joining node
-    VON_NODE:       2, // VON's notification of new nodes 
-    VON_HELLO:      3, // VON's hello, to let a newly learned node to be mutually aware
-    VON_HELLO_R:    4, // VON's hello response
-    VON_EN:         5, // VON's enclosing neighbor inquiry (to see if my knowledge of EN is complete)
-    VON_MOVE:       6, // VON's move, to notify AOI neighbors of new/current position
-    VON_MOVE_F:     7, // VON's move, full notification on AOI
-    VON_MOVE_B:     8, // VON's move for boundary neighbors
-    VON_MOVE_FB:    9, // VON's move for boundary neighbors with full notification on AOI
-    VON_BYE:       10  // VON's disconnecting a remote node
+    VON_BYE:        0, // VON's disconnect
+    VON_PING:       1, // VON's ping, to check if a connected neighbor is still alive
+    VON_QUERY:      2, // VON's query, to find an acceptor to a given point 
+    VON_JOIN:       3, // VON's join, to learn of initial neighbors
+    VON_NODE:       4, // VON's notification of new nodes 
+    VON_HELLO:      5, // VON's hello, to let a newly learned node to be mutually aware
+    VON_HELLO_R:    6, // VON's hello response
+    VON_EN:         7, // VON's enclosing neighbor inquiry (to see if my knowledge of EN is complete)
+    VON_MOVE:       8, // VON's move, to notify AOI neighbors of new/current position
+    VON_MOVE_F:     9, // VON's move, full notification on AOI
+    VON_MOVE_B:    10, // VON's move for boundary neighbors
+    VON_MOVE_FB:   11  // VON's move for boundary neighbors with full notification on AOI
 };
 
 var VON_Message_String = [
-    'VON_DISCONNECT',
+    'VON_BYE',
+    'VON_PING',
     'VON_QUERY',
+    'VON_JOIN',
     'VON_NODE', 
     'VON_HELLO',
     'VON_HELLO_R',
@@ -105,26 +109,8 @@ var VON_Message_String = [
     'VON_MOVE',
     'VON_MOVE_F',
     'VON_MOVE_B',    
-    'VON_MOVE_FB',
-    'VON_BYE'
+    'VON_MOVE_FB'
 ];
-
-// TODO: msg priority is probably not VON-specific
-var VON_Priority = {
-    HIGHEST:        0,
-    HIGH:           1,
-    NORMAL:         2,
-    LOW:            3,
-    LOWEST:         4
-};
-
-// TODO: node state is probably not VON-specific
-var NodeState = {
-    ABSENT:         0,
-    QUERYING:       1,           // finding / determing certain thing
-    JOINING:        2,           // different stages of join
-    JOINED:         3,    
-};
 
 // status on known nodes in the neighbor list, can be either just inserted / deleted / updated
 var NeighborUpdateStatus = {
@@ -141,71 +127,127 @@ var NeighborState = {
     NEIGHBOR_ENCLOSED:      2 
 };
 
+//
+// NOTE: this class interface with msg_handler via the following:
+//          _connHandler, _disconnHandler, _packetHandler, _self_id
+//       it also uses the following provided by msg_handler
+//          sendMessage, sendPack, net
+//
+
 // definition of a VON peer
-function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
-        
+function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
+    
     /////////////////////
     // public methods
     //
     
-    // join a VON network with a given gateway (entry)    
-    var _join = this.join = function (GW_addr, aoi, done_CB) {
+    var _that = this;
+    
+    // function to create a new net layer
+    this.init = function (self_id, port, GW_addr, done_CB) {
+   
+        self_id = self_id || VAST_ID_UNASSIGNED;
+        port = port || VON_DEFAULT_PORT;
+                        
+        LOG.debug('VON_peer init called, self_id: ' + self_id + ' port: ' + port);
+                                
+        // create new layer
+        _msg_handler = new msg_handler(self_id, port, function (local_addr) {
         
+            // NOTE: this will cause initStates() be called
+            _msg_handler.addHandler(_that);
+        
+            // store gateway address, ensure input conforms to internal data structure
+            // NOTE: need to do it here, as _storeMapping is not effective after addHandler calls initStates            
+            var addr = new VAST.addr();
+            addr.parse(GW_addr);                        
+            _storeMapping(VAST_ID_GATEWAY, GW_addr);       
+
+            LOG.warn('VON_peer init: gateway set to: ' + addr.toString());
+
+            // store callback after gateway response
+            _init_done_CB = done_CB;            
+            
+            // send PING to gateway to learn of my id
+            if (self_id === VAST_ID_UNASSIGNED)
+                _sendMessage(VAST_ID_GATEWAY, VON_Message.VON_PING, {request: true}, VAST.priority.HIGHEST);
+            else
+                _setInited();
+        });
+    }
+    
+    // find the acceptor for a given center point 
+    var _query = this.query = function (contact_id, center, msg_type, msg_para) {
+        
+        LOG.debug('VON_peer query() will contact node[' + contact_id + '] to find acceptor');
+                       
+        var msg = {
+            pos:  center,
+            type: msg_type,
+            para: msg_para
+        }
+        
+        // send out query request
+        _sendMessage(contact_id, VON_Message.VON_QUERY, msg, VAST.priority.HIGHEST);
+    }
+    
+    // join a VON network with a given aoi 
+    var _join = this.join = function (aoi, done_CB) {
+        
+        if (_state === VAST.state.ABSENT) {
+            LOG.error('VON_peer.join(): node not yet init');
+            return;
+        }
+                
         // check if already joined
-        if (_state === NodeState.JOINED) {
+        if (_state === VAST.state.JOINED) {
             LOG.warn('VON_peer.join(): node already joined');
             if (typeof done_CB === 'function')
                 done_CB(_self.id);
             return;
         }
 
-        // ensure function input conforms to internal data structure
-        var addr = new VAST.addr();
-        addr.parse(GW_addr);
-        LOG.debug('VON_peer join() called, joining: ' + addr.toString());
+        LOG.debug('VON_peer join() called');
                      
         // change internal state
-        _state = NodeState.JOINING; 
+        _state = VAST.state.JOINING; 
                 
         // keep reference to call future once join is completed
         _join_done_CB = done_CB;
         
         // set self AOI
         _self.aoi.update(aoi);
-                     
-        LOG.debug('calling getHost()');
+
+        // update address info for self
+        var addr = _msg_handler.getAddress();
+        _self.endpt = new VAST.endpt(addr.host, addr.port);
+
+        // store self node to neighbor map
+        _insertNode(_self);
         
-        // create self object
-        _net.getHost(function (local_IP) {
+        // if I'm gateway, no further action required
+        // TODO: doesn't look clean, can gateway still send query request to itself?
+        //       that'll be a more general process
+        //       (however, will deal with how to determined 'already joined' for gateway)
+        if (_self.id === VAST_ID_GATEWAY)
+            return _setJoined();
+                    
+        // build node info for acceptor to contact back (from _self)
+        var joiner = new VAST.node();
         
-            LOG.debug('local IP: ' + local_IP);
-   
-            // update address info for self
-            _self.endpt = new VAST.endpt(local_IP, l_port);
-              
-            // return value is actual port binded
-            _net.listen(l_port, function (actual_port) {
-                // update port of self if different from the one attempting to bind
-                if (actual_port != l_port)
-                    _self.endpt.addr.port = actual_port;
-            
-                // store self node to neighbor map
-                _insertNode(_self);
-                            
-                // if I'm gateway, no further action required
-                // TODO: doesn't look clean, can gateway still send query request to itself?
-                //       that'll be a more general process
-                //       (however, will deal with how to determined 'already joined' for gateway)
-                if (_self.id === VAST_ID_GATEWAY)
-                    return _setJoined();
-                       
-                // send out join request
-                // TODO: if id is not correct, remote host will send back correct one
-                _net.storeMapping(VAST_ID_GATEWAY, GW_addr);                
-                _sendMessage(VAST_ID_GATEWAY, VON_Message.VON_QUERY, _self, VON_Priority.HIGHEST);
-                        
-            }); 
-        });             
+        //LOG.debug('joiner (before): ' + joiner.toString());
+        
+        joiner.update(_self);
+        joiner.aoi.center = aoi.center;
+                
+        //LOG.debug('joiner (after): ' + joiner.toString());
+        LOG.debug('joiner: ' + joiner.toString());
+        
+        // send out query request first to find acceptor
+        _query(VAST_ID_GATEWAY, aoi.center, VON_Message.VON_JOIN, joiner);
+                
+        // TODO: if id is not correct, remote host will send back correct one        
+        //_sendMessage(VAST_ID_GATEWAY, VON_Message.VON_QUERY, _self, VAST.priority.HIGHEST);        
     }
     
     // leave the VON network
@@ -311,7 +353,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         var pack = new VAST.pack(
             VON_Message.VON_MOVE,
             node_info,
-            VON_Priority.HIGHEST);
+            VAST.priority.HIGHEST);
             
         // send to regular neighbors            
         pack.targets = regular_list;
@@ -357,7 +399,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     
     // check if we've joined the VON network
     var _isJoined = this.isJoined = function () {        
-        return (_state === NodeState.JOINED);
+        return (_state === VAST.state.JOINED);
     }
     
     // check if a given ID is an existing neighbor  
@@ -422,7 +464,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         if (_isNeighbor (id) == false)
             return false;
 
-        var timeout = period * _net.getTimestampPerSecond ();   
+        var timeout = period * _net.getTimestampPerSecond ();
         return ((_tick_count - _neighbors[id].endpt.lastAccessed) < timeout);
 */
     }
@@ -440,7 +482,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
             return false;
           
         // notify network layer about connection info, no need to actually connect for now
-        _net.storeMapping(node.id, node.endpt.addr);
+        _storeMapping(node.id, node.endpt.addr);
         
         // update last access time
         node.endpt.lastAccessed = UTIL.getTimestamp();
@@ -463,7 +505,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         _updateStatus[node.id] = NeighborUpdateStatus.INSERTED;
 
         var meta_keys = node.hasOwnProperty('meta') ? Object.keys(node.meta).length : 0;
-        LOG.warn('[' + _self.id + '] insertNode neighbor (after insert) size: ' + Object.keys(_neighbors).length + 
+        LOG.debug('[' + _self.id + '] insertNode neighbor (after insert) size: ' + Object.keys(_neighbors).length + 
                   ' voro: ' + _voro.size() + 
                   ' meta: ' + meta_keys);
         
@@ -557,7 +599,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     // set current node to be 'joined'
     var _setJoined = function () {
     
-        _state = NodeState.JOINED;
+        _state = VAST.state.JOINED;
 
         // notify callback
         if (typeof _join_done_CB === 'function')
@@ -565,6 +607,19 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
             
         // start ticking
         _interval_id = setInterval(_tick, TICK_INTERVAL);
+    }
+    
+    // set current node to be 'init'
+    var _setInited = function () {
+        
+        _state = VAST.state.INIT;
+        
+        // NOTE: other fields (endpt, aoi, time) may be empty at this point
+        _self = new VAST.node(_getID());
+                
+        // notify done
+        if (typeof _init_done_CB === 'function')
+            _init_done_CB(_self.id);            
     }
     
     var _sendKeepAlive = function () {
@@ -626,11 +681,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
             if (_isRelevantNeighbor (node, _self)) {
                         
                 LOG.debug('[' + node.id + '] is relevant to self [' + _self.id + ']');
-                
-                // store new node as a potential neighbor, pending confirmation from the new node 
-                // this is to ensure that a newly discovered neighbor is indeed relevant
-                //_potential_neighbors[target] = node;
-                
+                                
                 // add a new relevant neighbor
                 // NOTE: we record first without inserting because we need to remove
                 //       the new neighbor positions from Voronoi first
@@ -638,7 +689,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
                 
                 // notify mapping for sending Hello message
                 // TODO: a cleaner way (less notifymapping call?)
-                _net.storeMapping(node.id, node.endpt.addr);
+                _storeMapping(node.id, node.endpt.addr);
 
                 // send HELLO message to newly discovered nodes
                 // NOTE that we do not perform insert yet (until the remote node has confirmed via MOVE)
@@ -664,9 +715,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         // NOTE: erase new neighbors seems to bring better consistency 
         //       (rather than keep to next round, as in previous version)
         _new_neighbors = {};
-    
-        // TODO: _potential_neighbors should be cleared once in a while  
-        
+            
         LOG.debug('total neighbors (after process neighbors): ' + Object.keys(_neighbors).length);
         LOG.debug('total voro nodes: ' + _voro.size() + '\n');        
     }
@@ -864,7 +913,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         for (var i=0; i < list.length; i++)
             nodes.push(_getNode(list[i]));
         
-        _sendMessage(target, VON_Message.VON_NODE, nodes, VON_Priority.NORMAL, reliable);
+        _sendMessage(target, VON_Message.VON_NODE, nodes, VAST.priority.NORMAL, reliable);
     }
     
     // send a list of IDs to a particular node
@@ -887,7 +936,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         
         // prepare HELLO message
         // TODO: do not create new HELLO message every time? (local-side optimization)
-        _sendMessage(target, VON_Message.VON_HELLO, node, VON_Priority.HIGHEST, true);
+        _sendMessage(target, VON_Message.VON_HELLO, node, VAST.priority.HIGHEST, true);
     }
 
     // send a particular node its perceived enclosing neighbors
@@ -895,7 +944,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     
         var id_list = _voro.get_en(target);
         if (id_list.length > 0)
-            _sendMessage(target, VON_Message.VON_EN, id_list, VON_Priority.HIGH, true);        
+            _sendMessage(target, VON_Message.VON_EN, id_list, VAST.priority.HIGH, true);        
     }
     
     var _sendBye = function (targets) {
@@ -906,7 +955,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         
             LOG.debug('sendBye target size: ' + targets.length);
         
-            var pack = new VAST.pack(VON_Message.VON_BYE, {}, VON_Priority.HIGHEST);               
+            var pack = new VAST.pack(VON_Message.VON_BYE, {}, VAST.priority.HIGHEST);               
             pack.targets = targets;
             _sendPack(pack, true);
                         
@@ -925,55 +974,61 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     // handlers for incoming messages, connect/disconnect
     //
     
-    var _handlePacket = function (from_id, pack) {
+    var _packetHandler = this.packetHandler = function (from_id, pack) {
+    
+        // if node is not initiated, do not process any message, unless it's a PING response
+        if (_state < VAST.state.INIT) {   
 
-        // if join is not even initiated, do not process any message        
-        if (_state == NodeState.ABSENT) {
-            LOG.error('node not yet join, should not process any messages');
-            return false;
+            if (pack.type !== VON_Message.VON_PING) {
+                LOG.error('VON_peer: node not yet init, should not process any messages');                
+                return false;
+            }
+            
+            _setInited(); 
         }
         
         LOG.debug('[' + _self.id + '] ' + VON_Message_String[pack.type] + ' from [' + from_id + '], neighbor size: ' + Object.keys(_neighbors).length);        
 
         switch (pack.type) {
-                       
-            // VON's query, to find an acceptor that can take in a joining node
-            case VON_Message.VON_QUERY: {
+
+            // VON's ping, to check if a connected host is still alive          
+            case VON_Message.VON_PING: {
             
-                // update the joiner's id (if it's a newly joined node)
-                if (pack.msg.id === VAST_ID_UNASSIGNED)
-                    pack.msg.id = from_id;
-            
-                // extract message
-                var joiner = new VAST.node();
-                joiner.parse(pack.msg);                
-                LOG.debug('joiner: ' + joiner.toString());
-                                
-                // TODO: verify message in a systematic way
-                if (joiner.endpt.addr.isEmpty()) {
-                    LOG.error('joiner has no valid IP/port address, ignore request');
-                    break;
+                // check if it's a request, respond to it
+                if (typeof pack.msg.request !== 'undefined' && pack.msg.request == true) {
+                    LOG.warn('VON_PING receive request, simply respond');
+                    _sendMessage(from_id, VON_Message.VON_PING, {request: false}, VAST.priority.HIGH, true);
                 }
-                 
+            }
+            break;
+            
+            // VON's query, to find an acceptor to a given point            
+            case VON_Message.VON_QUERY: {
+                        
+                // extract message
+                var pos = new VAST.pos();
+                pos.parse(pack.msg.pos);
+                LOG.debug('VON_QUERY checking pos: ' + pos.toString());
+                                                 
                 // find the node closest to the joiner
-                var closest = _voro.closest_to(joiner.aoi.center);
-                
-                LOG.debug('closest node found: ' + closest);
-                
+                var closest = _voro.closest_to(pos);
+                LOG.debug('closest node: ' + closest + ' (' + typeof closest + ')');
+    
+                // TODO: should generate a VON_JOIN directly to self
+                /*
                 // if this is gateway receiving its own request
                 if (closest === VAST_ID_UNASSIGNED && Object.keys(_neighbors).length === 1) {
                     LOG.warn('gateway getting its own VON_QUERY, return empty list');
                     _sendNodes (from_id, [], true);
                     break;
                 }
-  
-                LOG.debug('closest node: ' + closest + ' (' + typeof closest + ')');
-                                
+                */
+                                  
                 // forward the request if a more appropriate node exists
                 // TODO: contains() might recompute Voronoi, isRelevantNeighbor below 
                 //       also will recompute Voronoi. possible to combine into one calculation?
-                if (_voro.contains (_self.id, joiner.aoi.center) === false &&
-                    _isSelf (closest) === false &&
+                if (_voro.contains(_self.id, pos) === false &&
+                    _isSelf(closest) === false &&
                     closest != from_id) {
 
                     LOG.warn('forward VON_QUERY request to: ' + closest);
@@ -984,69 +1039,97 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
                     _sendPack(pack);
                 }                    
                 else {
-                
-                    // insert first so we can properly find joiner's EN
-                    _insertNode (joiner);
 
-                    // I am the acceptor, send back initial neighbor list
-                    var list = [];
+                    LOG.warn('accepting VON_QUERY from: ' + from_id);
+                
+                    // I'm the acceptor, re-direct message content to self
+                    pack.type = pack.msg.type;
+                    pack.msg = pack.msg.para;
+                    pack.targets = [];
+                    pack.targets.push(_self.id);
                     
-                    // loop through all my known neighbors and check which are relevant to the joiner to know
-                    var out_str = '';
-                    for (var id in _neighbors) {                            
+                    // add from_id as this is not found elsewhere
+                    // TODO: not clean to add to pack?
+                    //pack.from_id = from_id;
                     
-                        var neighbor = _neighbors[id];
-                        //LOG.debug('checking if neighbor [' + neighbor.id + '] should be notified');                    
-                        // store only if neighbor is both relevant and timely
-                        // TODO: more efficient check (EN of joiner is calculated multiple times now)
-                        
-                        var is_relevant = _isRelevantNeighbor(neighbor, joiner);
-                        //LOG.debug('is relevant: ' + is_relevant);
-                        if (neighbor.id != joiner.id && 
-                            is_relevant &&
-                            _isTimelyNeighbor(neighbor.id)) {
-                            list.push(neighbor.id);
-                            out_str += neighbor.id + ' ';
-                        }
-                    }
+                    LOG.debug('redirect to self: ' + JSON.stringify(pack));
                     
-                    LOG.debug('notify ' + list.length + ' nodes to joiner: ' + out_str);
-                    if (list.length <= 1) {
-                        LOG.warn('too few neighbors are notified! check correctness\n');
-                        LOG.debug(_voro.to_string());
-                    }
+                    // NOTE: need to check if this works correctly, to send back to self
+                    //_sendPack(pack);
                     
-                    // send a list of nodes to a specific target node                   
-                    _sendNodes (joiner.id, list, true);
+                    // NOTE: has danger to enter infinite loop
+                    // TODO: make some kind of msgqueue for sending?
+                    _packetHandler(from_id, pack);
                 }          
+            }
+            break;
+        
+            // VON's join, to learn of initial neighbors
+            case VON_Message.VON_JOIN: {
+            
+                // update the joiner's id (if it's a newly joined node)
+                if (pack.msg.id === VAST_ID_UNASSIGNED)
+                    pack.msg.id = from_id;
+            
+                // extract message
+                var joiner = new VAST.node();
+                joiner.parse(pack.msg);
+                LOG.debug('joiner: ' + joiner.toString());
+                
+                // TODO: verify message in a systematic way
+                if (joiner.endpt.addr.isEmpty()) {
+                    LOG.error('joiner has no valid IP/port address, ignore request');
+                    break;
+                }
+                                 
+                // insert first so we can properly find joiner's EN
+                _insertNode(joiner);
+   
+                // if this is gateway receiving its own request
+                // TODO: to check correctness
+                if (Object.keys(_neighbors).length === 1) {
+                    LOG.warn('gateway getting its own VON_QUERY, return empty list');
+                    _sendNodes(from_id, [], true);
+                    break;
+                }
+   
+                // I am the acceptor, send back initial neighbor list
+                var list = [];
+                
+                // loop through all my known neighbors and check which are relevant to the joiner to know
+                var out_str = '';
+                for (var id in _neighbors) {                            
+                
+                    var neighbor = _neighbors[id];
+                    //LOG.debug('checking if neighbor [' + neighbor.id + '] should be notified');                    
+                    // store only if neighbor is both relevant and timely
+                    // TODO: more efficient check (EN of joiner is calculated multiple times now)
+                    
+                    var is_relevant = _isRelevantNeighbor(neighbor, joiner);
+                    //LOG.debug('is relevant: ' + is_relevant);
+                    if (neighbor.id != joiner.id && 
+                        is_relevant &&
+                        _isTimelyNeighbor(neighbor.id)) {
+                        list.push(neighbor.id);
+                        out_str += neighbor.id + ' ';
+                    }
+                }
+                
+                LOG.debug('notify ' + list.length + ' nodes to joiner: ' + out_str);
+                if (list.length <= 1) {
+                    LOG.warn('too few neighbors are notified! check correctness\n');
+                    LOG.debug(_voro.to_string());
+                }
+                
+                // send a list of nodes to a specific target node                   
+                _sendNodes(joiner.id, list, true);
             }
             break;
             
             // process notifications for new nodes
             case VON_Message.VON_NODE: {
-                
-                // if VON_NODE is received, we're considered joined
-                // NOTE: do this first as we need to update our self ID for later VON_NODE process to work
-                //LOG.warn('checking joining state: ' + _state);
-                if (_state === NodeState.JOINING) {
-
-                    // check if we're getting new ID
-                    // TODO: is this clean? consider use VON_HELLO first when contacting new node/neighbor?
-                    var selfID = _net.getID();
-                    LOG.debug('selfID, prev: ' + _self.id + ' new: ' + selfID);
-                    
-                    // update self
-                    // NOTE: we don't use _updateNode as it requires the same node id
-                    _deleteNode(_self.id);
-                    _self.id = selfID;
-                    _insertNode(_self);
-
-                    // NOTE: we don't notify join success until neighbor list is processed
-                    //       so that upon join success, the client already has a list of neighbors                    
-                }                                      
-                            
-                var nodelist = pack.msg;
-                                
+                       
+                var nodelist = pack.msg;                               
                 for (var i=0; i < nodelist.length; i++) {
                                         
                     // extract message
@@ -1077,10 +1160,15 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
                     }
                 } // end going through node list                
                                 
-                // process new neighbors if we just joined, 
-                // otherwise, do this periodically & collectively during tick                
-                if (_state === NodeState.JOINING) {
-                    _contactNewNeighbors();                
+                // if VON_NODE is received for the first time, we're considered joined
+                if (_state === VAST.state.JOINING) {
+                
+                    // process new neighbors if we just joined, 
+                    // otherwise, do this periodically & collectively during tick                                
+                    _contactNewNeighbors();
+                
+                    // NOTE: we don't notify join success until neighbor list is processe
+                    //       so that upon join success, the client already has a list of neighbors
                     _setJoined();     
                 }                
             }
@@ -1122,7 +1210,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
                 if (Object.keys(_meta).length > 0)
                     res_obj.meta = _meta;
                     
-                _sendMessage(from_id, VON_Message.VON_HELLO_R, res_obj, VON_Priority.HIGH, true);
+                _sendMessage(from_id, VON_Message.VON_HELLO_R, res_obj, VAST.priority.HIGH, true);
 
                 // check if enclosing neighbors need any update
                 _checkConsistency(from_id);
@@ -1150,7 +1238,7 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
                     _updateNode(neighbor);        
                 }
                 else
-                    LOG.warn('got VON_HELLO_R from unknown neighbor [' + from_id + ']');
+                    LOG.warn('[' + _self.id + '] got VON_HELLO_R from unknown neighbor [' + from_id + ']');
             }
             break;
             
@@ -1247,17 +1335,16 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
             break;            
             
             // VON's disconnecting a remote node
-            case VON_Message.VON_DISCONNECT: 
             case VON_Message.VON_BYE: {
 
                 // TODO: check if from_id is certainly the sending node's ID
                 if (_neighbors.hasOwnProperty(from_id)) {
-                    _checkConsistency (from_id);
-                    _deleteNode (from_id);
+                    _checkConsistency(from_id);
+                    _deleteNode(from_id);
                 }                
                 
-                // TODO: physically disconnect the node? (or it will be done by the remote node?)
-                var result = _net.disconnect(from_id);
+                // physically disconnect the node (or it will be done by the remote node)
+                var result = _disconnect(from_id);
                 LOG.debug('disconnect succcess: ' + result);                
                 LOG.debug('after removal, neighbor size: ' + Object.keys(_neighbors).length);
             }
@@ -1272,14 +1359,49 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         // successfully handle packet
         return true;
     }
-          
+              
+    var _connHandler = this.connHandler = function (id) {
+        LOG.debug('VON peer [' + id + '] connected');
+    }
+    
+    var _disconnHandler = this.disconnHandler = function (id) {
+        LOG.debug('VON peer [' + id + '] disconnected');
+        
+        // generate a VON_BYE message 
+        var pack = new VAST.pack(
+            VON_Message.VON_BYE,
+            {},
+            VAST.priority.HIGHEST);
+
+        _packetHandler(id, pack);            
+    }    
+
+    /////////////////////
+    // msg_handler methods
+    //
+    
     // clean up all internal states for a new fresh join
-    var _initStates = function () {
+    var _initStates = this.initStates = function (msg_handler) {
     
         LOG.debug('initStates called');
         
+        if (msg_handler !== undefined) {
+        
+            _msg_handler = msg_handler;
+            
+            var id = _msg_handler.getID();
+            LOG.warn('VON_peer initStates called with msg_handler, id: ' + id);
+                            
+            // add convenience references
+            _storeMapping = _msg_handler.storeMapping,
+            _getID =        _msg_handler.getID,      
+            _disconnect =   _msg_handler.disconnect,
+            _sendMessage =  _msg_handler.sendMessage,
+            _sendPack =     _msg_handler.sendPack;                
+        }
+                
         // node state definition
-        _state = NodeState.ABSENT; 
+        _state = VAST.state.ABSENT; 
     
         // list of AOI neighbors (map from node id to node)
         _neighbors = {};
@@ -1291,7 +1413,6 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         _neighbor_states = {}; 
         
         _updateStatus = {};
-        //_potential_neighbors = {};
         _req_nodes = {};
         _time_drop = {};
                 
@@ -1303,75 +1424,48 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
         _stat[VON_Message.VON_NODE] = new VAST.ratio();                   
     
         // clear meta data
-        _meta = {};
+        _meta = {};        
     }
-    
-    var _connHandler = function (id) {
-        LOG.debug('VON peer [' + id + '] connected');
-    }
-    
-    var _disconnHandler = function (id) {
-        LOG.debug('VON peer [' + id + '] disconnected');
-        
-        // generate a VON_DISCONNECT message 
-        var pack = new VAST.pack(
-            VON_Message.VON_DISCONNECT,
-            {},
-            VON_Priority.HIGHEST);
-
-        _handlePacket(id, pack);            
-    }    
-
+            
     /////////////////////
     // constructor
     //
     LOG.debug('VON_peer constructor called');
-    
-    // call parent class's constructor
-    //this.init(_connHandler, _disconnHandler, _handlePacket, l_self_id);
-    msg_handler.call(this, _connHandler, _disconnHandler, _handlePacket, l_self_id);
-    
-    // make a local reference to the parent class (msg_handler)'s net object
-    // need to create reference here because within functions (such as callbacks)
-    // 'this' refers to the function itself
-    
-    // TODO: a cleaner approach?
-    var _net = this.net;
-    var that = this;
-    
-    // convenience functions with the right executation context (the desirable 'this')
-    var _sendMessage = function () {
-        that.sendMessage.apply(that, arguments);
-    }
-    
-    var _sendPack = function () {
-        that.sendPack.apply(that, arguments);
-    }
-    
-    //LOG.warn('_net: ' + _net + ' this.net: ' + this.net);
+            
+    //
+    // constructor actions
+    //
     
     // set default AOI buffer size
-    if (l_aoi_buffer === undefined)
-        l_aoi_buffer = AOI_DETECTION_BUFFER;
+    l_aoi_buffer = l_aoi_buffer || AOI_DETECTION_BUFFER;
         
     // check whether AOI neighbor is defined as nodes whose regions
     // are completely inside AOI, default to be 'true'
-    if (l_aoi_use_strict === undefined)
-        l_aoi_use_strict = true;
-    
-    if (l_port === undefined)
-        l_port = VON_DEFAULT_PORT;
+    l_aoi_use_strict = l_aoi_use_strict || true;
+             
+    //
+    //  handler-related
+    //
+                                                      
+    // register with an existing or new message handler
+    // NOTE: to register, must provide: connHandler, disconnHandler, packetHandler
+    var _msg_handler = undefined;
         
-    // reference to self
-    // NOTE: other info of 'self' may be empty at this moment (e.g., endpt, aoi, etc.)
-    var _self = new VAST.node(l_self_id);
- 
+    // convenience references
+    var _storeMapping, _getID, _disconnect, _sendMessage, _sendPack;
+
     //
     // internal states
     //
-   
+        
+    // reference to self (NOTE: need to be initialized in init())
+    var _self;    
+          
     // callback to use once join is successful
     var _join_done_CB = undefined;
+
+    // callback to use once init is successful (got self ID from server)
+    var _init_done_CB = undefined;
     
     // interval id for removing periodic ticking
     var _interval_id = undefined;
@@ -1385,7 +1479,6 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
     // TODO: combine these structures into one?
     var _new_neighbors;             // nodes worth considering to connect (learned via VON_NODE messages)
     var _neighbor_states;           // neighbors' knowledge of my neighbors (for neighbor discovery check)
-    //var _potential_neighbors;       // neighbors to be discovered
     var _req_nodes;                 // nodes requesting neighbor discovery check
     
     var _updateStatus;              // status about whether a neighbor is: 1: inserted, 2: deleted, 3: updated
@@ -1400,13 +1493,8 @@ function VONPeer(l_self_id, l_port, l_aoi_buffer, l_aoi_use_strict) {
 
     // app-specific meta data
     var _meta;
-    
-    // clean all states
-    _initStates();
-    
-} // end of peer
 
-VONPeer.prototype = new msg_handler();
+} // end of peer
 
 // NOTE: it's important to export VONPeer after the prototype declaration
 //       otherwise the exported method will not have unique msg_handler instance

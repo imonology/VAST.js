@@ -103,7 +103,7 @@ var l_area = exports.area = function (center, radius) {
     }
      
     this.toString = function () {
-        return 'Area: ' + this.center.toString() + ' radius: ' + this.radius;
+        return 'area: ' + this.center.toString() + ' radius: ' + this.radius;
     }
 
     // update info from existing object
@@ -136,15 +136,10 @@ var l_area = exports.area = function (center, radius) {
 
 // definition for a connectable IP/port pair (vast_addr)
 var l_addr = exports.addr = function (host, port) {
-
-    // set default
-    if (host === undefined)
-        host = 0;
-    if (port === undefined)
-        port = 0;
-
-    this.host = host;
-    this.port = port;       
+    
+    // set initial value or default
+    this.host = host || 0;
+    this.port = port || 0;       
   
     // turn object to string representation
     this.toString = function () {
@@ -221,20 +216,13 @@ var l_endpt = exports.endpt = function (host, port) {
 // 'aoi': a vast_area object
 // 'endpt': a vast_endpt object
 var l_node = exports.node = function (id, endpt, aoi, time) {
-
-    // set default
-    if (endpt === undefined)
-        endpt = new l_endpt();
-    if (aoi === undefined)
-        aoi = new l_area();
-    if (time === undefined)
-        time = 0;
-        
-    this.id = id;               // a node's unique ID
-    this.endpt = endpt;         // a node's contact endpoint (host_id & address)
-    this.aoi  = aoi;            // a node's AOI (center + radius)
-    this.time = time;           // a node's last updated time (used to determine whether it contains newer info)
-    //this.meta = {};             // a node's meta-data, default to empty 
+    
+    // set initial values or default        
+    this.id     = id    || 0;               // a node's unique ID
+    this.endpt  = endpt || new l_endpt();   // a node's contact endpoint (host_id & address)
+    this.aoi    = aoi   || new l_area();    // a node's AOI (center + radius)
+    this.time   = time  || 0;               // a node's last updated time (used to determine whether it contains newer info)
+    //this.meta = {};               // a node's meta-data, default to empty 
         
     // update node info from another node
     // NOTE: this is powerful as it replaces almost everything (perhaps ID shouldn't be replaced?)
@@ -293,10 +281,7 @@ var l_pack = exports.pack = function (type, msg, priority) {
     
     // the message content
     this.msg = msg;
-        
-    // group is used to determine who will handle this message (still needed?)
-    this.group = 0;
-    
+            
     // default priority is 1
     this.priority = (priority === undefined ? 1 : priority);
     
@@ -314,4 +299,51 @@ var l_ratio = exports.ratio = function () {
     this.ratio = function () {
         return normal / total;
     } 
+}
+
+// definition for a node
+// 'aoi': a vast_area object
+// 'endpt': a vast_endpt object
+var l_sub = exports.sub = function (host_id, id, layer, aoi) {
+
+    // set default
+    host_id = host_id || 0;
+    id      = id || 0;
+    layer   = layer || 1;
+    aoi     = aoi || new l_area();
+            
+    this.host_id    = host_id;        // 'number' HostID of the subscriber
+    this.id         = id;             // 'number' subscriptionID (different subscriptions may have same hostID)
+    this.layer      = layer;          // 'number' layer number for the subscription    
+    this.aoi        = aoi;            // 'area'   aoi of the subscription (including a center position)
+    //this.relay = relay;             // 'endpt'  the address of the relay of the subscriber (to receive messages)
+    
+        
+    // update info from existing record
+    // NOTE: we only replace if data is available
+    this.update = function (info) {
+        
+        this.host_id = (info.host_id !== 0  ? info.host_id  : this.host_id);
+        this.id      = (info.id !== 0       ? info.id       : this.id);
+        this.layer   = (info.layer !== 0    ? info.layer    : this.layer);
+        this.aoi.update(info.aoi);        
+    }
+
+    // parse a json object onto a node object
+    this.parse = function (js_obj) {
+        try {
+            this.host_id = parseInt(js_obj.host_id);
+            this.id      = parseInt(js_obj.id);
+            this.layer   = parseInt(js_obj.layer);
+            this.aoi.parse(js_obj.aoi);            
+        }
+        catch (e) {
+            console.log('sub parse error: ' + e);
+        }
+    }
+    
+    // print out node info
+    this.toString = function () {
+        return '[' + this.id + '] host_id: ' + host_id + ' layer: ' + this.layer + ' AOI: ' + this.aoi.toString();
+    }
 }
