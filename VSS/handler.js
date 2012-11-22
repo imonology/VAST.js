@@ -8,8 +8,8 @@ require('../common');
 
 // default port for connecting / creating VON nodes
 var _VON_port = 37700;
-//var _VON_gateway = '127.0.0.1';
-var _VON_gateway = 'dev.imonology.com';
+var _VON_gateway = '127.0.0.1';
+//var _VON_gateway = 'dev.imonology.com';
 
 // default radius when first joined
 // TODO: need to have default radius?
@@ -147,11 +147,11 @@ var _reply = function (res, res_obj) {
 var _replySubscribers = function (request, res) {
 
     var node = _getNode(request, res);
-
-    LOG.debug('replySubscribers called, node id: ' + node.getSelf().id);
     
     if (node !== undefined && node !== null) {
-    
+
+        LOG.debug('replySubscribers called, node id: ' + node.getSelf().id);
+
         // get a list of current neighbors's id
         var neighbors = node.list();
         var list = [];

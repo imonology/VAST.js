@@ -70,6 +70,7 @@
     history: 
         2010/03/18      adopted from ArbitratorImpl.h in VASTATE
         2012/09/09      initial js version (from VSOPeer.h)
+        2012/11/01      converted to first js version
 */
 
 require('./common.js');
@@ -202,7 +203,7 @@ class EXPORT VSOPeer : public VONPeer
 public:
 
     VSOPeer (id_t id, VONNetwork *net, VSOPolicy *policy, length_t aoi_buffer = AOI_DETECTION_BUFFER);
-    ~VSOPeer ();                        
+    ~VSOPeer ();                    
 
     // perform joining the overlay, indicate the joining position, AOI, contact origin, also whether dynamic adjustment is enabled
     void join (Area &aoi, Node *origin, bool is_static = false);
@@ -348,7 +349,7 @@ private:
     int                 _overload_count;        // counter for # of times a OVERLOAD_M request is sent
 
     timestamp_t         _overload_timeout;    // overload time       
-    timestamp_t         _underload_timeout;   // underload time   
+    timestamp_t         _underload_timeout;   // underload time
 
     timestamp_t         _next_periodic;     // last timestamp executing periodic task
 };

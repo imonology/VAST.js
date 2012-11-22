@@ -9,10 +9,19 @@ VON:    peer connectivity, neighbor discovery within peer's AOI
         - update from neighbors
         
         assumes: 
-        - net_layer (send/recv)
+        - vast_net (send/recv)
         
         implemented by:
         - VON_peer
+        
+        functions:
+          join(addr, aoi, done_CB)            join a VON network with a given gateway (entry) 
+          leave()                             leave the VON network
+          move(aoi, send_time)                move the AOI to a new position (or change radius)
+          list()                              get a list of AOI neighbors    
+          send(id, msg)                       send a message to a given node
+          put(obj)                            store a app-specific data along with the node (will pass during node discovery)                      
+          get()                               retrieve app-specific data for this node
         
 SPS:    pub/sub record keeping, pub/sub matching, request passing
         - pub/sub request
@@ -22,15 +31,25 @@ SPS:    pub/sub record keeping, pub/sub matching, request passing
         - delivery of messages
         
         assumes:
-        - net_layer (send/recv)
+        - vast_net (send/recv)
         - region
         - neighboring region
         
         implemented by:
-        - VASTMatcher
-        - VASTClient
+        - VAST_matcher
+        - VAST
         
-
+        functions:
+          join(GW_addr, world_id)             join the VAST network given a gateway and world 
+          leave()                             leave the VAST network
+          subscribe(layer, area, sub_CB)      subscribe for an area at a given layer
+          publish(layer, area, msg)           publish a message to an area at a given layer
+          move(subID, area)                   move a subscription to a new position
+          send(id, msg)                       send a message to specified user(s)
+          list(area, neighbor_CB)             get a list of subscribers within an area
+          
+          subscribeNeighbors(notify_CB)       subscribe for subscribers in/out notifications
+          
 VSO:    region resizing, pub/sub record migration, fault-tolerance (?)
         - load detection
         - overload handling (resize)

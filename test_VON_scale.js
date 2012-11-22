@@ -61,7 +61,7 @@ var VONnode = function (num, GWaddr, radius) {
     var pos = movement.getpos(num-1);
 
     // create GW or a connecting client;
-    var peer = new VON.peer(VAST_ID_UNASSIGNED, port);
+    var peer = new VON.peer();
     var aoi  = new VAST.area(new VAST.pos(pos.x, pos.y), radius);
                 
     // perform movement
@@ -75,16 +75,19 @@ var VONnode = function (num, GWaddr, radius) {
         peer.move(aoi);
     }
         
-    peer.join(GWaddr, aoi,
-
-        // done callback
-        function (id) {
-            LOG.warn('joined successfully! id: ' + id + '\n');
-            
-            if (id !== VAST_ID_GATEWAY)
-                setInterval(moveNode, tick_interval);
-        }
-    );   
+    peer.init(VAST_ID_UNASSIGNED, port, GWaddr, function () {
+    
+        peer.join(aoi,
+    
+            // done callback
+            function (id) {
+                LOG.warn('joined successfully! id: ' + id + '\n');
+                
+                if (id !== VAST_ID_GATEWAY)
+                    setInterval(moveNode, tick_interval);
+            }
+        );    
+    });    
 }
 
 var nodes_created = 0;

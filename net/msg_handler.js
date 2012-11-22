@@ -34,50 +34,171 @@
     supported functions:
     
     // basic callback / structure
-        sendMessage
-        sendPack
-        _msgHandler
+    addr = {host, port}
+    l_onDone(addr)
     
     // constructor
+    self_id         id for self node
+    listen_port     port to listen/bind locally
+    onDone          callback to notify when binding is finished
     
     // basic functions
+    addHandler      add a new handler to message handler
+    removeHandler   remove an existing handler from message handler    
+    sendMessage     send a javascript object to a SINGLE target node (given message 'type' and 'priority')
+    sendPack        send a pack object to its destinated targets
+    storeMapping    store mapping between id and address
+    disconnect      disconnect from a particular host id        
     
     // accessors
-      
+    getAddress      get locally detected & binded network address
+    getID           get unique ID for the net layer
+           
     history:
         2012-10-03              initial version 
+        2012-11-04              add addHandler/removeHandler methods
 */
 
-function msg_handler(l_connHandler, l_disconnHandler, l_packetHandler, l_self_id) {
-        
-    // prevent incorrect init
-    if (l_connHandler === undefined || 
-        l_disconnHandler === undefined ||
-        l_packetHandler === undefined)
-        return;
-          
+function msg_handler(l_self_id, l_listen_port, l_onDone) {
+            
     //
     // public methods (usable by classes that inherent the msg_handler class)
     //
+               
+    //
+    //  add a new handler to message handler, the handler should provide the following:
+    //  connHandler         handler for connection event
+    //  disconnHandler      handler for disconnection event
+    //  packetHandler       handler to process a packet, return 'true' if success
+    //
+
+    this.addHandler = function (handler_class) {
+                        
+        // first check if they're all valid
+        if (typeof handler_class.connHandler !== 'function') {
+            LOG.error('addHandler: new handler does not have connHandler');
+            return false;        
+        }
+        
+        if(typeof handler_class.disconnHandler !== 'function') {
+            LOG.error('addHandler: new handler does not have disconnHandler');
+            return false;                
+        }
+        
+        if(typeof handler_class.packetHandler !== 'function') {
+            LOG.error('addHandler: new handler does not have packetHandler');
+            return false;                
+        }
+
+        if(typeof handler_class.initStates !== 'function') {
+            LOG.error('addHandler: new handler does not have initStates');
+            return false;                
+        }
+                                                         
+        // store handlers
+        _handlers.push(handler_class);
+        
+        // store this msg_handler to the handler
+        handler_class.initStates(this);
                 
+        return true;
+    }
+    
+    // remove an existing handler from message handler
+    this.removeHandler = function (handler) {
+        
+        for (var i=0; i < _handlers.length; i++)
+            // handler found, remove it
+            if (_handlers[i] == handler) {
+                _handlers.splice(i, 1);
+                return true;
+            }
+      
+        // no matching handler found
+        return false; 
+    }
+    
+    // send a javascript object to a SINGLE target node (given message 'type' and 'priority')
+    this.sendMessage = function (target, msg_type, js_obj, priority, is_reliable) {
+
+        // create a delivery package to send
+        var pack = new VAST.pack(
+            msg_type,
+            js_obj,
+            priority);
+            
+        pack.targets.push(target);
+        
+        //console.log('_net: ' + _net + ' target: ' + target);
+        
+        // convert pack to JSON or binary string
+        return _that.sendPack(pack, is_reliable);
+    }    
+
+    // send a pack object to its destinated targets
+    this.sendPack = function (pack, is_reliable) {
+
+        // do nothing is target is empty
+        if (pack.targets.length === 0)
+            return;
+    
+        // serialize string
+        var encode_str = JSON.stringify(pack);
+                      
+        // go through each target and send        
+        // TODO: optimize so only one message is sent to each physical host target        
+        var to_list = '';
+        var self_id = _net.getID();
+        
+        for (var i=0; i < pack.targets.length; i++)  {        
+    
+            _net.send(pack.targets[i], encode_str, is_reliable);            
+            to_list += (pack.targets[i] + ',');
+        }
+            
+        LOG.debug('SEND to [' + to_list + ']: ' + encode_str);
+    }
+        
+    // store a network id to address mapping
+    this.storeMapping = function (id, addr) {
+        return _net.storeMapping(id, addr);
+    }
+    
+    // disconnect a remote host
+    this.disconnect = function (id) {
+        return _net.disconnect(id);
+    }    
+        
+    // get locally detected & binded network address
+    this.getAddress = function () {
+        return _localAddress;
+    }
+    
+    // obtain self ID from network layer
+    this.getID = function () {
+        return _net.getID();
+    }
+           
     //
     //  private methods (internal usage, some are replacable at inherted class)
     //
-      
-    // constructor
-    //LOG.debug('msg_handler init, l_packetHandler: ' + typeof l_packetHandler);
-  
-    // NOTE: packet & message handlers cannot be of prototype-style, 
-    //       as they need to occupy memory independently for each msg handler instance
+
+    var _net = undefined;           // a reference to vast_net 
     
-    // default packet handler (does not process anything)    
-    //var _handlePacket = undefined;
+    // handlers registered to handle connect/disconnect/packet
+    var _handlers = [];     
+
+    // local IP & port
+    var _localAddress = {host: '127.0.0.1', port: 0};
     
     // keep local reference for 'this'
     var _that = this;    
-        
+      
+    // NOTE: packet & message handlers cannot be of prototype-style, 
+    //       as they need to occupy memory independently for each msg handler instance
+            
     // handler for incoming messages
-    this.msgHandler = function (from_id, msg) {
+    var _packetHandler = function (from_id, msg) {
                         
         // prevent processing invalid msg
         // NOTE: we allow for empty message (?) such as VON_DISCONNECT
@@ -85,6 +206,8 @@ function msg_handler(l_connHandler, l_disconnHandler, l_packetHandler, l_self_id
             LOG.error('msgHandler: invalid msg from [' + from_id + '], skip processing');
             return;
         }
+    
+        LOG.debug('RECV from [' + from_id + ']: ' + msg);
     
         var pack;
         
@@ -96,80 +219,77 @@ function msg_handler(l_connHandler, l_disconnHandler, l_packetHandler, l_self_id
             LOG.error('msgHandler: convert to js_obj fail: ' + e + ' msg: ' + msg);
             return;
         }
-          
-        if (l_packetHandler === undefined) {
-            LOG.error('no valid packet handler for type: ' + pack.type + ' msg: ' + msg);         
-            return;
-        }
-    
-        //LOG.debug('call packetHandler: ' + typeof l_packetHandler);
-        if (l_packetHandler(from_id, pack) === false)
-            LOG.error('cannot recongize message type: ' + pack.type + ' msg: ' + msg);         
+ 
+        // go through each packet handler and see which will handle it
+        for (var i=0; i < _handlers.length; i++) {
+            if (typeof _handlers[i].packetHandler === 'function') 
+                if (_handlers[i].packetHandler(from_id, pack) === true) {
+                    // successfully handle incoming packet, return
+                    return true; 
+                }
+        }        
+     
+        LOG.error('no packet handler for message type: ' + pack.type + ' msg: ' + msg);         
+        return false;
     }    
     
-    /*
-    // initialize message handler
-    this.init = function (connHandler, disconnHandler, packetHandler, self_id) {
-  
-        // replace default with provided custom handler, if any
-        if (typeof packetHandler === 'function') {
-            LOG.warn('handlePacket type is: ' + typeof _handlePacket);
-            _handlePacket = packetHandler;
+    // handler for connection notification
+    var _connHandler = function (id) {
+    
+        // notify each registered handler for connection
+        for (var i=0; i < _handlers.length; i++) {
+            if (typeof _handlers[i].connHandler === 'function') 
+                _handlers[i].connHandler(id);
         }
- 
-        LOG.debug('msg_handler:init() called. checking existence of net object...');
- 
-        // create new net layer if does not exist
-        if (this.net === undefined) {
-            LOG.warn('creating new VASTnet...');
-            
-            // create network layer & start listening
-            // NOTE: internal handlers must be defined before creating the VAST.net instance        
-            this.net = new VAST.net(this.msgHandler, connHandler, disconnHandler, self_id);    
-        }    
-    } 
-    */
-
+    }
+    
+    // handler for disconnection notification
+    var _disconnHandler = function (id) {
+    
+        // notify each registered handler for disconnection
+        for (var i=0; i < _handlers.length; i++) {
+            if (typeof _handlers[i].disconnHandler === 'function') 
+                _handlers[i].disconnHandler(id);
+        }
+    }
+    
+    //
+    // constructor (record or create a new vast_net layer)
+    //
+    
+    // constructor
+    LOG.debug('msg_handler init, l_self_id: ' + l_self_id);
+    
     // create new net layer if does not exist
-    LOG.warn('creating new VASTnet... net: ' + typeof this.net);
-        
+    LOG.warn('creating new VASTnet... net: ' + typeof _net);
+    
     // create network layer & start listening
     // NOTE: internal handlers must be defined before creating the VAST.net instance        
-    this.net = new VAST.net(this.msgHandler, l_connHandler, l_disconnHandler, l_self_id);    
-    
-} // end msg_handler
-
-
-// send a pack object to its destinated targets
-// TODO: this previously exist at the network layer, should move it there?
-msg_handler.prototype.sendPack = function (pack, is_reliable) {
-
-    // serialize string
-    var encode_str = JSON.stringify(pack);
-    
-    // go through each target and send        
-    // TODO: optimize so only one message is sent to each physical host target        
-    for (var i=0; i < pack.targets.length; i++)            
-        this.net.send(pack.targets[i], encode_str, is_reliable);
-}
-
-// send a javascript object to a SINGLE target node (given message 'type' and 'priority')
-msg_handler.prototype.sendMessage = function (target, msg_type, js_obj, priority, is_reliable) {
-
-    // create a delivery package to send
-    var pack = new VAST.pack(
-        msg_type,
-        js_obj,
-        priority);
+    _net = new VAST.net(_packetHandler, _connHandler, _disconnHandler, l_self_id);
         
-    pack.targets.push(target);
+    LOG.debug('calling getHost()');
     
-    //console.log('this.net: ' + this.net + ' target: ' + target);
+    // create self object
+    _net.getHost(function (local_IP) {
     
-    // convert pack to JSON or binary string
-    // NOTE: we pass the same context
-    return msg_handler.prototype.sendPack.call(this, pack, is_reliable);
-}
+        LOG.debug('local IP: ' + local_IP);
+           
+        // store my locally detected IP
+        _localAddress.host = local_IP;
+                
+        // return value is actual port binded
+        _net.listen(l_listen_port, function (actual_port) {
+            
+            // store actual port binded
+            _localAddress.port = actual_port;
+                   
+            // notify port binding success
+            if (typeof l_onDone === 'function')
+                l_onDone(_localAddress);
+        }); 
+    });
+     
+} // end msg_handler
 
 if (typeof module !== 'undefined')
 	module.exports = msg_handler;
