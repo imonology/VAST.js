@@ -49,6 +49,7 @@
     sendPack        send a pack object to its destinated targets
     storeMapping    store mapping between id and address
     disconnect      disconnect from a particular host id        
+    close           stop the underlying network layer
     
     // accessors
     getAddress      get locally detected & binded network address
@@ -168,6 +169,11 @@ function msg_handler(l_self_id, l_listen_port, l_onDone) {
     this.disconnect = function (id) {
         return _net.disconnect(id);
     }    
+    
+    // stop the underlying network layer    
+    this.close = function () {
+        return _net.close();
+    }
         
     // get locally detected & binded network address
     this.getAddress = function () {

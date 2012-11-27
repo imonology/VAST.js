@@ -25,20 +25,21 @@
     supported functions:
     
     // basic callback / structure
-    addr = {host, port};
-    CB_receive(id, msg);
-    CB_connect(id);
-    CB_disconnect(id);
+    addr = {host, port}
+    CB_receive(id, msg)
+    CB_connect(id)
+    CB_disconnect(id)
     
     // constructor
     vast_net(CB_receive, CB_connect, CB_disconnect);
     
     // basic functions
-    storeMapping(id, addr);     store mapping from id to a particular host IP/port
-    setID(new_id, old_id);      set self ID or change the id -> socket mapping for incoming connections
-    getID();                    get self ID (which may be assigned by remote host)
-    send(id, msg, is_reliable); send a message to a target 'id'
-    listen(port, CB_done);      start a server at a given 'port', port binded is returned via 'CB_done', 0 indicates error
+    storeMapping(id, addr)      store mapping from id to a particular host IP/port
+    setID(new_id, old_id)       set self ID or change the id -> socket mapping for incoming connections
+    getID()                     get self ID (which may be assigned by remote host)
+    send(id, msg, is_reliable)  send a message to a target 'id'
+    listen(port, CB_done)       start a server at a given 'port', port binded is returned via 'CB_done', 0 indicates error
+    close()                     close a server
     disconnect(id)              disconnect connection to a remote node
     
     // socket related
@@ -364,7 +365,17 @@ function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
                 
         _server.listen(port, listen_handler);        
     }
-
+    
+    // close a server
+    this.close = function () {
+        if (_server === undefined)
+            LOG.error('vast_net: server not started, cannot close');
+        else {
+            _server.close();
+            _server = undefined;
+        }
+    }    
+    
     // remove an existing connection
     this.disconnect = function (id) {
     

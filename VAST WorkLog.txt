@@ -52,6 +52,42 @@ Overall Goals:
 implement generic SPS based on matcher-client design
 simplify msg_handler usage (handler needs to implement many things...)
 
+2012-11-27 (1)
+-------------
+goal: fix port does not close after revokeNode is called in VSS
+
+
+
+2012-11-26 (1)
+-------------
+goal: implement subscribe() in VAST.js (matcher-side)
+
+- stuck at how to initialize vast_matcher (need to figure out: how to initialize a matcher)
+- added 'close()' function in net_nodejs & vast_net to close up a listening server
+
+
+2012-11-25 (7)
+-------------
+goal: implement subscribe() in VAST.js (matcher-side)
+
+- re-check basic client-side implementation
+- decide that 'host_id' in subscription info is still important (to forward matching publications)
+
+
+2012-11-24 (6)
+-------------
+goal: implement subscribe() in VAST.js (matcher-side)
+
+- consider to remove host_id in 'endpt' and 'sub' data structures
+
+
+2012-11-23 (5)
+-------------
+goal: implement subscribe() in VAST.js (matcher-side)
+
+- need to consider two issues:
+  whether host_id is necessary in a subscription
+  whether each vast node can do multiple subscriptions (or limited to single)
 
 
 2012-11-22 (4)

@@ -63,6 +63,9 @@
     // return port binded, or 0 to indicate error 
     listen(port, onDone)
     
+    // close the current listening server
+    close()
+    
     // check if I'm a listening server    
     isServer()
                  
@@ -187,10 +190,12 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
             
             // pass back error for further processing
             _server.on('error', function (e) {        
-                //LOG.error('net_nodejs: listen error caught: ' + e);
+                LOG.error('net_nodejs: listen error caught: ' + e.stack);
                 
                 //if (typeof onError === 'function')
                 //    onError(e);
+                _server = undefined;
+                
                 if (typeof onDone === 'function')
                     onDone(0);                
             });
@@ -203,10 +208,27 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
             });                
         }
         catch (e) {
-            LOG.error('net_nodejs: listen error crashed: ' + e); 
+            LOG.error('net_nodejs: listen error crashed: ' + e.stack); 
             if (typeof onError === 'function')
                 onError('listen');
         }        
+    }
+    
+    // close the current listening server
+    this.close = function () {
+        try {
+            if (_server === undefined) {
+                LOG.error('net_nodejs: server not started');
+                return false;
+            }
+            _server.close();
+            _server = undefined;
+            return true;
+        }
+        catch (e) {
+            LOG.error('net_nodejs: server close error: ' + e.stack); 
+            return false;
+        }                
     }
     
     // check if this network socket is a listening server

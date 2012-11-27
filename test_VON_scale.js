@@ -4,12 +4,6 @@
     2012.08.28 init
 */
 
-/*
-process.on('uncaughtException', function(err) {
-  console.log(err);
-});
-*/
-
 // flags
 require('./common');
 var cluster_model = require('./move_cluster');

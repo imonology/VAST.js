@@ -80,6 +80,7 @@ function VAST_matcher(recv_callback, settings) {
     // send to gateway a message on a given handler
     var _sendGatewayMessage = function (pack) {
     
+        pack.targets = [];
         pack.targets.push(VAST_ID_GATEWAY);
         _sendPack(pack, true);
     }
@@ -342,13 +343,14 @@ function VAST_matcher(recv_callback, settings) {
     // function to create a new net layer
     this.init = function (self_id, port, done_CB) {
     
+        self_id = self_id || VAST_ID_UNASSIGNED;
         port = port || VAST_DEFAULT_PORT;
         
         // create new layer
-        var m_handler = new msg_handler(self_id, port, function (local_addr) {
+        var handler = new msg_handler(self_id, port, function (local_addr) {
                     
             // NOTE: this will cause initStates() be called
-            m_handler.addHandler(_that);
+            handler.addHandler(_that);
             
             // notify done
             if (typeof done_CB === 'function')
@@ -374,6 +376,11 @@ function VAST_matcher(recv_callback, settings) {
             
             // add VON peer as self node
             _self = new VON.peer();
+            
+            // provide self id, self port, gateway address, and callback when done
+            // TODO: how to init a matcher?
+            //_self.init(id, 
+            
             _msg_handler.addHandler(_self);            
         }
     }

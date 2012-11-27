@@ -93,8 +93,11 @@ function VAST_client(recv_callback, settings, GW_addr) {
     // my subscription record
     var _sub = VAST.sub();
     
+    // callback to notify when subscribe is done
+    var _sub_CB = undefined;
+    
     // information regarding current node
-    var _self;          
+    var _self;
 
     // id for owner matcher, default to gateway
     var _matcher_id = VAST_ID_GATEWAY;
@@ -128,33 +131,35 @@ function VAST_client(recv_callback, settings, GW_addr) {
     //
     // public methods
     //
-    
-    var _subscribeRetry = function () {
-    
-    }
-    
+        
     // subscribe for an area at a given layer
     this.subscribe = function (layer, area, sub_CB) {
   
-        /*
-        // set timeout to re-try, necessary because it takes time to send the subscription
-        _timeout_subscribe = _net->getTimestamp () + (TIMEOUT_SUBSCRIBE * _net->getTimestampPerSecond ());
-
-        // keep trying each TIMEOUT_SUBSCRIBE seconds
-        setTimeout(_subscribeRetry, 1000 * TIMEOUT_SUBSCRIBE);
+        // record callback when subscribe is done
+        _sub_CB = sub_CB;
         
+        // store host to which matching publication should be sent (back to myself)
+        _sub.host_id = _getID();
+        
+        //_sub.host_id = _net->getHostID ();
+        //_sub.active  = false;
+        //_sub.relay   = _net->getAddress (_relay->getRelayID ());
+                
         // record my subscription, not yet successfully subscribed  
-        // NOTE: current we assume we subscribe only one at a time  
+        // NOTE: currently we assume we subscribe only one at a time  
         //       also, it's important to record the area & layer first, so that
         //       re-subscribe attempt may be correct (in case the check below is not passed yet)        
-        
+                       
         // NOTE: because my hostID is unique, it guarantee my subscription ID is also unique
         if (_sub.id === VAST_ID_UNASSIGNED)
             _sub.id = _getID();
 
         _sub.aoi    = area;
         _sub.layer  = layer;
-        */
+                
+        // activate re-try mechanism
+        // NOTE: is this such a good idea (will result in request flooding?)
+        _subscribeRetry();
         
         /*
         // if matcher or relay is not yet known, wait first
@@ -164,21 +169,7 @@ function VAST_client(recv_callback, settings, GW_addr) {
             return false;
         }
         */
-
-        /*
-        // TODO: check if this is correct... do we need to separate host_id & sub_id ?
-        _sub.host_id = _getID();
         
-        //_sub.host_id = _net->getHostID ();       
-        //_sub.active  = false;
-        //_sub.relay   = _net->getAddress (_relay->getRelayID ());
-
-        LOG.debug('[' + _self.id + '] sends SUBSCRIBE request to [' + _matcher_id + ']');
-
-        // send out subscription request to owner matcher
-        var pack = new VAST.pack(VAST.msgtype.SUB, _sub, VAST.priority.HIGH);
-        return sendMatcherMessage(pack);    
-        */
     }
     
     // publish a message to an area at a given layer
@@ -202,16 +193,34 @@ function VAST_client(recv_callback, settings, GW_addr) {
     // private methods
     //
     
+    var _subscribeRetry = function () {
+    
+        // no need to re-try if subscription is completed
+        if (_sub_CB === undefined)
+            return;
+                    
+        LOG.debug('[' + _self.id + '] sends SUBSCRIBE request to [' + _matcher_id + ']');
+
+        // set timeout to re-try, necessary because it takes time to send the subscription, which can be lost       
+        setTimeout(_subscribeRetry, 1000 * TIMEOUT_SUBSCRIBE);        
+        
+        // send out subscription request to owner matcher
+        var pack = new VAST.pack(VAST.msgtype.SUB, _sub, VAST.priority.HIGH);
+        _sendMatcherMessage(pack);        
+    }    
+    
     // send to gateway a message on a given handler
     var _sendGatewayMessage = function (pack) {
     
+        pack.targets = [];
         pack.targets.push(VAST_ID_GATEWAY);
         _sendPack(pack, true);
     }
 
     // send to gateway a message on a given handler
     var _sendMatcherMessage = function (pack) {
-    
+
+        pack.targets = [];
         pack.targets.push(_matcher_id);
         _sendPack(pack, true);
     }
@@ -273,13 +282,14 @@ function VAST_client(recv_callback, settings, GW_addr) {
     // function to create a new net layer
     this.init = function (self_id, port, done_CB) {
     
+        self_id = self_id || VAST_ID_UNASSIGNED;
         port = port || VAST_DEFAULT_PORT;
         
-        // create new layer
-        var m_handler = new msg_handler(self_id, port, function (local_addr) {
+        // create message handler manager and add self as one of the handlers
+        var handler = new msg_handler(self_id, port, function (local_addr) {
                     
             // NOTE: this will cause initStates() be called
-            m_handler.addHandler(_that);
+            handler.addHandler(_that);
             
             // notify done
             if (typeof done_CB === 'function')
@@ -342,4 +352,4 @@ function VAST_client(recv_callback, settings, GW_addr) {
 
 // export the class with conditional check
 if (typeof module !== "undefined")
-	module.exports = VAST_client;
+    module.exports = VAST_client;

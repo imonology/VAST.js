@@ -47,6 +47,7 @@
     
     // basic functions
     init(id, port, addr, done_CB)       init a VON peer with id, listen port & gateway's address
+    shut()                              shutdown a VON peer (will close down listen port)
     query(center, acceptor_CB)          find the re a app-specific data along with the node (will pass during node discovery)                      
     get()                               retrieve app-specific data for this node
     
@@ -174,6 +175,21 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
             else
                 _setInited();
         });
+    }
+    
+    // shutdown a VON peer (will close down listen port)
+    this.shut = function () {
+    
+        if (_msg_handler !== undefined) {
+            // stop server, if currently listening
+            // NOTE: if VON peer is used with other nodes, stopping server here will impact other nodes as well
+            _msg_handler.close();
+            _msg_handler = undefined;                    
+        }            
+        
+        _self = undefined;
+        
+        _state = VAST.state.ABSENT;        
     }
     
     // find the acceptor for a given center point 
