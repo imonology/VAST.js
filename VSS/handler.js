@@ -113,7 +113,9 @@ var _revokeNode = function (info, done_CB) {
     
     //destroy node
     node.leave();
+    node.shut();
     node = null;
+    
     delete _keys[info.apikey][info.layer][info.ident];
     
     // check if we need to remove layer and/or API key

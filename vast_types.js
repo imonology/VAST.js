@@ -301,9 +301,12 @@ var l_ratio = exports.ratio = function () {
     } 
 }
 
-// definition for a node
-// 'aoi': a vast_area object
-// 'endpt': a vast_endpt object
+// definition for a subscription
+// 'host_id':   to which host a matched publication should be sent
+// 'id':        unique subscription id
+// 'layer':     which layer the subscription belongs
+// 'aoi':       the aoi of the subscription
+
 var l_sub = exports.sub = function (host_id, id, layer, aoi) {
 
     // set default
@@ -317,8 +320,7 @@ var l_sub = exports.sub = function (host_id, id, layer, aoi) {
     this.layer      = layer;          // 'number' layer number for the subscription    
     this.aoi        = aoi;            // 'area'   aoi of the subscription (including a center position)
     //this.relay = relay;             // 'endpt'  the address of the relay of the subscriber (to receive messages)
-    
-        
+            
     // update info from existing record
     // NOTE: we only replace if data is available
     this.update = function (info) {

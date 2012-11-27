@@ -4,11 +4,6 @@
     2012.07.10
 */
 
-/*
-process.on('uncaughtException', function(err) {
-  console.log(err);
-});
-*/
 
 // flags
 var AUTOMATIC_LEAVE_PERIOD = 3;     // number of seconds 
@@ -19,7 +14,7 @@ require('./common');
 //LOG.debug(curr.toLocaleString());
 
 // do not show debug
-LOG.setLevel(2);
+//LOG.setLevel(2);
 
 // set default IP/port
 var gateway_addr = {host: "127.0.0.1", port: 37700};
