@@ -1,4 +1,4 @@
- 
+﻿ 
 To-Do:
 
 - add VON_REQUEST_ID msg or send VON_HELLO first? (for ID assignment without net layer involvement)

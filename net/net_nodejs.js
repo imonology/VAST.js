@@ -190,7 +190,9 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
             
             // pass back error for further processing
             _server.on('error', function (e) {        
-                LOG.error('net_nodejs: listen error caught: ' + e.stack);
+                
+                // NOTE: we do not display this as binding to a already binded port will cause this error
+                LOG.error('net_nodejs: listen error caught: ' + e);
                 
                 //if (typeof onError === 'function')
                 //    onError(e);
