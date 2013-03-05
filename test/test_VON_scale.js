@@ -6,8 +6,8 @@
 */
 
 // flags
-require('./common');
-var cluster_model = require('./move_cluster');
+require('../VAST');
+var cluster_model = require('../move_cluster');
 
 // set error level
 LOG.setLevel(2);

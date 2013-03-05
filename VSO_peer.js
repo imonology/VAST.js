@@ -73,7 +73,7 @@
         2012/11/01      converted to first js version
 */
 
-require('./common.js');
+require('./VAST.js');
 require('./VON_peer.js');
 
 

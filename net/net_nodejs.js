@@ -70,7 +70,7 @@
         2012-09-24              add is_connected()
 */
 
-require('../common.js');
+require('../VAST.js');
 var l_net = require('net');   // allow using network
 
 function net_nodejs(onReceive, onConnect, onDisconnect, onError) {

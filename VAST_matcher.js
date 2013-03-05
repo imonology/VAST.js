@@ -47,7 +47,7 @@
         2012-11-09              initial version (convert from VASTMatcher.h)
 */
 
-require('./common.js');
+require('./VAST.js');
 var msg_handler = msg_handler || require('./net/msg_handler.js');
 
 // config
