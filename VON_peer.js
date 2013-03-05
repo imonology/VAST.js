@@ -63,7 +63,7 @@
         2012-07-07              initial version (from VAST.h)
 */
 
-require('./common.js');
+require('./VAST.js');
 
 // to be inherited by VON.peer
 var msg_handler = msg_handler || require('./net/msg_handler.js');
