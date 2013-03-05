@@ -10,11 +10,8 @@ var AUTOMATIC_LEAVE_PERIOD = 3;     // number of seconds
 
 require('./common');
 
-//var curr = new Date();
-//LOG.debug(curr.toLocaleString());
-
 // do not show debug
-//LOG.setLevel(2);
+LOG.setLevel(2);
 
 // set default IP/port
 var gateway_addr = {host: "127.0.0.1", port: 37700};
@@ -54,8 +51,14 @@ var moveAround = function () {
     // move if not GW
     if (peer.getSelf().id !== VAST_ID_GATEWAY) {
         // random walk new location (5 units within current center position)
-        aoi.center.x += Math.floor((Math.random()%10 - 5));
-        aoi.center.y += Math.floor((Math.random()%10 - 5));
+        aoi.center.x += Math.floor((Math.random()%10) - 5);
+        aoi.center.y += Math.floor((Math.random()%10) - 5);
+        
+        if (aoi.center.x < 0)
+            aoi.center.x *= -1;
+        if (aoi.center.y < 0)
+            aoi.center.y *= -1;
+            
     }
     
     var neighbor_size = Object.keys(peer.list()).length;
@@ -68,9 +71,9 @@ var moveAround = function () {
 var interval_id = undefined;
 
 // after init the peer will bind to a local port
-peer.init((is_client ? VAST_ID_UNASSIGNED : VAST_ID_GATEWAY), gateway_addr.port, gateway_addr, function () {
+peer.init((is_client ? VAST_ID_UNASSIGNED : VAST_ID_GATEWAY), gateway_addr.port, function () {
 
-    peer.join(aoi, 
+    peer.join(gateway_addr, aoi, 
 
         // done callback
         function (id) {

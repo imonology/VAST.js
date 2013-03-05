@@ -85,9 +85,9 @@ io.sockets.on('connection', function (socket) {
         nodes_created++;
 
         // join in the network        
-        _self.init(VAST_ID_UNASSIGNED, ip_port.port + nodes_created, ip_port, function () {
+        _self.init(VAST_ID_UNASSIGNED, ip_port.port + nodes_created, function () {
         
-            _self.join(aoi,
+            _self.join(ip_port, aoi,
         
                 // done callback
                 function (self_id) {

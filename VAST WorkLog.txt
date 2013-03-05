@@ -19,9 +19,9 @@ BUG (*) denotes design bug:
 2012-06-23: 1st & 2nd level enclosing neighbors are the same
 2012-07-23: voro.overlaps returns 'false' always when there's only one region for any point
 2012-08-29: scaling many nodes will cause TCP connection errors
-2012-09-03: EADDRINUSE crash bug (after running a while with >50 nodes)
 2012-09-24: send_msg in vast_net does not necessarily send out in FIFO order
-
+2012-11-27: shutdown 50 nodes at once will leave ghost nodes
+2012-12-01: if node positions overlap, VSS server will show continouing warning messages
 
 ----
 2009-06-12 UDP transmission causes connection lost in real network
@@ -51,12 +51,385 @@ BUG (*) denotes design bug:
 Overall Goals:
 implement generic SPS based on matcher-client design
 simplify msg_handler usage (handler needs to implement many things...)
+debug ECONNABORTED (possibly over-connection), EFAULT
 
-2012-11-27 (1)
+2013-03-05 (2)
+-------------
+goal: identify ENOBUFS causes
+      
+- found that there's a lot of redundent socket connections      
+      
+      
+
+2013-03-04 (1)
+-------------
+goal: debug ECONNABORTED (possibly over-connection), EFAULT
+      debug ENOBUFS
+
+- ENOBUFS is caused by lack of memory in server buffer
+
+
+2013-02-26 (2)
+-------------
+goal: debug ECONNABORTED (possibly over-connection), EFAULT
+      debug ENOBUFS
+
+- appearantly there are many 'incoming' sockets whose real ids were not assigned (but their socket
+  connections are kept)
+  > may need to check if incoming sockets handshake their ids properly
+  
+
+2013-02-25 (1)
+-------------
+goal: debug ECONNABORTED (possibly over-connection), EFAULT
+
+- tested slowly joining nodes and let them run, seems more stable
+- basic VON seems to work for up to 50 nodes, but then many nodes do not move
+  (appears to be disconnected)
+
+2013-02-23 (6)
+-------------
+goal: debug ECONNABORTED (possibly over-connection), EFAULT
+
+- still can't pinpoint the problem...
+
+2013-02-19 (2)
+-------------
+goal: debug ECONNABORTED (possibly over-connection), EFAULT
+
+- found out if nodes join slowly, then less likely to crash (can last longer)
+
+
+
+2013-02-05 (2)
+-------------
+goal: debug ECONNABORTED (possibly over-connection), EFAULT
+
+
+
+2013-02-02 (6)
+-------------
+goal: debug ECONNABORTED (possibly over-connection), EFAULT
+
+- found out the 'data' event and 'connect' event do not trigger in particular orders. 
+  so might need to be careful to assume 'connect' always come before 'data'
+
+
+2013-02-01 (5)
+-------------
+goal: debug ECONNABORTED (possibly over-connection), EFAULT
+
+- after showing socket connection size and print out actually known sockets
+  found out too many sockets have negative socket numbers 
+  (so likely there are over-connections every time a certain socket is the send target)
+
+2013-01-29 (2)
+-------------
+goal: debug ECONNABORTED (possibly over-connection), EFAULT
+
+BUGS known:
+-0:36- [11] msgqueue has no target [2]. shouldn not happen
+0:36- [16] got VON_HELLO_R from unknown neighbor [12]
+
+
+
+2013-01-27 (7)
+-------------
+goal: debug ECONNABORTED (possibly over-connection)
+
+- try to perform socket.end() whenever duplicate socket is detected
+- new error: EFAULT
+
+net.js:912
+        if (e.errno != EMFILE) throw e;                               ^
+Error: EFAULT, Bad address
+    at IOWatcher.callback (net.js:910:24)
+
+
+    
+2013-01-26 (6)
+-------------
+goal: debug vast.io client
+
+- seems vast.io local client works now 
+- will have ECONNABORTED cause von_test_scale to crash with 50 nodes on Toshiba NB
+- see lots of 'redundent socket already exists' warning
+
+
+2013-01-22 (2)
+-------------
+goal: debug vast.io client
+
+- re-check & ensure that disconnect() on socket works
+
+
+2013-01-21 (1)
+-------------
+goal: debug client id assignment
+
+- client id assign ok.
+- need to debug vast.io client
+
+2013-01-20 (7)
+-------------
+goal: debug id assignment
+      support send to self id in vast_net's send()
+
+- debug gateway id assignment (now need to debug client ID assignment)
+- also provide send to self in vast_net's send()      
+
+2013-01-15 (2)
+-------------
+goal: debug id assignment
+
+
+2013-01-12 (6)
+-------------
+goal: debug id assignment
+      remove id assign from net layer
+
+- removed id assign
+
+2013-01-11 (5)
+-------------
+goal: debug id assignment
+
+- need to remove id assignment from net layer
+
+2013-01-10 (4)
+-------------
+goal: debug id assignment
+
+
+2013-01-08 (2)
+-------------
+goal: review _processData in vast_net for id assignment mechanism
+
+- implement id assigbment but is buggy
+- need to debug id assignment
+
+
+2013-01-05 (6)
+-------------
+goal: store sender id to all out-going messages at vast_net
+
+- modified send() in vast_net to accomodate sending multiple targets at once,
+  while attaching sender id
+  
+- need to review _processData in vast_net for id assignment mechanism
+
+
+2013-01-03 (4)
+-------------
+goal: store sender id to all out-going messages at vast_net
+      
+- finished review net_nodejs            
+- found out need to decide where to pack/unpack sender id
+
+
+
+2012-12-30 (6)
+-------------
+goal: combine incoming & outgoing sockets into same management
+      test code
+            
+- review net_nodejs & vast_net for correctness
+
+2012-12-22 (6)
+-------------
+goal: combine incoming & outgoing sockets into same management
+      check vast_net / net_nodejs modifications
+      test code
+
+- modify vast_net behavior to manage only sockets. 
+
+2012-12-21 (5)
+-------------
+goal: combine incoming & outgoing sockets into same management
+      test code
+
+- figure out should manage all sockets in vast_net, but not net_nodejs objects.
+      
+      
+2012-12-17 (1)
+-------------
+goal: combine incoming & outgoing sockets into same management
+
+- did code review/proofreading
+
+2012-12-16 (7)
+-------------
+goal: combine incoming & outgoing sockets into same management
+
+- finish remove _sockets in vast_net (pending tests)
+
+
+2012-12-15 (6)
+-------------
+goal: modify msg_id so all messages' sender id is contained with message itself
+
+main issues now:
+- need to allow remote node learn of id                         --> notify / contain id
+- handshake & regular messages can be not sequential            --> consider self-contain id
+- redundent connections for same host:port pairs                --> store out & in-coming sockets into same reference
+- messages can pack up (queued up & send all at once)           --> consider UDP
+
+
+
+
+2012-12-14 (5)
+-------------
+goal: debug received NaN for sender at net layer
+
+- ensure that the message received is turned into js object first, before the 'sender id' (src) is retrieved. 
+  now the NaN problem is solved. :)
+  
+- now can run 50 nodes for a long time (10min+)  However, two issues are observed:
+    1. once 50 nodes are joined, it's difficult (almost impossible) to join a new node via web
+    2. node movement in demo is very slow & not smooth
+    3. nodes get discovered all at once
+    4. many messages are accumulated. (change to UDP?)
+      
+
+2012-12-13 (4)
+-------------
+goal: debug received NaN for sender at net layer
+      experiment with include 'sender id' in all messages sent
+
+- try adding 'sender id', but still seems to get NaN id problems. Really need to look into the mechanism
+  for connections.       
+
+2012-12-12 (3)
+-------------
+goal: debug received NaN for sender at net layer
+
+- found that the problem with dual-connection is not easy to solve. A case might go like this:
+    
+    1. A sends hello to B  (making new connection...)
+    2. B sends hello to A  (making new connection...)
+    3. A rejects B's 'notify id' (there's already a connection established in 1.)
+    4. B's message to A cannot be processed (source unknown 'NaN' problem) for the following:
+        5:  HELLO
+        7:  EN
+        10: MOVE_B
+        10: MOVE_B
+        10: MOVE_B
+        6:  HELLO_R
+        4:  NODE
+        
+    why does 3 occur? (in theory, id notify goes only via a newly established connection...) 
+    need to think more carefully about the dual-connection issue...
+
+- consider to enclose sender id in packet (makes it completely self-contained), so that it doesn't
+  matter which channel is used to deliver the message. This will be more RESTful? (and possibly can 
+  become a HTTP-style protocol in future)? 
+  
+  
+2012-12-11 (2)
+-------------
+goal: debug received NaN for sender at net layer
+
+- found out NaN problem may be caused by id notify is sent to an already-established
+  socket connection. 
+
+
+2012-12-08 (6)
+-------------
+goal: debug received NaN for sender at net layer
+
+- try to set socket.connected flag *after* connect notify callback is called,
+  so that id notify may not be sent after other messages.
+  > does not solve the NaN id problem.
+
+
+2012-12-06 (4)
+-------------
+goal: debug received NaN for sender at net layer
+
+- found out the bug is caused by ID notify and subsequent messages are mixed in sending order.
+  so later messages are received before the ID notify is processed. need to find a way to ensure
+  ID notify is sent absolutely first before all other messages. 
+  > put ID notify to beginning of msgqueue to be sent to remote node, but NaN problem still exists...
+  > an explanation is the socket.write() does not actually preserve the order of writing,
+  > if message is put to system buffer due to too busy.. 
+  
+- found another problem is caused when two nodes initiate connections to each other simutaneously... 
+  so possibly two channels are established... 
+  > need to find a way to ensure just one connection
+  
+- yet another problem is messages are sent from existing to new node in this order: 
+  HELLO, EN, NODE, id notify..
+  
+  possiby acceptor first discovers new node, then got VON_JOIN? or acceptor   
+  another possibility is that the messages come from different connections
+  (one from self, another from remote).  
+  
+
+2012-12-05 (3)
+-------------
+goal: debug received NaN for sender at net layer
+
+- notice that when nodes are joining quickly, VON_HELLO can be received earlier than VON_NODE for a joining node
+  (that means node is not yet fully joined, but other neighbors are already saying HELLO)...
+  
+- change sending initial ID to wait till socket.write is complete. 
+- also change all messages can be processed once initial ID is obtained
+
+- bug still exists, looks like we need a more guaranteed way to notify unique ID 
+  
+
+2012-12-03 (1)
+-------------
+goal: remove tick() from VON_peer.js
+
+- done removing tick() and spread original tick functions to after receiving VON_NODE 
+ (contactNewNeighbor) and VON_MOVE_X (checkNeighborDiscovery & removeNonOverlapped)
+ 
+ 
+
+
+2012-12-01 (6)
+-------------
+goal: implement subscribe() in VAST.js (matcher-side)
+
+BUG: if node positions overlap, the two nodes will continously have check enclosing neigbhor
+     error (as actual neighbor size is smaller than expected # of neighbors)
+
+
+
+
+2012-11-29 (4)
+-------------
+goal: implement subscribe() in VAST.js (matcher-side)
+      extract non-standard code from init() in VON_Peer
+      
+- revise init & join responisbility, and make init simply to initialize, 
+  any network contact is done only at the join() stage
+
+- finish revision & testing (but on small NB, running 50 nodes will still cause 
+  program fault/hang after a while, likely due to network problem). 
+      
+
+2012-11-28 (3)
+-------------
+goal: implement subscribe() in VAST.js (matcher-side)
+
+- identfiy a potential issue: as init in VON_Peer.js performs necessary tasks other
+  than msg_handler creation, it's required to include it, but then msg_handler will
+  be created twice when VAST_matcher tries to include a VON_Peer inside itself. 
+  solution seems to keep init() simple so it's the same for VON_Peer, VON_matcher, or VAST
+
+2012-11-27 (2)
 -------------
 goal: fix port does not close after revokeNode is called in VSS
 
+- added shut() to when VSS server performs revokeNode (seems to solve the issue)
 
+BUG:    when running test_VON_scale with 50 nodes, and shutdown all 50 nodes,
+        some nodes do not seem to disappear cleanly and still exist in the knoweldge of still-existing nodes
+        (need to somehow find a way to clean them, or to periodically ping / verify their existence)
+        
+        
 
 2012-11-26 (1)
 -------------
@@ -1863,16 +2236,16 @@ m = (y2-y1) / (x2-x1)
 intercept:
 (y2-y1)/(x2-x1)*x1 + b = y1
 
-y = y1 + [(y2 - y1) / (x2 - x1)]¡P(x - x1)
-(x2 - x1)¡P(y - y1) = (y2 - y1)¡P(x - x1)
+y = y1 + [(y2 - y1) / (x2 - x1)]ï¿½P(x - x1)
+(x2 - x1)ï¿½P(y - y1) = (y2 - y1)ï¿½P(x - x1)
 
-(x2¡Py - x1¡Py) - (x2¡Py1 - x1¡Py1) = (x¡Py2 - x¡Py1) - (x1¡Py2-x1¡Py1)
-x2¡Py - x1¡Py - x2¡Py1 + x1¡Py1 = x¡Py2 - x¡Py1 - x1¡Py2 + x1¡Py1
-(y2-y1)x + (x1-x2)y + (x2¡Py1 - x1¡Py1 - x1¡Py2 + x1¡Py1) = 0
+(x2ï¿½Py - x1ï¿½Py) - (x2ï¿½Py1 - x1ï¿½Py1) = (xï¿½Py2 - xï¿½Py1) - (x1ï¿½Py2-x1ï¿½Py1)
+x2ï¿½Py - x1ï¿½Py - x2ï¿½Py1 + x1ï¿½Py1 = xï¿½Py2 - xï¿½Py1 - x1ï¿½Py2 + x1ï¿½Py1
+(y2-y1)x + (x1-x2)y + (x2ï¿½Py1 - x1ï¿½Py1 - x1ï¿½Py2 + x1ï¿½Py1) = 0
 
 a = (y2-y1)
 b = (x1-x2)
-c = (x2¡Py1 - x1¡Py1 - x1¡Py2 + x1¡Py1)
+c = (x2ï¿½Py1 - x1ï¿½Py1 - x1ï¿½Py2 + x1ï¿½Py1)
 
 - contains() work with rh_voronoi, but still buggy 
   (check returns 'true' very often)
@@ -5416,7 +5789,7 @@ DEBUG:
     1) an annoying bug where many times, the program would crash within sfvoronoi, where doing
        a free (buf_list[]) in calvs() tries to free invalid buf_list.
 
-       the bug (found by ¤Öºd) was that in processmsg of VAST, we'd collect stat info of msgtype
+       the bug (found by ï¿½Öºd) was that in processmsg of VAST, we'd collect stat info of msgtype
        via
 
        _msg_stat[msgtype] += size;
@@ -6003,13 +6376,13 @@ goal: review simulation code for potential unstability,
       (possibily removing the scalability analysis paragraph in VON paper)
 
 - made a decision today to let another person work on the simulation in full.
-  today asked æ³“ç? to help.
+  today asked æ³“ï¿½? to help.
 
 
 
 2006/03/14 (2)
 --------------
-- today asked å°‘æ? to help on NAT.
+- today asked å°‘ï¿½? to help on NAT.
 
 2006/03/13 (1)
 --------------

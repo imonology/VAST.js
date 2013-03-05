@@ -16,21 +16,31 @@ require('./common');
 //LOG.setLevel(2);
 
 // set default IP/port
-var ip_port = {host: "127.0.0.1", port: 37700};
-
-// get custom parameters
-var port = process.argv[2];
-if (port !== undefined)
-    ip_port.port = port;
-
-var host = process.argv[3];
+// set default IP/port
+var gateway_addr = {host: "127.0.0.1", port: 37700};
 var is_client = false;
-if (host !== undefined) {
-    ip_port.host = host;
-    is_client = true;
+
+// IP/port
+if (process.argv[2] !== undefined) {
+    var ip_port = process.argv[2];
+    // check if this is port only
+    var idx = ip_port.search(':');
+    
+    // ':' not found, port only
+    if (idx === (-1))
+        gateway_addr.port = parseInt(ip_port);       
+    else {
+        var ip = ip_port.slice(0, idx);
+        var port = ip_port.slice(idx+1, ip_port.length);
+        gateway_addr.host = ip;
+        gateway_addr.port = parseInt(port);        
+        
+        is_client = true;
+    }
 }
 
-LOG.debug('host: ' + ip_port.host + ' port: ' + ip_port.port + ' is_client: ' + is_client);
+LOG.debug('GW ip: ' + gateway_addr.host + ' port: ' + gateway_addr.port);
+LOG.debug('is_client: ' + is_client);
 
 var x = Math.floor(Math.random() * 100);
 var y = Math.floor(Math.random() * 100);
@@ -58,11 +68,11 @@ var moveAround = function () {
 var interval_id = undefined;
 
 // after init the client will bind to a local port
-client.init((is_client ? VAST_ID_UNASSIGNED : VAST_ID_GATEWAY), ip_port.port, function () {
+client.init((is_client ? VAST_ID_UNASSIGNED : VAST_ID_GATEWAY), gateway_addr.port, function () {
 
     LOG.warn('test_VAST_client: init done');
         
-    client.join(ip_port, 
+    client.join(gateway_addr, 
 
         // done callback
         function (id) {

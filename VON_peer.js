@@ -37,7 +37,7 @@
     vast_net (see definition in vast_net.js)
     
     // constructoracceptor for a given center point 
-    join(aoi, done_CB)                  join a VON network with a given aoi 
+    join(addr, aoi, done_CB)            join a VON network at a gateway with a given aoi 
     leave()                             leave the VON network
     move(aoi, send_time)                move the AOI to a new position (or change radius)
     list()                              get a list of AOI neighbors    
@@ -46,7 +46,7 @@
     VON_peer(aoi_buffer, aoi_use_strict)
     
     // basic functions
-    init(id, port, addr, done_CB)       init a VON peer with id, listen port & gateway's address
+    init(id, port, done_CB)             init a VON peer with id, listen port
     shut()                              shutdown a VON peer (will close down listen port)
     query(center, acceptor_CB)          find the re a app-specific data along with the node (will pass during node discovery)                      
     get()                               retrieve app-specific data for this node
@@ -145,35 +145,20 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
     var _that = this;
     
     // function to create a new net layer
-    this.init = function (self_id, port, GW_addr, done_CB) {
+    this.init = function (self_id, port, done_CB) {
    
         self_id = self_id || VAST_ID_UNASSIGNED;
         port = port || VON_DEFAULT_PORT;
-                        
-        LOG.debug('VON_peer init called, self_id: ' + self_id + ' port: ' + port);
-                                
+                                                        
         // create new layer
-        _msg_handler = new msg_handler(self_id, port, function (local_addr) {
+        var handler = new msg_handler(self_id, port, function (local_addr) {
         
             // NOTE: this will cause initStates() be called
-            _msg_handler.addHandler(_that);
-        
-            // store gateway address, ensure input conforms to internal data structure
-            // NOTE: need to do it here, as _storeMapping is not effective after addHandler calls initStates            
-            var addr = new VAST.addr();
-            addr.parse(GW_addr);                        
-            _storeMapping(VAST_ID_GATEWAY, GW_addr);       
+            handler.addHandler(_that);
 
-            LOG.warn('VON_peer init: gateway set to: ' + addr.toString());
-
-            // store callback after gateway response
-            _init_done_CB = done_CB;            
-            
-            // send PING to gateway to learn of my id
-            if (self_id === VAST_ID_UNASSIGNED)
-                _sendMessage(VAST_ID_GATEWAY, VON_Message.VON_PING, {request: true}, VAST.priority.HIGHEST);
-            else
-                _setInited();
+            // notify done
+            if (typeof done_CB === 'function')
+                done_CB(local_addr);            
         });
     }
     
@@ -185,10 +170,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
             // NOTE: if VON peer is used with other nodes, stopping server here will impact other nodes as well
             _msg_handler.close();
             _msg_handler = undefined;                    
-        }            
-        
-        _self = undefined;
-        
+        }
         _state = VAST.state.ABSENT;        
     }
     
@@ -208,13 +190,8 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
     }
     
     // join a VON network with a given aoi 
-    var _join = this.join = function (aoi, done_CB) {
-        
-        if (_state === VAST.state.ABSENT) {
-            LOG.error('VON_peer.join(): node not yet init');
-            return;
-        }
-                
+    var _join = this.join = function (GW_addr, aoi, done_CB) {
+                        
         // check if already joined
         if (_state === VAST.state.JOINED) {
             LOG.warn('VON_peer.join(): node already joined');
@@ -223,49 +200,32 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
             return;
         }
 
-        LOG.debug('VON_peer join() called');
-                     
+        LOG.debug('VON_peer join() called, self: ' + _self.id + ' getID: ' + _getID());
+        
+        // store gateway address, ensure input conforms to internal data structure
+        // NOTE: need to do it here, as _storeMapping is not effective after addHandler calls initStates            
+        var addr = new VAST.addr();
+        addr.parse(GW_addr);                        
+        _storeMapping(VAST_ID_GATEWAY, addr);       
+        LOG.warn('gateway set to: ' + addr.toString());
+    
+        // store initial aoi
+        _self.aoi.update(aoi);       
+        
         // change internal state
         _state = VAST.state.JOINING; 
                 
         // keep reference to call future once join is completed
         _join_done_CB = done_CB;
-        
-        // set self AOI
-        _self.aoi.update(aoi);
 
-        // update address info for self
-        var addr = _msg_handler.getAddress();
-        _self.endpt = new VAST.endpt(addr.host, addr.port);
-
-        // store self node to neighbor map
-        _insertNode(_self);
-        
-        // if I'm gateway, no further action required
-        // TODO: doesn't look clean, can gateway still send query request to itself?
-        //       that'll be a more general process
-        //       (however, will deal with how to determined 'already joined' for gateway)
-        if (_self.id === VAST_ID_GATEWAY)
-            return _setJoined();
-                    
-        // build node info for acceptor to contact back (from _self)
-        var joiner = new VAST.node();
-        
-        //LOG.debug('joiner (before): ' + joiner.toString());
-        
-        joiner.update(_self);
-        joiner.aoi.center = aoi.center;
-                
-        //LOG.debug('joiner (after): ' + joiner.toString());
-        LOG.debug('joiner: ' + joiner.toString());
-        
-        // send out query request first to find acceptor
-        _query(VAST_ID_GATEWAY, aoi.center, VON_Message.VON_JOIN, joiner);
-                
-        // TODO: if id is not correct, remote host will send back correct one        
-        //_sendMessage(VAST_ID_GATEWAY, VON_Message.VON_QUERY, _self, VAST.priority.HIGHEST);        
+        // if id is empty, send PING to gateway to learn of my id first
+        // otherwise attempt to join by contacting gateway
+        if (_getID() === VAST_ID_UNASSIGNED)
+            _sendMessage(VAST_ID_GATEWAY, VON_Message.VON_PING, {request: true}, VAST.priority.HIGHEST);
+        else
+            _setInited();
     }
-    
+        
     // leave the VON network
     var _leave = this.leave = function () {
 
@@ -291,17 +251,19 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
         // clean data structure
         _initStates();
         
+        /*
         // remove ticking interval
         // TODO: remove js-specific code or collect them
         if (_interval_id !== undefined) {
             clearInterval(_interval_id);
             _interval_id = undefined;
         }
+        */
     }    
 
     // move the AOI to a new position (or change radius)    
     var _move = this.move = function (aoi, sendtime) {
-        LOG.debug('VON_Peer moving to: ' + aoi.center.toString());
+        //LOG.warn('VON_Peer moving to: ' + aoi.center.toString());
 
         try {
             if (typeof aoi.radius === 'string')
@@ -397,7 +359,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
     // store a app-specific data along with the node (will pass during node discovery)                      
     var _put = this.put = function (obj) {
         _meta = obj;
-        LOG.warn('after put() meta keys: ' + Object.keys(_meta).length);
+        LOG.debug('after put() meta keys: ' + Object.keys(_meta).length);
         
         // update to self (so that it can be sent over)
         _self.meta = _meta;
@@ -405,7 +367,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
     
     // retrieve app-specific data for this node
     var _get = this.get = function () {
-        LOG.warn('get() meta keys: ' + Object.keys(_meta).length);    
+        LOG.debug('get() meta keys: ' + Object.keys(_meta).length);    
         return _meta;
     }
     
@@ -599,6 +561,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
     //
     
     // the master function for all things regular
+    /*
     var _tick = function () {
     
         //_sendKeepAlive();
@@ -611,33 +574,47 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
             LOG.error('tick error:\n' + e.stack);
         }
     }
+    */
+    
+    // self creation once self ID is obtained
+    var _setInited = function () {
+    
+        // update id & address info for self (we need valid self address for acceptor to contact)
+        _self.id = _getID();
+        var addr = _msg_handler.getAddress();
+        _self.endpt = new VAST.endpt(addr.host, addr.port);
+
+        LOG.warn('init myself as ' + _self.toString());        
+        
+        // store self node to neighbor map
+        _insertNode(_self);
+        
+        // if I'm gateway, no further action required
+        // TODO: doesn't look clean, can gateway still send query request to itself?
+        //       that'll be a more general process
+        //       (however, will deal with how to determined 'already joined' for gateway)
+        if (_self.id === VAST_ID_GATEWAY)
+            _setJoined();
+        else
+            // send out query request first to find acceptor
+            _query(VAST_ID_GATEWAY, _self.aoi.center, VON_Message.VON_JOIN, _self);
+    }
     
     // set current node to be 'joined'
+    // NOTE: should not do other init stuff (such as insert self to neighbor list) here
+    //       otherwise VON_NODE message may be incorrectly processed
     var _setJoined = function () {
     
         _state = VAST.state.JOINED;
-
-        // notify callback
+        
+        // notify join is done
         if (typeof _join_done_CB === 'function')
             _join_done_CB(_self.id);         
             
         // start ticking
-        _interval_id = setInterval(_tick, TICK_INTERVAL);
+        //_interval_id = setInterval(_tick, TICK_INTERVAL);
     }
-    
-    // set current node to be 'init'
-    var _setInited = function () {
         
-        _state = VAST.state.INIT;
-        
-        // NOTE: other fields (endpt, aoi, time) may be empty at this point
-        _self = new VAST.node(_getID());
-                
-        // notify done
-        if (typeof _init_done_CB === 'function')
-            _init_done_CB(_self.id);            
-    }
-    
     var _sendKeepAlive = function () {
     
         // simply move a little to indicate keepalive
@@ -694,7 +671,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
 
             // if the neighbor is relevant and we insert it successfully
             // NOTE that we're more tolerant for AOI buffer when accepting notification
-            if (_isRelevantNeighbor (node, _self)) {
+            if (_isRelevantNeighbor(node, _self)) {
                         
                 LOG.debug('[' + node.id + '] is relevant to self [' + _self.id + ']');
                                 
@@ -715,8 +692,8 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
                 
                 // NOTE: even if en_list is empty, should still send out HELLO
                 // empty can occur if initially just two nodes with overlapped positions
-                _sendHello(target);
-                _sendEN(target);
+                //_sendHello(target);
+                //_sendEN(target);
             }
         }
 
@@ -725,8 +702,14 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
             _voro.remove(new_list[i]);
             
         // insert new neighbors
-        for (var i=0; i < relevant_neighbors.length; i++)
+        for (var i=0; i < relevant_neighbors.length; i++) {
             _insertNode(relevant_neighbors[i]);
+            
+            // NOTE: even if en_list is empty, should still send out HELLO
+            // empty can occur if initially just two nodes with overlapped positions            
+            _sendHello(relevant_neighbors[i].id);
+            _sendEN(relevant_neighbors[i].id);
+        }
         
         // NOTE: erase new neighbors seems to bring better consistency 
         //       (rather than keep to next round, as in previous version)
@@ -868,11 +851,18 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
     
     // remove neighbors no longer in view
     var _removeNonOverlapped = function () {
-
-        //vector<id_t> delete_list;
-        var delete_list = [];
         
         var now = UTIL.getTimestamp ();
+        
+        // check if we should perform check (should check no more than once per second)
+        if ((now - _lastRemoveNonOverlapped) < 1000)
+            return 0;
+            
+        // update check time
+        _lastRemoveNonOverlapped = now;
+
+        // prepare neighbor list to remove
+        var delete_list = [];
         
         // wait time in milliseconds
         var grace_period = now + (MAX_DROP_SECONDS * 1000);
@@ -937,7 +927,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
     // list:     a list of id to be sent
     var _sendHello = function (target) {
                     
-        LOG.debug('sendHello target: ' + target);
+        //LOG.warn('[' + _self.id + '] sendHello to [' + target + ']');
         
         var node = _getNode(_self.id);
      
@@ -946,7 +936,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
         // add app-specific attributes, if exist 
         // TODO: find a cleaner way (for example, meta already exists in the node returned by getNode)
         if (Object.keys(_meta).length > 0) {
-            LOG.warn('storing meta keys ' + Object.keys(_meta).length + ' to node to be sent for VON_HELLO');
+            LOG.debug('storing meta keys ' + Object.keys(_meta).length + ' to node to be sent for VON_HELLO');
             node.meta = _meta;
         }
         
@@ -990,30 +980,71 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
     // handlers for incoming messages, connect/disconnect
     //
     
+    // new ID assignment
+    var _new_ID = undefined;     
+    var _assignNewID = function () {
+
+        // we use our own ID as first
+        // NOTE if we start with VAST_ID_UNASSIGNED (0) then first ID will be 1
+        if (_new_ID === undefined)
+            _new_ID = _getID() + 1;
+            
+        LOG.warn('new ID assigned: ' + _new_ID); 
+        return _new_ID++;
+    }
+    
     var _packetHandler = this.packetHandler = function (from_id, pack) {
     
-        // if node is not initiated, do not process any message, unless it's a PING response
-        if (_state < VAST.state.INIT) {   
+        // if node is not joined, do not process any message, unless it's response for
+        // getting ID (VON_PING) or neighbor list (VON_NODE) or handshake (VON_HELLO)
+        // NOTE: it's possible for VON_HELLO to arrive earlier than VON_NODE
+        /*
+        if (_state < VAST.state.JOINED) {   
 
-            if (pack.type !== VON_Message.VON_PING) {
-                LOG.error('VON_peer: node not yet init, should not process any messages');                
+            if (pack.type !== VON_Message.VON_PING && 
+                pack.type !== VON_Message.VON_NODE &&
+                pack.type !== VON_Message.VON_HELLO) {
+                LOG.error('VON_peer: node not yet joined, should not process any messages');                
                 return false;
             }
-            
-            _setInited(); 
+        }
+        */
+        
+        if (_self.id === VAST_ID_UNASSIGNED && pack.type !== VON_Message.VON_PING) {
+            LOG.error('VON_peer: node not yet init (got unique ID), should not process any messages');
+            return false;        
         }
         
-        LOG.debug('[' + _self.id + '] ' + VON_Message_String[pack.type] + ' from [' + from_id + '], neighbor size: ' + Object.keys(_neighbors).length);        
+        LOG.debug('[' + _self.id + '] ' + VON_Message_String[pack.type] + ' from [' + from_id + '], neighbor size: ' + Object.keys(_neighbors).length);
 
         switch (pack.type) {
 
             // VON's ping, to check if a connected host is still alive          
             case VON_Message.VON_PING: {
-            
+                        
                 // check if it's a request, respond to it
                 if (typeof pack.msg.request !== 'undefined' && pack.msg.request == true) {
-                    LOG.warn('VON_PING receive request, simply respond');
-                    _sendMessage(from_id, VON_Message.VON_PING, {request: false}, VAST.priority.HIGH, true);
+                
+                    // if remote id is not yet assigned, assign new one
+                    var remote_id = _assignNewID();
+                    LOG.warn('assign new ID [' + remote_id + '] to [' + from_id + ']');                        
+                    
+                    // check if this is the first ever ID assigned by me
+                    // if so, then I'm likely the gateway (my ID is also unassigned yet)
+                    if (_self.id === VAST_ID_UNASSIGNED) {
+                        LOG.warn('first ID assigned, likely I am the gateway');
+                        _self.id = remote_id;
+                    }
+                                
+                    //LOG.warn('VON_PING receive request, simply respond');
+                    _sendMessage(from_id, VON_Message.VON_PING, {request: false, aid: remote_id}, VAST.priority.HIGH, true);
+                }
+                // otherwise we got a response from gateway, set my ID, can now send join request
+                else if (_self.id === VAST_ID_UNASSIGNED) {
+                    var assigned_id = parseInt(pack.msg.aid);
+                    LOG.debug('assigned_id: ' + assigned_id);
+                    _setID(assigned_id);                    
+                    _setInited();               
                 }
             }
             break;
@@ -1029,17 +1060,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
                 // find the node closest to the joiner
                 var closest = _voro.closest_to(pos);
                 LOG.debug('closest node: ' + closest + ' (' + typeof closest + ')');
-    
-                // TODO: should generate a VON_JOIN directly to self
-                /*
-                // if this is gateway receiving its own request
-                if (closest === VAST_ID_UNASSIGNED && Object.keys(_neighbors).length === 1) {
-                    LOG.warn('gateway getting its own VON_QUERY, return empty list');
-                    _sendNodes (from_id, [], true);
-                    break;
-                }
-                */
-                                  
+                                      
                 // forward the request if a more appropriate node exists
                 // TODO: contains() might recompute Voronoi, isRelevantNeighbor below 
                 //       also will recompute Voronoi. possible to combine into one calculation?
@@ -1047,7 +1068,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
                     _isSelf(closest) === false &&
                     closest != from_id) {
 
-                    LOG.warn('forward VON_QUERY request to: ' + closest);
+                    //LOG.warn('forward VON_QUERY request to: ' + closest);
                     
                     // re-assign target for the query request
                     pack.targets = [];
@@ -1056,7 +1077,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
                 }                    
                 else {
 
-                    LOG.warn('accepting VON_QUERY from: ' + from_id);
+                    LOG.debug('accepting VON_QUERY from: ' + from_id);
                 
                     // I'm the acceptor, re-direct message content to self
                     pack.type = pack.msg.type;
@@ -1082,11 +1103,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
         
             // VON's join, to learn of initial neighbors
             case VON_Message.VON_JOIN: {
-            
-                // update the joiner's id (if it's a newly joined node)
-                if (pack.msg.id === VAST_ID_UNASSIGNED)
-                    pack.msg.id = from_id;
-            
+
                 // extract message
                 var joiner = new VAST.node();
                 joiner.parse(pack.msg);
@@ -1175,17 +1192,20 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
                         _new_neighbors[new_node.id] = new_node;
                     }
                 } // end going through node list                
-                                
+
+                // process new neighbors immediately after learning new nodes
+                _contactNewNeighbors();
+                
                 // if VON_NODE is received for the first time, we're considered joined
                 if (_state === VAST.state.JOINING) {
                 
                     // process new neighbors if we just joined, 
                     // otherwise, do this periodically & collectively during tick                                
-                    _contactNewNeighbors();
+                    //_contactNewNeighbors();
                 
                     // NOTE: we don't notify join success until neighbor list is processe
                     //       so that upon join success, the client already has a list of neighbors
-                    _setJoined();     
+                    _setJoined();
                 }                
             }
             break;            
@@ -1203,7 +1223,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
                     
                 // store meta data, if any
                 if (pack.msg.hasOwnProperty('meta') && typeof pack.msg.meta === 'object') {
-                    LOG.warn('VON_HELLO storing to node meta keys: ' + Object.keys(pack.msg.meta).length);
+                    LOG.debug('VON_HELLO storing to node meta keys: ' + Object.keys(pack.msg.meta).length);
                     node.meta = pack.msg.meta;
                 }
                     
@@ -1246,7 +1266,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
                     
                     // store meta data, if any
                     if (pack.msg.hasOwnProperty('meta') && typeof pack.msg.meta === 'object') {
-                        LOG.warn('meta keys received: ' + Object.keys(pack.msg.meta).length);
+                        LOG.debug('meta keys received: ' + Object.keys(pack.msg.meta).length);
                         neighbor.meta = pack.msg.meta;
                     }
                     
@@ -1350,8 +1370,10 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
                     _req_nodes[from_id] = true;                                              
                     
                 // check for neighbor discovery 
-                // NOTE: do this only periodically during tick
-                //_checkNeighborDiscovery();
+                _checkNeighborDiscovery();
+                
+                // remove neighbors I'm no longer interested
+                _removeNonOverlapped();
             }
             break;            
             
@@ -1411,11 +1433,12 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
             _msg_handler = msg_handler;
             
             var id = _msg_handler.getID();
-            LOG.warn('VON_peer initStates called with msg_handler, id: ' + id);
+            //LOG.warn('VON_peer initStates called with msg_handler, id: ' + id);
                             
             // add convenience references
             _storeMapping = _msg_handler.storeMapping,
             _getID =        _msg_handler.getID,      
+            _setID =        _msg_handler.setID,
             _disconnect =   _msg_handler.disconnect,
             _sendMessage =  _msg_handler.sendMessage,
             _sendPack =     _msg_handler.sendPack;                
@@ -1436,6 +1459,8 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
         _updateStatus = {};
         _req_nodes = {};
         _time_drop = {};
+        
+        _lastRemoveNonOverlapped = 0;
                 
         // create an object to calculate Voronoi diagram for neighbor mangement/discovery 
         _voro = new Voronoi();
@@ -1473,15 +1498,15 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
     var _msg_handler = undefined;
         
     // convenience references
-    var _storeMapping, _getID, _disconnect, _sendMessage, _sendPack;
+    var _storeMapping, _getID, _setID, _disconnect, _sendMessage, _sendPack;
 
     //
     // internal states
     //
         
     // reference to self (NOTE: need to be initialized in init())
-    var _self;    
-          
+    var _self = new VAST.node(); 
+             
     // callback to use once join is successful
     var _join_done_CB = undefined;
 
@@ -1489,7 +1514,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
     var _init_done_CB = undefined;
     
     // interval id for removing periodic ticking
-    var _interval_id = undefined;
+    //var _interval_id = undefined;
    
     // node state definition
     var _state; 
@@ -1505,6 +1530,8 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
     var _updateStatus;              // status about whether a neighbor is: 1: inserted, 2: deleted, 3: updated
         
     var _time_drop;
+    
+    var _lastRemoveNonOverlapped;   // last timestamp when removeNonOverlapped is called
         
     // create an object to calculate Voronoi diagram for neighbor mangement/discovery 
     var _voro; 

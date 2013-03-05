@@ -3,7 +3,7 @@
 require('../common');
 
 // do not show debug
-LOG.setLevel(2);
+//LOG.setLevel(2);
 
 var server = require("./server");
 var router = require("./router");

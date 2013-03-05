@@ -26,7 +26,6 @@
     supported functions:
     
     // basic callback / structure
-    settings = {port};
     pos  = {x, y}
     addr = {host, port}
     area = {pos, radius}
@@ -38,7 +37,7 @@
     recv_CB(msg)                        // callback to receive any messages
     
     // constructor
-    VAST(recv_CB, settings, GW_addr)
+    VAST(recv_CB, GW_addr)
     
     // basic functions
     subscribe(layer, area, sub_CB)      subscribe for an area at a given layer
@@ -79,7 +78,7 @@ var TIMEOUT_SUBSCRIBE       = (5);        // number of seconds before re-attempt
 
 //var TIMEOUT_REMOVE_GHOST  = (5);        // # of seconds before removing ghost objects at clients
 
-function VAST_client(recv_callback, settings, GW_addr) {
+function VAST_client(recv_callback, GW_addr) {
 
     // callback to notify subscribed messages received
     var _recv_CB = recv_callback;

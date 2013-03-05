@@ -26,29 +26,29 @@
     
     // basic callback / structure
     addr = {host, port}
-    CB_receive(id, msg)
-    CB_connect(id)
-    CB_disconnect(id)
+    onReceive(id, msg)
+    onConnect(id)
+    onDisconnect(id)
     
     // constructor
-    vast_net(CB_receive, CB_connect, CB_disconnect);
+    vast_net(onReceive, onConnect, onDisconnect);
     
     // basic functions
-    storeMapping(id, addr)      store mapping from id to a particular host IP/port
-    setID(new_id, old_id)       set self ID or change the id -> socket mapping for incoming connections
-    getID()                     get self ID (which may be assigned by remote host)
-    send(id, msg, is_reliable)  send a message to a target 'id'
-    listen(port, CB_done)       start a server at a given 'port', port binded is returned via 'CB_done', 0 indicates error
-    close()                     close a server
-    disconnect(id)              disconnect connection to a remote node
-    
+    storeMapping(id, addr)              store mapping from id to a particular host IP/port
+    setID(new_id, old_id)               set self ID or change the id -> socket mapping for incoming connections
+    getID()                             get self ID (which may be assigned by remote host)
+    send([id], msg, reliable, onDone)   send a message to a target 'id', initiate connection as needed
+    listen(port, onDone)                start a server at a given 'port', port binded is returned via 'onDone', 0 indicates error
+    close()                             close a server
+    disconnect(id)                      disconnect connection to a remote node
+        
     // socket related
-    id = openSocket(addr, recv_callback);
+    id = openSocket(addr, onReceive);
     closeSocket(id);
     sendSocket(id, msg);
     
     // aux helper methods (info from physical host)
-    getHost(CB_done);
+    getHost(onDone);
     
     // state check methods
     isJoined();
@@ -62,38 +62,38 @@
         2012-07-05              first working version (storeMapping, switchID, send)
         2012-07-20              rename switchID -> setID (can set self ID)
 */
-
-//require('../common.js');
+var os = require('os');
 var l_net = require('./net_nodejs');   // implementation-specific network layer
 //var VAST_ID_UNASSIGNED = 0;
 
 //
 // input: 
-//    CB_receive(id, msg)       callback when a message is received
-//    CB_connect(id)            callback when a remote host connects
-//    CB_disconnect(id)         callback when a remote host disconnects
-//    id_generator()            generator callback to create new IDs (optional & used only at gateway)
+//    onReceive(id, msg)       callback when a message is received
+//    onConnect(id)            callback when a remote host connects
+//    onDisconnect(id)         callback when a remote host disconnects
+//    id                       optional assigned id
 //
-function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
+function vast_net(onReceive, onConnect, onDisconnect, id) {
 
     //
     // aux methods
     //
     
     // get & store local IP
-    var _localIP = undefined;
-    
+    var _localIP = '127.0.0.1';
+    //var _localIP = undefined;
+   
     // return the host IP for the current machine
-    this.getHost = function (CB_done) {
+    this.getHost = function (onDone) {
 
-        var hostname = require('os').hostname();
-        LOG.debug('getHost called, hostname: ' + hostname);
-        
         // if already available, return directly
         if (_localIP !== undefined)
-            return CB_done(_localIP);
-                    
-                    
+            return onDone(_localIP);
+    
+        var hostname = os.hostname();
+        LOG.debug('getHost called, hostname: ' + hostname);
+                                      
+        // NOTE: if network is not connected, lookup might take a long, indefinite time                       
         require('dns').lookup(hostname, function (err, addr, fam) {
             
             if (err) {
@@ -103,8 +103,8 @@ function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
             else 
                 _localIP = addr;
             
-            CB_done(_localIP);
-        })        
+            onDone(_localIP);
+        })          
     }
     
     //
@@ -112,27 +112,23 @@ function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
     //
 
     // id for myself, created by an id_generator, if available
-    var _self_id = (typeof id === 'undefined' ? VAST_ID_UNASSIGNED : id);
+    var _self_id = id || VAST_ID_UNASSIGNED;
     
     // mapping between id and address
     // TODO: clear mapping once in a while? (for timeout mapping)    
     var _id2addr = {};
     
-    // records for outgoing connections
-    var _conn = {};
-    
-    // records for sockets of incoming connections
-    // TODO: simpler approach? (store just _conn and no _sockets?)
+    // records for connections 
     var _sockets = {};
-    
-    // queue to store messages pending transmission after connection is made
+        
+    // queue to store messages pending out-transmission after connection is made
     var _msgqueue = {};
     
     // net_nodejs object for acting as server (& listen to port)
     var _server = undefined;
     
     // counter for assigning internal / local-only ids
-    // TODO: this should be removed in future
+    // TODO: this should be removed in future, or need to re-use id
     var _id_counter = (-1);
     
     // 
@@ -143,27 +139,30 @@ function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
     // NOTE: mapping stored is from logical (app-layer) id to a host/port pair
     //       *not* mapping from host_id (physical-layer) to host/port pair
     this.storeMapping = function (id, addr) {
+        LOG.debug('store mapping for [' + id + ']: ' + addr.toString());
         // simply replace any existing mapping
         _id2addr[id] = addr;        
     }
     
     // switch an existing id to socket mapping
     var l_setID = this.setID = function (new_id, old_id) {
-        //LOG.debug('replacing old_id [' + old_id + '] with new_id [' + new_id + ']');
     
         // check if setting self id
         if (old_id === undefined) {
+            LOG.warn('assigning id to net layer for 1st time: [' + new_id + ']');
             _self_id = new_id;
         }
         // rename connection ID 
         // NOTE: incoming only, as we should know the id of outgoing connections
         else if (_sockets.hasOwnProperty(old_id)) {
-                   
-            _sockets[new_id] = _sockets[old_id];
-            delete _sockets[old_id];
             
-            // set new ID for socket (very important for future incoming messages)
-            _sockets[new_id].id = new_id;
+            LOG.debug('replacing old_id [' + old_id + '] with new_id [' + new_id + ']');
+        
+            // set new ID for socket (very important for future incoming messages)            
+            _sockets[old_id].id = new_id;
+            
+            _sockets[new_id] = _sockets[old_id];
+            delete _sockets[old_id];                        
         }
         else
             return false;
@@ -176,99 +175,96 @@ function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
         return _self_id;
     }
     
-    // send a message to an id
-    var l_send = this.send = function (id, msg, is_reliable) {
-    
-        // default is reliable TCP transmission
-        if (is_reliable === undefined)
-            is_reliable = true;
-            
-        // actually sending the message (attaching '\n' to indicate termination)
-        var send_msg = function (message) {
-
-            LOG.debug('[' + _self_id + '] send_msg to [' + id + ']: ');
-            LOG.debug(message);
-        
-            // if I'm a server, send via one of the recorded sockets
-            if (_server !== undefined && _sockets.hasOwnProperty(id)) {
-                //LOG.debug('send to in conn [' + id + ']');
-                _server.send(message + '\n', _sockets[id]);
-            }
-            // if the target is available on an out-going channel
-            else if (_conn.hasOwnProperty(id)) {
-                //LOG.debug('send to out conn [' + id + ']');
-                _conn[id].send(message + '\n');
-            }
-            // otherwise I should have a connection mapping
-            else {
-                LOG.error('no mapping exists for send target id: ' + id);
-                return false;
-            }
-            
-            return true;
-        }
-    
-        // check if connections exist, if not then start to connect
-        if (_sockets.hasOwnProperty(id) === true)
-            return send_msg(msg);
-            
-        if (_conn.hasOwnProperty(id) === true) {
-        
-            // for outgoing connections, check if establish, if not then queue
-            if (_conn[id].isConnected() === true)
-                return send_msg(msg);
-            
-            // store message to queue
-            LOG.debug('storing msg to msgqueue [' + id + '] msg: ' + msg);
-            _msgqueue[id].push(msg);
-            return true;
-        }
-             
-        // check for id to address mapping
-        if (_id2addr.hasOwnProperty(id) === false) {
-            LOG.error('no send target address info for id: ' + id); 
+    // actually sending the message (attaching '\n' to indicate termination)
+    // send all messages in pending queue
+    var l_sendPendingMessages = function (id) {
+                
+        // no messages to send
+        if (_msgqueue.hasOwnProperty(id) === false || _msgqueue[id].length === 0)
+            return;
+                
+        // if target id does not exist, indicate error
+        if (_sockets.hasOwnProperty(id) === false) {
+            LOG.error('socket not connected for send target id: ' + id);
             return false;
         }
-        
-        // create queue for new socket
-        _msgqueue[id] = [];
-        _msgqueue[id].push(msg);
                 
-        // create a new socket
-        _conn[id] = new l_net(
+        var socket = _sockets[id];
+                
+        var list = _msgqueue[id];
+        
+        // send out pending messages
+        //LOG.debug('[' + _self_id + '] l_sendPendingMessages to [' + id + '], msgsize: ' + list.length);
+        
+        for (var i=0; i < list.length; i++) {
+        
+            try {                                  
+                socket.write(list[i] + '\n');
+            }
+            catch (e) {
+                LOG.debug('l_sendPendingMessages fail: ' + list[i]);
+                if (typeof onError === 'function')
+                    onError('send');            
+                return false;
+            }        
+        }
+                                      
+        // clear queue
+        _msgqueue[id] = [];                          
+        return true;
+    }
+    
+    // make a connection to a target id
+    var l_connect = function (id) {
+
+        // check if id to address mapping exist
+        //LOG.debug('mapping: ');
+        //LOG.debug(_id2addr);
+        
+        if (_id2addr.hasOwnProperty(id) === false) {
+            LOG.error('no send target address info for id: ' + id); 
+            return;
+        }
+    
+        // create a new out-going connection if not exist        
+        var conn = new l_net(
             
             // receive callback
             _processData, 
             
             // connect callback
+            // NOTE: there will be a time gap between send() returns and when connect callbacak is called
+            // therefore it's possible more messages have been sent to this endpoint before
+            // the connect event is ever called
             function (socket) {
                 LOG.debug('[' + id + '] connected');
                 
                 // store id to socket, so we can identify the source of received messages
                 socket.id = id;
-                                               
-                // notify remote host of my id
-                // TODO: replace with binary handshake (for efficiency)
-                //_conn[id].send(_self_id + '\n');
-                // DEBUG: when connections are made quickly, it's possible at this stage
-                //        _conn[id] is not yet initialized so need to write directly
-                //        however, calling 'write' here does not look clean
-                socket.write(_self_id + '\n');
                 
+                // store to socket list
+                _sockets[id] = socket;
+                if (id < 0) {
+                    LOG.error('connected socket id < 0: ' + id);
+                }
+                                                
                 // notify connection
-                if (typeof CB_connect === 'function')
-                    CB_connect(id);
-                   
-                // send out pending messages
-                if (_msgqueue.hasOwnProperty(id)) {
-                    var list = _msgqueue[id];
-                    LOG.debug('msgqueue size for [' + id + ']: ' + list.length);
-                    for (var i=0; i < list.length; i++)
-                        send_msg(list[i]);
-                 
-                    // clear queue
+                if (typeof onConnect === 'function')
+                    onConnect(id);
+                
+                // create queue for new socket if not exist
+                // TODO: investigate why this happens (msgqueue should've already been init before this)
+                // unless, a disconnect for this 'id' has occured
+                // (so that means, before a new connection is made, another connection with the same remote host
+                //  has been disconnected)
+                if (_msgqueue.hasOwnProperty(id) === false) { 
+                    var mq_size = Object.keys(_msgqueue).length;
+                    var s_size = Object.keys(_sockets).length;
+                    LOG.error('[' + _self_id + '] msgqueue has no target [' + id + ']. should not happen, mq: ' + mq_size + ' sock: ' + s_size);
                     _msgqueue[id] = [];
-                }    
+                }
+                                                
+                l_sendPendingMessages(id);                    
             },
             
             // disconnect callback
@@ -278,9 +274,15 @@ function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
                 // remove id
                 delete socket.id;
                 
+                // remove from socket list
+                delete _sockets[id];
+                
+                // remove all pending messages
+                delete _msgqueue[id];
+                
                 // notify disconnection
-                if (typeof CB_disconnect === 'function')
-                    CB_disconnect(id);                
+                if (typeof onDisconnect === 'function')
+                    onDisconnect(id);                
             },
 
             // error callback
@@ -290,32 +292,102 @@ function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
         );
         
         // make connection
-        _conn[id].connect(_id2addr[id]); 
+        // NOTE: send will return immediately, so the actual send may not occur until later
+        // it's possible that after returning, upper layer starts to send messages
+        conn.connect(_id2addr[id]); 
                     
         return true;
+    
+    }
+    
+    // send a message to an id
+    var l_send = this.send = function (id_list, pack, is_reliable, onDone) {
+                
+        // default is reliable TCP transmission
+        is_reliable = is_reliable || true;
+
+        // attach sender id to message
+        pack.src = _self_id;
+    
+        // serialize string
+        var encode_str = JSON.stringify(pack);
+        
+        var target_list = ''; 
+        
+        // go through each target id to send 
+        for (var i=0; i < id_list.length; i++) {
+            var id = id_list[i];
+            
+            // check if there's existing connection, or id to address mapping            
+            target_list += (id + ',');
+                              
+            // check if it's a self message
+            if (id === _self_id) {      
+            
+                LOG.warn('send message to self [' + _self_id + ']');
+                // pass message to upper layer for handling
+                if (typeof onReceive === 'function') {                                    
+                    onReceive(_self_id, pack);
+                }    
+                continue;
+            }
+                              
+            // store message to queue
+            // create queue for connection if not exist
+            if (_msgqueue.hasOwnProperty(id) === false)
+                _msgqueue[id] = [];        
+                        
+            _msgqueue[id].push(encode_str);        
+                    
+            // if connections already exists, send directly, otherwise establish new connection 
+            if (_sockets.hasOwnProperty(id))
+                l_sendPendingMessages(id);
+            else {
+                var str = '';
+                var unknown_count = 0;
+                for (var s in _sockets) {
+                    str += (_sockets[s].id + ' ');
+                    if (_sockets[s].id < 0)
+                        unknown_count++;
+                }
+                
+                var sock_size = Object.keys(_sockets).length;
+                if (unknown_count > 5) {
+                    LOG.warn('[' + _self_id + '] attempts to connect to [' + id + '] sock_size: ' + sock_size);
+                    //LOG.warn(str);
+                }
+                l_connect(id);
+            }
+        }
+        
+        LOG.debug('[' + _self_id + '] SEND to [' + target_list + ']: ' + encode_str);                
     }
     
     // start a server at a given port
-    this.listen = function (port, CB_done) {
+    this.listen = function (port, onDone) {
     
         if (port === undefined || port < 0 || port >= 65536) {
             LOG.error('port not provided, cannot start listening');
-            if (typeof CB_done === 'function')
-                CB_done(0);
+            if (typeof onDone === 'function')
+                onDone(0);
             return;
         }
     
         // open server 
         _server = new l_net(
             // receive callback
-            _processData, 
+            _processData,
             
             // connect callback
             function (socket) {
+            
+                //LOG.warn('new socket connected, id: ' + socket.id);
 
                 // check if id doesn't exist, indicate it's unassigned
-                if (typeof socket.id === 'undefined')
-                    socket.id = _id_counter--;                    
+                if (socket.hasOwnProperty(id) === false) {
+                    socket.id = _id_counter--; 
+                    //LOG.warn('assigning id: ' + socket.id);
+                }
                                     
                 // record this socket
                 // NOTE: this is an important step, otherwise a server will not be 
@@ -323,8 +395,8 @@ function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
                 _sockets[socket.id] = socket;
                                        
                 // notify connection
-                if (typeof CB_connect === 'function')
-                    CB_connect(socket.id);    
+                if (typeof onConnect === 'function')
+                    onConnect(socket.id);    
             },
             
             // disconnect callback
@@ -332,8 +404,8 @@ function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
                 //console.log('disconnet occur');
                 
                 // notify disconnection
-                if (typeof CB_disconnect === 'function')
-                    CB_disconnect(socket.id);
+                if (typeof onDisconnect === 'function')
+                    onDisconnect(socket.id);
             },
             
             // error callback
@@ -347,10 +419,10 @@ function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
         
             // check for success
             if (port_binded != 0) {
-                //LOG.debug('port bind successful: ' + port_binded);
+                LOG.warn('port bind successful: ' + port_binded);
                 // return the actual port binded
-                if (typeof CB_done === 'function') 
-                    CB_done(port_binded);
+                if (typeof onDone === 'function') 
+                    onDone(port_binded);
                 return;
             }
             
@@ -379,23 +451,16 @@ function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
     // remove an existing connection
     this.disconnect = function (id) {
     
-        // if id belongs to an incoming socket
         if (_sockets.hasOwnProperty(id)) {
-            LOG.debug('disconnect incoming socket for id: ' + id);
-            _sockets[id].end();
+            LOG.debug('disconnect conn id: ' + id);
+            _sockets[id].disconnect();
             delete _sockets[id];
-        }
-        else if (_conn.hasOwnProperty(id)) {
-            LOG.debug('disconnect outgoing socket for id: ' + id);
-            _conn[id].disconnect();
-            delete _conn[id];
             delete _msgqueue[id];
         }
         else {
             LOG.debug('cannot find id [' + id + '] to disconnect');        
             return false;
         }
-            
         return true;
     }
     
@@ -403,37 +468,20 @@ function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
     //
     // private methods
     //
-
-    // new ID assignment
-    var _new_ID = undefined;     
-    var _assignNewID = function (socket) {
-
-        // we use our own ID as first
-        // NOTE if we start with VAST_ID_UNASSIGNED (0) then first ID will be 1
-        if (_new_ID === undefined)
-            _new_ID = _self_id + 1;
-            
-        LOG.debug('new ID assigned for socket: ' + socket.host + ':' + socket.port); 
-        return _new_ID++;
-    }
     
 	var _processData = function (socket, data) {
         
-        //console.log('vast_net id: ' + _self_id + ' processData: ' + data);
+        //LOG.warn('processData, socket.id: ' + socket.id);
         
 		// create buffer for partially received message, if not exist
-        if (typeof socket.recv_buf === 'undefined') {
-            //console.log('init recv_buf');
+        if (typeof socket.recv_buf === 'undefined')
             socket.recv_buf = '';
-        }
-            
+
         // store data to buffer directly first
         socket.recv_buf += data;
         
         // start loop of checking for complete messages
         while (true) {
-
-            //console.log('recv_buf: ' + socket.recv_buf);
             
 			// check if it's a complete message (termined with '\n')
             var idx = socket.recv_buf.search('\n');
@@ -442,68 +490,76 @@ function vast_net(CB_receive, CB_connect, CB_disconnect, id) {
             if (idx === (-1))
 				break;
                             
-            var str = socket.recv_buf.slice(0, idx);
-
-			// deliver this parsed data for processing
-            if (str !== undefined) {
-                //LOG.debug('str: ' + str + ' from id: ' + socket.id);
-    
-                // check if remote connection sends in its ID initially 
-                // NOTE: this check should be performed only once
-                // NOTE: as this check is before receiving new ID from remote host,
-                //       the first node joining the system will be given the gateway's ID (1)                
-                if (socket.id < VAST_ID_UNASSIGNED) {
-                    
-                    // assume the first message is remote node's id
-                    var remote_id = parseInt(str);
-                    LOG.debug('remote id: ' + remote_id);
-                    
-                    // skip message if remote_id is invalid
-                    // TODO: try to determine the cause & fix this 
-                    // NOTE: if this happens, the message is simply ignored
-                    if (isNaN(remote_id)) {
-                        LOG.error('[' + _self_id + '] remote_id is NaN, str: ' + str + ' from socket id: ' + socket.id);                              
-                    }
-                    else {
-                                       
-                        // if remote id is not yet assigned, assign new one
-                        if (remote_id === VAST_ID_UNASSIGNED) {
-                            remote_id = _assignNewID(socket);
-                            
-                            // check if this is the first ever ID assigned by me
-                            // if so, then I'm likely the gateway (my ID is also unassigned yet)
-                            if (_self_id === VAST_ID_UNASSIGNED) {
-                                LOG.warn('first ID assigned, likely I am the gateway');
-                                _self_id = remote_id;
-                            }
-                            // notify remote node of its new ID
-                            else {
-                                LOG.debug('assign new ID [' + remote_id + '] to [' + socket.id + ']'); 
-                                l_send(socket.id, remote_id);
-                            }
-                        }
-                    
-                        l_setID(remote_id, socket.id);
-                    }                        
-                }                
-                // check if the message is a new ID assignment for me
-                // NOTE: we assume the first message received is new id
-                else if (_self_id === VAST_ID_UNASSIGNED) {
-                    
-                    var assigned_id = parseInt(str);
-                    LOG.debug('assigned_id: ' + assigned_id);
-                    _self_id = assigned_id;
-                }           
-                // otherwise is a real msg, notify custom callback of incoming data (if provided)
-                else if (typeof CB_receive === 'function') {                    
-                    //LOG.debug('recv from [' + socket.id + '] str: ' + str);
-                    
-                    // TODO: queue-up message to be processed later?
-                    CB_receive(socket.id, str);
-                }
-            }
-			// update buffer
+            // get new message and update buffer
+            var str = socket.recv_buf.slice(0, idx);                       
             socket.recv_buf = socket.recv_buf.substr(idx + 1);
+            
+			// deliver this parsed data for processing
+            if (str === undefined) {
+                LOG.error('str is undefined, recv_buf: ' + socket.recv_buf + ' from id: ' + socket.id);
+                continue;
+            }
+            
+            // unpack packet        
+            var pack;
+            
+            try {
+                // convert msg back to js_obj
+                pack = JSON.parse(str);
+            }
+            catch (e) {
+                LOG.error('msgHandler: convert to js_obj fail: ' + e + ' str: ' + str);
+                continue;
+            }
+            
+            // if pack is invalid
+            if (pack.hasOwnProperty('src') === false ||
+                pack.hasOwnProperty('type') === false || 
+                pack.hasOwnProperty('msg') === false) {
+                LOG.error('[' + _self_id + '] invalid packet to process: ' + str);
+                continue;
+            }
+            
+            LOG.debug('RECV from [' + pack.src + ']: ' + str);            
+
+            if (socket.hasOwnProperty('id') === false) {
+                LOG.warn('socket has not id assigned yet...assigning: ' + pack.src);
+                socket.id = parseInt(pack.src);
+            }
+            
+            var remote_id = socket.id;
+            
+            // check if remote connection sends in its ID initially 
+            // NOTE: this check should be performed only once
+            // NOTE: as this check is before receiving new ID from remote host,
+            //       the first node joining the system will be given the gateway's ID (1)                
+            if (remote_id < VAST_ID_UNASSIGNED) {
+            
+                var sender_id = parseInt(pack.src);
+                                
+                LOG.debug('[' + _self_id + '] learns sender id: ' + sender_id);
+                                    
+                // if ID exists, then there's already an established connection                
+                if (_sockets.hasOwnProperty(sender_id) === true) {
+                    LOG.warn('[' + _self_id + '] redundent socket already exists: ' + sender_id);
+                    
+                    // disconnect remote host
+                    // however, message still needs to deliver
+                    //socket.end();
+                }
+
+                // store the remote ID as remote host's socket ID
+                else if (sender_id !== VAST_ID_UNASSIGNED) {
+                    l_setID(sender_id, socket.id);
+                    remote_id = sender_id;
+                }                               
+            }                           
+
+            // pass message to upper layer for handling
+            if (typeof onReceive === 'function') {                                    
+                // TODO: queue-up message to be processed later?
+                onReceive(remote_id, pack);
+            }            
         }
     };
         
