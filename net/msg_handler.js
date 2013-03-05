@@ -54,6 +54,7 @@
     // accessors
     getAddress      get locally detected & binded network address
     getID           get unique ID for the net layer
+    setID           set unique ID for the net layer
            
     history:
         2012-10-03              initial version 
@@ -129,9 +130,7 @@ function msg_handler(l_self_id, l_listen_port, l_onDone) {
             priority);
             
         pack.targets.push(target);
-        
-        //console.log('_net: ' + _net + ' target: ' + target);
-        
+                
         // convert pack to JSON or binary string
         return _that.sendPack(pack, is_reliable);
     }    
@@ -142,22 +141,11 @@ function msg_handler(l_self_id, l_listen_port, l_onDone) {
         // do nothing is target is empty
         if (pack.targets.length === 0)
             return;
-    
-        // serialize string
-        var encode_str = JSON.stringify(pack);
-                      
+                          
         // go through each target and send        
-        // TODO: optimize so only one message is sent to each physical host target        
-        var to_list = '';
-        var self_id = _net.getID();
-        
-        for (var i=0; i < pack.targets.length; i++)  {        
-    
-            _net.send(pack.targets[i], encode_str, is_reliable);            
-            to_list += (pack.targets[i] + ',');
-        }
-            
-        LOG.debug('SEND to [' + to_list + ']: ' + encode_str);
+        // TODO: optimize so only one message is sent to each physical host target                
+        //for (var i=0; i < pack.targets.length; i++)
+        _net.send(pack.targets, pack, is_reliable);            
     }
         
     // store a network id to address mapping
@@ -184,7 +172,13 @@ function msg_handler(l_self_id, l_listen_port, l_onDone) {
     this.getID = function () {
         return _net.getID();
     }
-           
+
+    // set self ID to net layer
+    this.setID = function (id) {
+        return _net.setID(id);
+    }
+
+    
     //
     //  private methods (internal usage, some are replacable at inherted class)
     //
@@ -204,28 +198,8 @@ function msg_handler(l_self_id, l_listen_port, l_onDone) {
     //       as they need to occupy memory independently for each msg handler instance
             
     // handler for incoming messages
-    var _packetHandler = function (from_id, msg) {
-                        
-        // prevent processing invalid msg
-        // NOTE: we allow for empty message (?) such as VON_DISCONNECT
-        if (msg == '' || msg === null || msg === undefined) {
-            LOG.error('msgHandler: invalid msg from [' + from_id + '], skip processing');
-            return;
-        }
-    
-        LOG.debug('RECV from [' + from_id + ']: ' + msg);
-    
-        var pack;
-        
-        try {
-            // convert msg back to js_obj
-            pack = JSON.parse(msg);
-        }
-        catch (e) {
-            LOG.error('msgHandler: convert to js_obj fail: ' + e + ' msg: ' + msg);
-            return;
-        }
- 
+    var _packetHandler = function (from_id, pack) {
+                                 
         // go through each packet handler and see which will handle it
         for (var i=0; i < _handlers.length; i++) {
             if (typeof _handlers[i].packetHandler === 'function') 
@@ -233,9 +207,9 @@ function msg_handler(l_self_id, l_listen_port, l_onDone) {
                     // successfully handle incoming packet, return
                     return true; 
                 }
-        }        
+        }
      
-        LOG.error('no packet handler for message type: ' + pack.type + ' msg: ' + msg);         
+        LOG.error('[' + _net.getID() + '] no packet handler for packet: ' + JSON.stringify(pack));
         return false;
     }    
     
@@ -267,7 +241,7 @@ function msg_handler(l_self_id, l_listen_port, l_onDone) {
     LOG.debug('msg_handler init, l_self_id: ' + l_self_id);
     
     // create new net layer if does not exist
-    LOG.warn('creating new VASTnet... net: ' + typeof _net);
+    //LOG.warn('creating new VASTnet... net: ' + typeof _net);
     
     // create network layer & start listening
     // NOTE: internal handlers must be defined before creating the VAST.net instance        

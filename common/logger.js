@@ -12,16 +12,23 @@ var _red = '\033[31m';
 var _white = '\033[m';
 var _yellow = '\033[33m';
 
-var _ERR = _red + 'ERR -';
-var _ERREND = _white;
-
-var _WARN = _yellow + '-';
+var _ERR = _red;
+var _ERREND = _white
+var _WARN = _yellow;
 
 function logger() {
 
+    var currDate = new Date();
+    var dateStr = '-' + currDate.getHours() + ':' + currDate.getMinutes() + '- ';
+    
     // by default we display all 
     var _level = 3;
 
+    // convert obj to msg
+    var _convert = function (obj) {	    
+	    return (typeof obj === 'object' ? JSON.stringify(obj, null, 4) : obj);
+    }    
+    
     // set log level: 1 (error only), 2 (warning), 3 (debug)
     this.setLevel = function (level) {
         if (level <= 0 || level > 3) {
@@ -29,22 +36,25 @@ function logger() {
             return;
         }        
         _level = level;
-        this.debug('set error level to be: ' + level);
+        console.log('set error level to be: ' + level);
     }
     
     this.debug = function (msg) {
+        msg = _convert(msg);    
         if (_level >= 3)
-            console.log(msg);
+            console.log(dateStr + msg);
     }
 
     this.warn = function (msg) {
+        msg = _convert(msg);    
         if (_level >= 2)
-            console.log(_WARN + msg + _ERREND);
+            console.log(_WARN + dateStr + msg + _ERREND);
     }
 
     this.error = function (msg) {
+        msg = _convert(msg);    
         if (_level >= 1)
-            console.log(_ERR + msg + _ERREND);
+            console.log(_ERR + dateStr + msg + _ERREND);
     }
     
     this.stack = function () {

@@ -1,3 +1,4 @@
+
 /*
     test for many VON_peer
 
@@ -56,22 +57,22 @@ var VONnode = function (num, GWaddr, radius) {
 
     // create GW or a connecting client;
     var peer = new VON.peer();
-    var aoi  = new VAST.area(new VAST.pos(pos.x, pos.y), radius);
+    var aoi  = new VAST.area(new VAST.pos(Math.floor(pos.x), Math.floor(pos.y)), radius);
                 
     // perform movement
     var moveNode = function () {
         
         var new_pos = movement.getpos(num-1);
-        aoi.center.x = new_pos.x;
-        aoi.center.y = new_pos.y;
+        aoi.center.x = Math.floor(new_pos.x);
+        aoi.center.y = Math.floor(new_pos.y);
         
         LOG.debug('node num: ' + num + ' moves to ' + aoi.center);
         peer.move(aoi);
     }
         
-    peer.init(VAST_ID_UNASSIGNED, port, GWaddr, function () {
+    peer.init(VAST_ID_UNASSIGNED, port, function () {
     
-        peer.join(aoi,
+        peer.join(GWaddr, aoi,
     
             // done callback
             function (id) {
@@ -102,7 +103,7 @@ var createNode = function () {
     
     // see if we want to create more
     if (nodes_created < node_size)
-        setTimeout(createNode, 500);
+        setTimeout(createNode, 1000);
 }
 
 LOG.debug('creating ' + node_size + ' nodes @ host: ' + gateway_addr.host + ' port: ' + gateway_addr.port);

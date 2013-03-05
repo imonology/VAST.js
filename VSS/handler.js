@@ -52,11 +52,10 @@ var _registerNode = function (pos, info, done_CB) {
     var new_node = new VON.peer();
                            
     // join in the network        
-    new_node.init(VAST_ID_UNASSIGNED, ip_port.port + _nodes_created, ip_port, function () {
+    new_node.init(VAST_ID_UNASSIGNED, ip_port.port + _nodes_created, function () {
     
         _nodes_created++;                   
-        LOG.debug('new_node (before join): ' + new_node.getSelf().toString());
-        
+
         // store node ident for ident discovery across different VSS servers
         var ident_info = {
             apikey: info.apikey,
@@ -66,13 +65,13 @@ var _registerNode = function (pos, info, done_CB) {
         
         new_node.put(ident_info);
         
-        new_node.join(aoi,
+        new_node.join(ip_port, aoi,
         
             // done callback
             function (self_id) {
                                 
                 LOG.warn('\njoined successfully! id: ' + self_id + ' self id: ' + new_node.getSelf().id);
-                
+               
                 // keep track of newly joined node in internal record
                 if (_keys.hasOwnProperty(info.apikey) === false)
                     _keys[info.apikey] = {};

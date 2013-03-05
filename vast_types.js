@@ -185,7 +185,7 @@ var l_endpt = exports.endpt = function (host, port) {
     this.addr = new l_addr(host, port);
 
     this.toString = function () {
-        return 'Endpoint: host [' + this.host_id + '] ' + this.addr.toString(); 
+        return 'host [' + this.host_id + '] ' + this.addr.toString(); 
     }
     
     // update info from existing object
@@ -259,23 +259,25 @@ var l_node = exports.node = function (id, endpt, aoi, time) {
             //    this.meta = js_obj.meta;            
         }
         catch (e) {
-            console.log('node parse error: ' + e);
+            console.log('node parse error: ' + e.stack);
         }
     }
     
     // print out node info
     this.toString = function () {
         //return '[' + this.id + '] ' + this.endpt.toString() + ' ' + this.aoi.toString() + ' meta: ' + Object.keys(this.meta).length; 
-        return '[' + this.id + '] ' + this.endpt.toString() + ' ' + this.aoi.toString();
+        return '[' + this.id + ']: ' + this.endpt.toString() + ' ' + this.aoi.toString();
     }
 }
 
 
-// definition for a node
-// 'area': a vast_area object
-// 'addr': a vast_addr object
-var l_pack = exports.pack = function (type, msg, priority) {
-    
+// definition for a network packet
+// type:        number  message type 
+// msg:         string  actual message
+// priority:    number  sending priority
+// sender:      string  sender id
+var l_pack = exports.pack = function (type, msg, priority, sender) {
+        
     // the message type
     this.type = type;
     
@@ -287,6 +289,9 @@ var l_pack = exports.pack = function (type, msg, priority) {
     
     // target is a list of node IDs
     this.targets = [];    
+    
+    // sender id
+    this.src = sender || 0;    
 }
 
 

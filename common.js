@@ -29,7 +29,7 @@ global.VAST.matcher = require('./VAST_matcher');
 // TODO: find a better way to store this? (maybe in msg_handler?)
 global.VAST.state = {
     ABSENT:         0,
-    INIT:           1,           // init done
+   // INIT:           1,           // init done
     JOINING:        2,           // different stages of join
     JOINED:         3
 };

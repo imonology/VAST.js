@@ -61,13 +61,13 @@ function VAST_matcher(recv_callback, settings) {
     // public methods
     //
     
-    // init/join the matcher?
+    // join the matcher to a VON 
     this.join = function (done_CB) {
     
         // join VON network
         var id, port;
         
-        _self.join(id, port, function () {
+        _self.init(id, port, function () {
             // when done
         
         });    
@@ -346,7 +346,7 @@ function VAST_matcher(recv_callback, settings) {
         self_id = self_id || VAST_ID_UNASSIGNED;
         port = port || VAST_DEFAULT_PORT;
         
-        // create new layer
+        // create message handler manager and add self as one of the handlers
         var handler = new msg_handler(self_id, port, function (local_addr) {
                     
             // NOTE: this will cause initStates() be called
@@ -375,12 +375,7 @@ function VAST_matcher(recv_callback, settings) {
             _sendPack =     _msg_handler.sendPack;                           
             
             // add VON peer as self node
-            _self = new VON.peer();
-            
-            // provide self id, self port, gateway address, and callback when done
-            // TODO: how to init a matcher?
-            //_self.init(id, 
-            
+            _self = new VON.peer();                       
             _msg_handler.addHandler(_self);            
         }
     }
