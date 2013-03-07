@@ -70,7 +70,7 @@ var VONnode = function (num, GWaddr, radius) {
         peer.move(aoi);
     }
         
-    peer.init(VAST_ID_UNASSIGNED, port, function () {
+    peer.init(VAST.ID_UNASSIGNED, port, function () {
     
         peer.join(GWaddr, aoi,
     
@@ -78,7 +78,7 @@ var VONnode = function (num, GWaddr, radius) {
             function (id) {
                 LOG.warn('joined successfully! id: ' + id + '\n');
                 
-                if (id !== VAST_ID_GATEWAY)
+                if (id !== VAST.ID_GATEWAY)
                     setInterval(moveNode, tick_interval);
             }
         );    

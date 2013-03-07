@@ -4,7 +4,7 @@
 //
 
 // include VAST
-require('../common');
+require('../VAST');
 
 // default port for connecting / creating VON nodes
 var _VON_port = 37700;
@@ -52,7 +52,7 @@ var _registerNode = function (pos, info, done_CB) {
     var new_node = new VON.peer();
                            
     // join in the network        
-    new_node.init(VAST_ID_UNASSIGNED, ip_port.port + _nodes_created, function () {
+    new_node.init(VAST.ID_UNASSIGNED, ip_port.port + _nodes_created, function () {
     
         _nodes_created++;                   
 

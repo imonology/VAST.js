@@ -17,14 +17,15 @@ LOG.setLevel(3);
 //
 // VAST & VON
 //
-// ID definitions
-global.VAST_ID_UNASSIGNED   = 0;
-global.VAST_ID_GATEWAY      = 1;
 
 global.VAST         = require('./vast_types');
 global.VAST.net     = require('./net/vast_net');
 global.VAST.client  = require('./VAST');
 global.VAST.matcher = require('./VAST_matcher');
+
+// ID definitions
+global.VAST.ID_UNASSIGNED = 0;
+global.VAST.ID_GATEWAY    = 1;
 
 // TODO: find a better way to store this? (maybe in msg_handler?)
 global.VAST.state = {

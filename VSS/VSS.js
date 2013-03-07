@@ -1,6 +1,6 @@
 
 // include VAST
-require('../common');
+require('../VAST');
 
 // do not show debug
 //LOG.setLevel(2);

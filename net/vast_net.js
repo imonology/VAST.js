@@ -62,9 +62,10 @@
         2012-07-05              first working version (storeMapping, switchID, send)
         2012-07-20              rename switchID -> setID (can set self ID)
 */
+
 var os = require('os');
 var l_net = require('./net_nodejs');   // implementation-specific network layer
-//var VAST_ID_UNASSIGNED = 0;
+//var VAST.ID_UNASSIGNED = 0;
 
 //
 // input: 
@@ -112,7 +113,7 @@ function vast_net(onReceive, onConnect, onDisconnect, id) {
     //
 
     // id for myself, created by an id_generator, if available
-    var _self_id = id || VAST_ID_UNASSIGNED;
+    var _self_id = id || VAST.ID_UNASSIGNED;
     
     // mapping between id and address
     // TODO: clear mapping once in a while? (for timeout mapping)    
@@ -143,7 +144,7 @@ function vast_net(onReceive, onConnect, onDisconnect, id) {
         // simply replace any existing mapping
         _id2addr[id] = addr;        
     }
-    
+	
     // switch an existing id to socket mapping
     var l_setID = this.setID = function (new_id, old_id) {
     
@@ -181,7 +182,7 @@ function vast_net(onReceive, onConnect, onDisconnect, id) {
                 
         // no messages to send
         if (_msgqueue.hasOwnProperty(id) === false || _msgqueue[id].length === 0)
-            return;
+            return false;
                 
         // if target id does not exist, indicate error
         if (_sockets.hasOwnProperty(id) === false) {
@@ -533,7 +534,7 @@ function vast_net(onReceive, onConnect, onDisconnect, id) {
             // NOTE: this check should be performed only once
             // NOTE: as this check is before receiving new ID from remote host,
             //       the first node joining the system will be given the gateway's ID (1)                
-            if (remote_id < VAST_ID_UNASSIGNED) {
+            if (remote_id < VAST.ID_UNASSIGNED) {
             
                 var sender_id = parseInt(pack.src);
                                 
@@ -541,7 +542,11 @@ function vast_net(onReceive, onConnect, onDisconnect, id) {
                                     
                 // if ID exists, then there's already an established connection                
                 if (_sockets.hasOwnProperty(sender_id) === true) {
-                    LOG.warn('[' + _self_id + '] redundent socket already exists: ' + sender_id);
+					var size = Object.keys(_sockets).length;
+                    LOG.warn('[' + _self_id + '] redundent socket already exists: ' + sender_id + ' sock size: ' + size);
+					for (var sock_id in _sockets)
+						LOG.warn(sock_id);
+						
                     
                     // disconnect remote host
                     // however, message still needs to deliver
@@ -549,14 +554,16 @@ function vast_net(onReceive, onConnect, onDisconnect, id) {
                 }
 
                 // store the remote ID as remote host's socket ID
-                else if (sender_id !== VAST_ID_UNASSIGNED) {
+                else if (sender_id !== VAST.ID_UNASSIGNED) {
                     l_setID(sender_id, socket.id);
                     remote_id = sender_id;
-                }                               
+                }
             }                           
 
             // pass message to upper layer for handling
-            if (typeof onReceive === 'function') {                                    
+            if (typeof onReceive === 'function') {           
+				LOG.warn('[' + _self_id + '] process pack by upper layer from [' + remote_id + ']: ');
+				LOG.warn(pack);
                 // TODO: queue-up message to be processed later?
                 onReceive(remote_id, pack);
             }            

@@ -81,13 +81,13 @@ function VAST_matcher(recv_callback, settings) {
     var _sendGatewayMessage = function (pack) {
     
         pack.targets = [];
-        pack.targets.push(VAST_ID_GATEWAY);
+        pack.targets.push(VAST.ID_GATEWAY);
         _sendPack(pack, true);
     }
     
     // check whether current node is a gateway
     var _isGateway = function () {
-        return (_self.getSelf().id === VAST_ID_GATEWAY);
+        return (_self.getSelf().id === VAST.ID_GATEWAY);
     }
 
     //
@@ -343,7 +343,7 @@ function VAST_matcher(recv_callback, settings) {
     // function to create a new net layer
     this.init = function (self_id, port, done_CB) {
     
-        self_id = self_id || VAST_ID_UNASSIGNED;
+        self_id = self_id || VAST.ID_UNASSIGNED;
         port = port || VAST_DEFAULT_PORT;
         
         // create message handler manager and add self as one of the handlers

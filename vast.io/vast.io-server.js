@@ -6,7 +6,7 @@ process.on('uncaughtException', function(err) {
 */
 
 // include VAST
-require('../common');
+require('../VAST');
 
 // show only warnings
 LOG.setLevel(2);
@@ -79,13 +79,13 @@ io.sockets.on('connection', function (socket) {
         aoi.parse(data.aoi);
 
         // create GW or a connecting client
-        // NOTE: by using VAST_ID_UNASSIGNED as default, the first created node will be the gateway
+        // NOTE: by using VAST.ID_UNASSIGNED as default, the first created node will be the gateway
         _self = new VON.peer();
         
         nodes_created++;
 
         // join in the network        
-        _self.init(VAST_ID_UNASSIGNED, ip_port.port + nodes_created, function () {
+        _self.init(VAST.ID_UNASSIGNED, ip_port.port + nodes_created, function () {
         
             _self.join(ip_port, aoi,
         
