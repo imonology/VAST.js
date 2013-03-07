@@ -49,7 +49,7 @@ var aoi  = new VAST.area(new VAST.pos(x, y), 100);
 var moveAround = function () {
      
     // move if not GW
-    if (peer.getSelf().id !== VAST_ID_GATEWAY) {
+    if (peer.getSelf().id !== VAST.ID_GATEWAY) {
         // random walk new location (5 units within current center position)
         aoi.center.x += Math.floor((Math.random()%10) - 5);
         aoi.center.y += Math.floor((Math.random()%10) - 5);
@@ -71,7 +71,7 @@ var moveAround = function () {
 var interval_id = undefined;
 
 // after init the peer will bind to a local port
-peer.init((is_client ? VAST_ID_UNASSIGNED : VAST_ID_GATEWAY), gateway_addr.port, function () {
+peer.init((is_client ? VAST.ID_UNASSIGNED : VAST.ID_GATEWAY), gateway_addr.port, function () {
 
     peer.join(gateway_addr, aoi, 
 
@@ -80,7 +80,7 @@ peer.init((is_client ? VAST_ID_UNASSIGNED : VAST_ID_GATEWAY), gateway_addr.port,
             LOG.warn('joined successfully! id: ' + id + '\n');
             
             // try to move around once in a while...  (if not gateway)        
-            if (id !== VAST_ID_GATEWAY) {
+            if (id !== VAST.ID_GATEWAY) {
                 interval_id = setInterval(function(){ moveAround() }, 1000); 
             }        
         }

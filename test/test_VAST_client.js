@@ -52,7 +52,7 @@ var aoi  = new VAST.area(new VAST.pos(x, y), 100);
 var moveAround = function () {
      
     // move if not GW
-    if (client.getSelf().id !== VAST_ID_GATEWAY) {
+    if (client.getSelf().id !== VAST.ID_GATEWAY) {
         // random walk new location (5 units within current center position)
         aoi.center.x += Math.floor((Math.random()%10 - 5));
         aoi.center.y += Math.floor((Math.random()%10 - 5));
@@ -68,7 +68,7 @@ var moveAround = function () {
 var interval_id = undefined;
 
 // after init the client will bind to a local port
-client.init((is_client ? VAST_ID_UNASSIGNED : VAST_ID_GATEWAY), gateway_addr.port, function () {
+client.init((is_client ? VAST.ID_UNASSIGNED : VAST.ID_GATEWAY), gateway_addr.port, function () {
 
     LOG.warn('test_VAST_client: init done');
         
@@ -80,7 +80,7 @@ client.init((is_client ? VAST_ID_UNASSIGNED : VAST_ID_GATEWAY), gateway_addr.por
             
             /*
             // try to move around once in a while...  (if not gateway)        
-            if (id !== VAST_ID_GATEWAY) {
+            if (id !== VAST.ID_GATEWAY) {
                 interval_id = setInterval(function(){ moveAround() }, 1000); 
             } 
             */

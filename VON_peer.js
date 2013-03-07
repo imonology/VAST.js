@@ -147,7 +147,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
     // function to create a new net layer
     this.init = function (self_id, port, done_CB) {
    
-        self_id = self_id || VAST_ID_UNASSIGNED;
+        self_id = self_id || VAST.ID_UNASSIGNED;
         port = port || VON_DEFAULT_PORT;
                                                         
         // create new layer
@@ -206,7 +206,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
         // NOTE: need to do it here, as _storeMapping is not effective after addHandler calls initStates            
         var addr = new VAST.addr();
         addr.parse(GW_addr);                        
-        _storeMapping(VAST_ID_GATEWAY, addr);       
+        _storeMapping(VAST.ID_GATEWAY, addr);       
         LOG.warn('gateway set to: ' + addr.toString());
     
         // store initial aoi
@@ -220,8 +220,8 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
 
         // if id is empty, send PING to gateway to learn of my id first
         // otherwise attempt to join by contacting gateway
-        if (_getID() === VAST_ID_UNASSIGNED)
-            _sendMessage(VAST_ID_GATEWAY, VON_Message.VON_PING, {request: true}, VAST.priority.HIGHEST);
+        if (_getID() === VAST.ID_UNASSIGNED)
+            _sendMessage(VAST.ID_GATEWAY, VON_Message.VON_PING, {request: true}, VAST.priority.HIGHEST);
         else
             _setInited();
     }
@@ -593,11 +593,11 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
         // TODO: doesn't look clean, can gateway still send query request to itself?
         //       that'll be a more general process
         //       (however, will deal with how to determined 'already joined' for gateway)
-        if (_self.id === VAST_ID_GATEWAY)
+        if (_self.id === VAST.ID_GATEWAY)
             _setJoined();
         else
             // send out query request first to find acceptor
-            _query(VAST_ID_GATEWAY, _self.aoi.center, VON_Message.VON_JOIN, _self);
+            _query(VAST.ID_GATEWAY, _self.aoi.center, VON_Message.VON_JOIN, _self);
     }
     
     // set current node to be 'joined'
@@ -985,7 +985,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
     var _assignNewID = function () {
 
         // we use our own ID as first
-        // NOTE if we start with VAST_ID_UNASSIGNED (0) then first ID will be 1
+        // NOTE if we start with VAST.ID_UNASSIGNED (0) then first ID will be 1
         if (_new_ID === undefined)
             _new_ID = _getID() + 1;
             
@@ -1010,7 +1010,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
         }
         */
         
-        if (_self.id === VAST_ID_UNASSIGNED && pack.type !== VON_Message.VON_PING) {
+        if (_self.id === VAST.ID_UNASSIGNED && pack.type !== VON_Message.VON_PING) {
             LOG.error('VON_peer: node not yet init (got unique ID), should not process any messages');
             return false;        
         }
@@ -1031,7 +1031,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
                     
                     // check if this is the first ever ID assigned by me
                     // if so, then I'm likely the gateway (my ID is also unassigned yet)
-                    if (_self.id === VAST_ID_UNASSIGNED) {
+                    if (_self.id === VAST.ID_UNASSIGNED) {
                         LOG.warn('first ID assigned, likely I am the gateway');
                         _self.id = remote_id;
                     }
@@ -1040,7 +1040,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
                     _sendMessage(from_id, VON_Message.VON_PING, {request: false, aid: remote_id}, VAST.priority.HIGH, true);
                 }
                 // otherwise we got a response from gateway, set my ID, can now send join request
-                else if (_self.id === VAST_ID_UNASSIGNED) {
+                else if (_self.id === VAST.ID_UNASSIGNED) {
                     var assigned_id = parseInt(pack.msg.aid);
                     LOG.debug('assigned_id: ' + assigned_id);
                     _setID(assigned_id);                    
