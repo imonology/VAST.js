@@ -12,7 +12,7 @@ var vast_net = require('./vast_net');
 var net = undefined; 
 
 // set default IP/port
-var ip_port = {host: "127.0.0.1", port: 37};
+var ip_port = {host: VAST.Settings.IP_gateway, port: 37};
 
 // get input IP / port
 // check port input, if any

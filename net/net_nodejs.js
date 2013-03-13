@@ -35,6 +35,7 @@
     onReceive(socket, msg)
     onConnect(socket)
     onDisconnect(socket)
+	onError(err)
      
     /////////////////////////////
     supported functions: 
@@ -84,7 +85,7 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
     // reference
     var _that = this;
                 
-    // check for connection validity and send to it)
+    // check for connection validity and send to it
     // ip_port is an object with 'host' and 'port' parameter
     this.connect = function (host_port) {
         
@@ -94,19 +95,24 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
             // connect to the given host & port, while providing a connection listener
             _socket = l_net.createConnection(host_port.port, host_port.host);       
 
+			//setupSocket(_socket, host_port);
+			
+			// NOTE: we need to specify 'connect' event handler here, as
+			// if it's specified in setupSocket, it may not respond / process the
+			// the event in time
             _socket.on('connect', function () {
             
                 // setup connected socket               
                 // NOTE: the handler for 'connect' inside setupSocket won't be called, 
                 // as 'connect' event is already triggered here, so whatever task needs to be duplicated here
                 // TODO: more elegant approach?
-                setupSocket(_socket);                                       
+                setupSocket(_socket, host_port);
                         
-                LOG.debug('out connect success for: ' + host_port.host + ':' + host_port.port);
+                LOG.debug('ooutt connect success for: ' + host_port.host + ':' + host_port.port);
                 
                 // store remote address & port
-                _socket.host = host_port.host;
-                _socket.port = host_port.port;
+                //_socket.host = host_port.host;
+                //_socket.port = host_port.port;
 
                 _socket.disconnect = _that.disconnect;
                 _socket.connected = true; 
@@ -114,18 +120,20 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
                 if (typeof onConnect === 'function')
                     onConnect(_socket);        
             }); 
+
+			/*
               
             // if there's error on the connection, 'close' will follow
             _socket.on('error', function(err){
                 LOG.error('out connect socket error: ' + err);
             });
-        
+			*/ 
         }
         catch (e) {
             LOG.error('net_nodejs: connect error: ' + e); 
             if (typeof onError === 'function')
-                onError('connect');            
-        }         
+                onError('connect');
+        }
     }
     
     // disconnect from a given socket id
@@ -213,16 +221,40 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
         
 	// setup a new usable socket with a socket handler    
 	//-----------------------------------------
-	var setupSocket = function (socket) {
+	var setupSocket = function (socket, host_port) {
         
         //LOG.debug('setupSocket called, onReceive: ' + typeof onReceive);
+                
+        // NOTE: this won't be triggered for out-going connections, only incoming (i.e., when a listening server calls this)
+        socket.on('connect', function () {
         
-        socket.setEncoding('UTF8');
-        socket.setKeepAlive(true, 20 * 1000);		// 20 seconds keepalive
+            // NOTE: remoteAddress & remotePort are available for incoming connection, but not outgoing sockets
+            //LOG.debug('connection created: ' + socket.remoteAddress + ':' + socket.remotePort);
+            
+			// if host_port is provided, it's an outgoing connect success
+			if (host_port !== undefined) {
+				socket.host = host_port.host;
+				socket.port = host_port.port;
+				LOG.warn('out connect success for ' + socket.host + ':' + socket.port);				
+			}
+			else {
+				socket.host = socket.remoteAddress;
+				socket.port = socket.remotePort;
+				LOG.warn('in connect success for ' + socket.host + ':' + socket.port);
+            }
 
-        // this is important to allow messages be delivered immediately after sending
-        socket.setNoDelay(true);
-        
+            socket.connected = true;                
+            
+            // attach convenience function
+            socket.disconnect = function () {
+                socket.end();
+            }
+                                       
+            // notify connection, pass the connecting socket
+            if (typeof onConnect === 'function')            
+                onConnect(socket);           
+        });
+
         // call data callback to process data, if exists 
         // (this happens when setupSocket is called by a listening server for setup new socket)
         if (typeof onReceive === 'function') {
@@ -241,27 +273,6 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
             }
         });
 
-        // NOTE: this won't be triggered for out-going connections, only incoming (i.e., when a listening server calls this)
-        socket.on('connect', function () {
-        
-            // NOTE: remoteAddress & remotePort are available for incoming connection, but not outgoing sockets
-            //LOG.debug('connection created: ' + socket.remoteAddress + ':' + socket.remotePort);
-            
-            socket.host = socket.remoteAddress;
-            socket.port = socket.remotePort;
-            LOG.debug('in connect success for ' + socket.host + ':' + socket.port);
-
-            socket.connected = true;                
-            
-            // attach convenience function
-            socket.disconnect = function () {
-                socket.end();
-            }
-                                       
-            // notify connection, pass the connecting socket
-            if (typeof onConnect === 'function')            
-                onConnect(socket);           
-        });
                 
 		// handle connection error or close
         var disconnect_handler = function () {
@@ -299,16 +310,22 @@ function net_nodejs(onReceive, onConnect, onDisconnect, onError) {
         socket.on('close', function (has_error) {
             //LOG.warn('socket [close] called');            
             // print error, if any
-            if (has_error)                
-                LOG.error('socket close error: ' + has_error);                           
+            if (has_error)   
+                LOG.error('socket close error: ' + has_error);
                 
             disconnect_handler();
         });
                 
         // if there's error on the connection, 'close' will follow
         socket.on('error', function (err){
-            LOG.error('socket error: ' + err);        
+            LOG.error('ssocket error: ' + err);        
         });
+
+        socket.setEncoding('UTF8');
+        socket.setKeepAlive(true, 20 * 1000);		// 20 seconds keepalive
+
+        // this is important to allow messages be delivered immediately after sending
+        socket.setNoDelay(true);
          
 		return socket;
     }

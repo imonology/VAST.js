@@ -335,14 +335,19 @@ function vast_net(onReceive, onConnect, onDisconnect, id) {
                               
             // store message to queue
             // create queue for connection if not exist
-            if (_msgqueue.hasOwnProperty(id) === false)
+            if (_msgqueue.hasOwnProperty(id) === false) {
+				LOG.warn('msgqueue for [' + id + '] not exist, create one...');
                 _msgqueue[id] = [];        
-                        
-            _msgqueue[id].push(encode_str);        
-                    
+			}
+             
+			 // store message to pending queue           
+            _msgqueue[id].push(encode_str);     
+
             // if connections already exists, send directly, otherwise establish new connection 
-            if (_sockets.hasOwnProperty(id))
+            if (_sockets.hasOwnProperty(id)) {
+				LOG.warn('socket for [' + id + '] exists, send directly...');
                 l_sendPendingMessages(id);
+			}
             else {
                 var str = '';
                 var unknown_count = 0;
@@ -357,6 +362,8 @@ function vast_net(onReceive, onConnect, onDisconnect, id) {
                     LOG.warn('[' + _self_id + '] attempts to connect to [' + id + '] sock_size: ' + sock_size);
                     //LOG.warn(str);
                 }
+
+				LOG.warn('socket for [' + id + '] not exiss, try to connect...');
                 l_connect(id);
             }
         }
@@ -540,25 +547,26 @@ function vast_net(onReceive, onConnect, onDisconnect, id) {
                                 
                 LOG.debug('[' + _self_id + '] learns sender id: ' + sender_id);
                                     
-                // if ID exists, then there's already an established connection                
-                if (_sockets.hasOwnProperty(sender_id) === true) {
-					var size = Object.keys(_sockets).length;
-                    LOG.warn('[' + _self_id + '] redundent socket already exists: ' + sender_id + ' sock size: ' + size);
-					for (var sock_id in _sockets)
-						LOG.warn(sock_id);
-						
-                    
-                    // disconnect remote host
-                    // however, message still needs to deliver
-                    //socket.end();
-                }
-
                 // store the remote ID as remote host's socket ID
-                else if (sender_id !== VAST.ID_UNASSIGNED) {
-                    l_setID(sender_id, socket.id);
-                    remote_id = sender_id;
-                }
-            }                           
+                if (sender_id !== VAST.ID_UNASSIGNED) {
+
+                    // if ID exists, then there's already an established connection                
+                    if (_sockets.hasOwnProperty(sender_id) === true) {
+						var size = Object.keys(_sockets).length;
+                        LOG.warn('[' + _self_id + '] redundent socket already exists: ' + sender_id + ' sock size: ' + size);
+						for (var sock_id in _sockets)
+							LOG.warn(sock_id);
+							                    
+                        // disconnect remote host
+                        // however, message still needs to deliver
+                        //socket.end();
+                    }
+					else
+						l_setID(sender_id, socket.id);
+
+					remote_id = sender_id;
+                }				
+            }
 
             // pass message to upper layer for handling
             if (typeof onReceive === 'function') {           

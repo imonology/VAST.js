@@ -1,134 +1,13 @@
 
 //
-// local private variables to keep track of created nodes
+//	handler.js	handles REST request and pass to logic to handling
 //
 
-// include VAST
-require('../VAST');
-
-// default port for connecting / creating VON nodes
-var _VON_port = 37700;
-var _VON_gateway = '127.0.0.1';
-//var _VON_gateway = 'dev.imonology.com';
-
-// default radius when first joined
-// TODO: need to have default radius?
-var _default_radius = 0;
-
-// number of nodes already created
-var _nodes_created = 0;
-
-// API keys -> layers -> nodes mapping
-// NOTE: it's a 3-dimensional array
-var _keys = {};
-
-// node id -> ident mapping
-var _id2ident = {};
-
+var logic = require("./logic");
 
 //
-// actual execution code
+//	helpers
 //
-var _publishPos = function (node, pos, radius) {
-
-    // build new AOI info
-    var aoi = new VAST.area(pos, radius);
-    
-    // perform movement
-    node.move(aoi);
-}
-
-//
-// helper code
-//
-
-var _registerNode = function (pos, info, done_CB) {
-
-    // extract AOI for the VON node to create               
-    var aoi = new VAST.area(pos, _default_radius);
-    
-    // specify where to locate VON gateway
-    var ip_port = new VAST.addr(_VON_gateway, _VON_port);                
-    var new_node = new VON.peer();
-                           
-    // join in the network        
-    new_node.init(VAST.ID_UNASSIGNED, ip_port.port + _nodes_created, function () {
-    
-        _nodes_created++;                   
-
-        // store node ident for ident discovery across different VSS servers
-        var ident_info = {
-            apikey: info.apikey,
-            layer:  info.layer,
-            ident:  info.ident
-        };
-        
-        new_node.put(ident_info);
-        
-        new_node.join(ip_port, aoi,
-        
-            // done callback
-            function (self_id) {
-                                
-                LOG.warn('\njoined successfully! id: ' + self_id + ' self id: ' + new_node.getSelf().id);
-               
-                // keep track of newly joined node in internal record
-                if (_keys.hasOwnProperty(info.apikey) === false)
-                    _keys[info.apikey] = {};
-                if (_keys[info.apikey].hasOwnProperty(info.layer) === false)
-                    _keys[info.apikey][info.layer] = {};
-                    
-                _keys[info.apikey][info.layer][info.ident] = new_node;
-    
-                // store id to ident mapping
-                LOG.debug('store mapping for node id: ' + self_id + ' ident: ' + info.ident);
-                _id2ident[self_id] = info;
-                
-                //new_node.put(info);
-                
-                // check content
-                LOG.debug('new_node (after join): ' + new_node.getSelf().toString());
-    
-                // perform initial publish pos
-                // (so we can get a list of neighbors)
-                // NOTE: doesn't appear to work...
-                //_publishPos(new_node, info, new_node.getSelf().aoi.radius);
-                
-                done_CB(new_node);
-            }
-        );              
-    });    
-}
-
-var _revokeNode = function (info, done_CB) {
-
-    // check if node exists, return error if not yet exist (need to publishPos first)
-    var node = _getNode(info);
-    
-    if (node === undefined || node === null) 
-        return done_CB(false);
-    
-    var node_id = node.getSelf().id;
-    
-    //destroy node
-    node.leave();
-    node.shut();
-    node = null;
-    
-    delete _keys[info.apikey][info.layer][info.ident];
-    
-    // check if we need to remove layer and/or API key
-    if (Object.keys(_keys[info.apikey][info.layer]).length === 0)
-        delete _keys[info.apikey][info.layer];
-    if (Object.keys(_keys[info.apikey]).length === 0)
-        delete _keys[info.apikey];
-        
-    // remove id to ident mapping
-    LOG.debug('remove mapping for node id: ' + node_id + ' ident: ' + info.ident);
-    delete _id2ident[node_id];    
-        
-    done_CB(true);
-}
 
 // send back response to client
 var _reply = function (res, res_obj) {
@@ -148,109 +27,30 @@ var _reply = function (res, res_obj) {
 }
 
 // send back subscriber list to client
-var _replySubscribers = function (request, res) {
+var _replyPublishPos = function (request, res) {
 
-    var node = _getNode(request, res);
+    var node = logic.getNode(request, res);
     
-    if (node !== undefined && node !== null) {
+    if (node === undefined || node === null || res === undefined) {
+		LOG.error('node not found or response object invalid', 'replyPublishPos');
+		return;
+	}
 
-        LOG.debug('replySubscribers called, node id: ' + node.getSelf().id);
+    LOG.debug('replySubscribers called, node id: ' + node.getSelf().id);
 
-        // get a list of current neighbors's id
-        var neighbors = node.list();
-        var list = [];
-        
-        var self = node.getSelf();
-                       
-        // TODO: send only those who's AOI covers me (as true subscribers, not simply enclosing neighbors)
-        for (var id in neighbors) {
-            
-            LOG.debug('checking neighbor id: ' + id + ' against self id: ' + self.id);
-            
-            // convert node id to node ident (only for those registered here)
-            // NOTE: current approach can only do ident translation for nodes created via this VSS server
-            
-            var neighbor = neighbors[id];
-            
-            //for (var i in neighbor) 
-            //    LOG.debug(i + ': ' + typeof neighbor[i]);
-            
-            // get node ident (from either 'meta' field or from mapping)
-            var info = undefined;
-            if (neighbor.hasOwnProperty('meta'))
-                info = neighbor.meta;
-            else if (_id2ident.hasOwnProperty(id))
-                info = _id2ident[id];
-                                        
-            // do not return a node if:
-            //    1. is self
-            //    2. no mapping for ident (the node is not created via VSS)
-            //    3. is not a subscriber to myself (subscribed area does not cover me)
-            if (self.id == id ||
-                info === undefined || 
-                _isSubscriber(neighbors[id], self.aoi) === false)
-                continue;
-                
-            list.push(info.apikey + ':' + info.layer + ':' + info.ident);            
-        }
-                        
-        // return success
-        var error = [];
-        _reply(res, [list, error]);
-    }
+	// list to be returned (subscribers, new neighbors, left neighbors)
+    var lists = logic.getLists(node);
+                    
+    // return success
+    var error = [];
+    _reply(res, [lists, error]);    
 }
 
+//
+//	public actions
+//
 
-// get a specific node given its API key, layer, and node ident
-// returns 'undefined' if key info is missing
-// returns 'null' if not found
-var _getNode = function (req, res) {
-
-    // check if any essential info is missing
-    if (req.apikey === '' || req.layer === '' || req.ident === ''){
-        if (res !== undefined)
-            _reply(res, ["", ["key info (apikey/layer/ident) missing"]]);               
-        return undefined;
-    }
-                              
-    for (var key in _keys)
-        LOG.debug('key: ' + key);
-    
-    if (_keys.hasOwnProperty(req.apikey)) {
-        var layers = _keys[req.apikey];
-        
-        for (var layer in layers)
-            LOG.debug('layer: ' + layer);
-        
-        if (layers.hasOwnProperty(req.layer)) {
-            var nodes = layers[req.layer];
-            
-            for (var node in nodes)
-                LOG.debug('node: ' + node);
-            
-            if (nodes.hasOwnProperty(req.ident)) { 
-                return nodes[req.ident];
-            }
-        }     
-    }
-       
-    // no node found, warn in advance
-    if (res !== undefined)
-        _reply(res, ["", ['node not yet created']]);
-    
-    return null;
-}
-
-// check if a given node is a direct area subscriber for a center point
-var _isSubscriber = function (node, aoi) {
-
-    // NOTE: if subscription radius is 0, then we consider it's not subscribing anything
-    var result = (node.aoi.radius != 0 && node.aoi.covers(aoi.center));
-    LOG.debug('isSubscriber check if node ' + node.toString() + ' covers ' + aoi.center.toString() + ': ' + result);
-    return result;
-}
- 
-function publish(words, res) {
+var publish = function (words, res) {
     LOG.debug("Request handler 'publish' was called.");
     
     var request = {};
@@ -265,7 +65,7 @@ function publish(words, res) {
             // extract parameters
             request = { apikey:  words[3] || '',
                         layer:   words[4] || '',                           
-                        ident:   words[5] || '',                            
+                        name:    words[5] || '',                            
                         x:       Number(words[6]) || 0,
                         y:       Number(words[7]) || 0,
                         z:       Number(words[8]) || 0
@@ -276,41 +76,32 @@ function publish(words, res) {
                                         
             // check if node's already created, if so then send update
             // if not then need to create a new VON peer node
-            var node = _getNode(request);
+            var node = logic.getNode(request);
 
             switch (node) {
                 // parameter invalid
                 case undefined: {
-                    _reply(res, ["", ["key info (apikey/layer/ident) missing"]]);
+                    _reply(res, ["", ["key info (apikey/layer/name) missing"]]);
                     break;
                 }
             
                 // no node exist, create new
                 case null: {
-                    // if node does not exist, create one            
-                    var pos = new VAST.pos(request.x, request.y);
-                
-                    // append additional z value
-                    pos.z = request.z;
-                
-                    _registerNode(pos, request, function (new_node) {
+
+                    // if node does not exist, create one                            
+                    logic.registerNode(request, request, function (new_node) {
                         
-                        LOG.debug('new_node: ' + JSON.stringify(new_node));
-                    
-                        // send back node creation response                    
-                        //_reply(res, ["OK", []]);            
-                                                
-                        _replySubscribers(request, res); 
+                        LOG.debug('new_node: ' + JSON.stringify(new_node));                                                                        
+                        _replyPublishPos(request, res);
                     });            
                     break;
                 }
                      
                 // publish pos
                 default: {
-                    _publishPos(node, request, node.getSelf().aoi.radius);
+                    logic.publishPos(node, request, node.getSelf().aoi.radius);
                     
-                    //_reply(res, ["OK", []]);            
-                    _replySubscribers(request, res);
+                    _replyPublishPos(request, res);
                     break;
                 }
             }  
@@ -329,7 +120,7 @@ function publish(words, res) {
     }
 }
 
-function subscribe(words, res) {
+var subscribe = function (words, res) {
     LOG.debug("Request handler 'subscribe' was called.");
     
     var request = {};
@@ -343,7 +134,7 @@ function subscribe(words, res) {
             // extract parameters
             request = { apikey:  words[3] || '',
                         layer:   words[4] || '',                           
-                        ident:   words[5] || '',                            
+                        name:    words[5] || '',                            
                         radius:  Number(words[6]) || 0
                       };
 
@@ -355,11 +146,17 @@ function subscribe(words, res) {
             }
                                         
             // check if node exists, return error if not yet exist (need to publishPos first)
-            var node = _getNode(request, res);
-            
-            if (node != undefined && node !== null) {
+            var node = logic.getNode(request);
+
+			if (node === undefined) {
+				_reply(res, ["", ["key info (apikey/layer/name) missing"]]);               
+			}
+			else if (node === null) {
+				_reply(res, ["", ['node not yet created']]);
+			}            
+            else {
                 // update AOI radius for area subscription
-                _publishPos(node, node.getSelf().aoi.center, request.radius);
+                logic.publishPos(node, node.getSelf().aoi.center, request.radius);
                 
                 // return success
                 _reply(res, ["OK", []]);                  
@@ -373,7 +170,7 @@ function subscribe(words, res) {
     }  
 }
 
-function unsubscribe(words, res) {
+var unsubscribe = function (words, res) {
     LOG.debug("Request handler 'unsubscribe' was called.");
 
     var request = {};
@@ -388,20 +185,26 @@ function unsubscribe(words, res) {
             // extract parameters
             request = { apikey:  words[3] || '',
                         layer:   words[4] || '',                           
-                        ident:   words[5] || ''
+                        name:    words[5] || ''
                       };            
 
             // check if node exists, return error if not yet exist (need to publishPos first)
-            var node = _getNode(request, res);
+            var node = logic.getNode(request);
 
-            if (node === null || node === undefined)
+			if (node === undefined) {
+				_reply(res, ["", ["key info (apikey/layer/name) missing"]]);
+			}
+			else if (node === null) {
+				_reply(res, ["", ['node not yet created']]);
+			}
+			else
                 break;
                       
             // update AOI radius for area subscription
-            _publishPos(node, node.getSelf().aoi.center, 0);
+            logic.publishPos(node, node.getSelf().aoi.center, 0);
             
             // return success
-            _reply(res, ["OK", []]); 
+            _reply(res, ["OK", []]);
             break;        
         }
         default: {
@@ -412,7 +215,7 @@ function unsubscribe(words, res) {
 }
 
 
-function query(words, res) {
+var query = function (words, res) {
     LOG.debug("Request handler 'query' was called.");
     
     var request = {};
@@ -427,11 +230,11 @@ function query(words, res) {
             // extract parameters
             request = { apikey:  words[3] || '',
                         layer:   words[4] || '',                           
-                        ident:   words[5] || ''
+                        name:    words[5] || ''
                       };       
 
             // check if node exists, return error if not yet exist (need to publishPos first)
-            _replySubscribers(request, res);
+            _replyPublishPos(request, res);
                                       
             break;          
         }            
@@ -443,7 +246,7 @@ function query(words, res) {
 }
 
 // remove a node from system
-function revoke(words, res) {
+var revoke = function (words, res) {
     LOG.debug("Request handler 'revoke' was called.");
     
     var request = {};
@@ -458,10 +261,10 @@ function revoke(words, res) {
             // extract parameters
             request = { apikey:  words[3] || '',
                         layer:   words[4] || '',                           
-                        ident:   words[5] || ''
+                        name:    words[5] || ''
                       };       
 
-            _revokeNode(request, function(result) {
+            logic.revokeNode(request, function(result) {
                 // return success
                 if (result === true)
                     _reply(res, ["OK", []]);
@@ -479,9 +282,9 @@ function revoke(words, res) {
 }
 
 
-exports.publish = publish;
-exports.subscribe = subscribe;
+exports.publish     = publish;
+exports.subscribe   = subscribe;
 exports.unsubscribe = unsubscribe;
-exports.query = query;
-exports.revoke = revoke;
+exports.query	    = query;
+exports.revoke      = revoke;
 

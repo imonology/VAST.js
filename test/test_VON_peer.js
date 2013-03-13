@@ -11,10 +11,10 @@ var AUTOMATIC_LEAVE_PERIOD = 3;     // number of seconds
 require('../VAST');
 
 // do not show debug
-LOG.setLevel(2);
+LOG.setLevel(3);
 
 // set default IP/port
-var gateway_addr = {host: "127.0.0.1", port: 37700};
+var gateway_addr = {host: VAST.Settings.IP_gateway, port: VAST.Settings.port_gateway};
 var is_client = false;
 
 // IP/port
