@@ -46,7 +46,7 @@ process.on('uncaughtException', function(err) {
 var server_port = 38800;
 
 // default port for connecting / creating VON nodes
-var VON_port = 37700;
+var VON_port = VAST.Settings.port_gateway;
 
 var nodes_created = 0;
 
@@ -72,7 +72,7 @@ io.sockets.on('connection', function (socket) {
         console.log(data);
         
         // specify where to locate VON gateway
-        var ip_port = new VAST.addr('127.0.0.1', VON_port); 
+        var ip_port = new VAST.addr(VAST.Settings.IP_gateway, VON_port); 
                
         // extract AOI for the VON node to create               
         var aoi = new VAST.area();

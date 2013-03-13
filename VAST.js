@@ -59,3 +59,10 @@ global.VAST.msgstr = [
 global.VON          = {
     peer: require('./VON_peer')
 };
+
+// configurable settings
+global.VAST.Settings = {
+	port_gateway:	37700,
+	IP_gateway:		'127.0.0.1'
+	
+};

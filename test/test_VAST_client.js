@@ -17,7 +17,7 @@ require('../VAST');
 
 // set default IP/port
 // set default IP/port
-var gateway_addr = {host: "127.0.0.1", port: 37700};
+var gateway_addr = {host: VAST.Settings.IP_gateway, port: VAST.Settings.port_gateway};
 var is_client = false;
 
 // IP/port

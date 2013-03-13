@@ -42,7 +42,7 @@ var net = new net_nodejs(
 for (var i=0; i < process.argv.length; i++)
     console.log(i + ': ' + process.argv[i]);
 
-var ip_port = {host: "127.0.0.1", port: 37};
+var ip_port = {host: VAST.Settings.IP_gateway, port: 37};
 
 // check port input, if any
 var port = process.argv[2];    

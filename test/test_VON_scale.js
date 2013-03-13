@@ -19,7 +19,7 @@ var node_speed      = 5;
 var node_radius     = 200;
 
 // set default IP/port
-var gateway_addr = {host: "127.0.0.1", port: 37700};
+var gateway_addr = {host: VAST.Settings.IP_gateway, port: VAST.Settings.port_gateway};
 
 // IP/port
 if (process.argv[2] !== undefined) {

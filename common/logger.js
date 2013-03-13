@@ -17,9 +17,6 @@ var _ERREND = _white
 var _WARN = _yellow;
 
 function logger() {
-
-    var currDate = new Date();
-    var dateStr = '-' + currDate.getHours() + ':' + currDate.getMinutes() + '- ';
     
     // by default we display all 
     var _level = 3;
@@ -28,6 +25,12 @@ function logger() {
     var _convert = function (obj) {	    
 	    return (typeof obj === 'object' ? JSON.stringify(obj, null, 4) : obj);
     }    
+    
+    // get current time
+    var _curr_time = function () {
+        var currDate = new Date();
+        return '-' + currDate.getHours() + ':' + currDate.getMinutes() + '- '; 
+    }
     
     // set log level: 1 (error only), 2 (warning), 3 (debug)
     this.setLevel = function (level) {
@@ -42,19 +45,19 @@ function logger() {
     this.debug = function (msg) {
         msg = _convert(msg);    
         if (_level >= 3)
-            console.log(dateStr + msg);
+            console.log(_curr_time() + msg);
     }
 
     this.warn = function (msg) {
         msg = _convert(msg);    
         if (_level >= 2)
-            console.log(_WARN + dateStr + msg + _ERREND);
+            console.log(_WARN + _curr_time() + msg + _ERREND);
     }
 
     this.error = function (msg) {
         msg = _convert(msg);    
         if (_level >= 1)
-            console.log(_ERR + dateStr + msg + _ERREND);
+            console.log(_ERR + _curr_time() + msg + _ERREND);
     }
     
     this.stack = function () {
