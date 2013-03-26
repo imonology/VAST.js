@@ -1,6 +1,12 @@
 
-// include VAST
+// include VAST (need it here?)
 require('../VAST');
+
+// default settings
+global.CONFIG = {
+	gatewayIP:	'127.0.0.1',
+	gatewayPort: 39900	
+};
 
 // do not show debug
 //LOG.setLevel(2);
@@ -8,14 +14,5 @@ require('../VAST');
 var server   = require("./server");
 var router   = require("./router");
 var handlers = require("./handler");
-
-/*
-var handle = {}
-handle["publish"]     = handlers.publish;
-handle["subscribe"]   = handlers.subscribe;
-handle["unsubscribe"] = handlers.unsubscribe;
-handle["query"]       = handlers.query;
-handle["revoke"]      = handlers.revoke;
-*/
 
 server.start(router.route, handlers);

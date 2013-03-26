@@ -37,18 +37,17 @@
     vast_net (see definition in vast_net.js)
     
     // constructoracceptor for a given center point 
-    join(addr, aoi, done_CB)            join a VON network at a gateway with a given aoi 
+    join(addr, aoi, onDone)             join a VON network at a gateway with a given aoi 
     leave()                             leave the VON network
     move(aoi, send_time)                move the AOI to a new position (or change radius)
     list()                              get a list of AOI neighbors    
     send(id, msg)                       send a message to a given node
-    put(obj)                            sto
-    VON_peer(aoi_buffer, aoi_use_strict)
+    put(obj)                            store app-specific data to the node
     
     // basic functions
-    init(id, port, done_CB)             init a VON peer with id, listen port
+    init(id, port, onDone)              init a VON peer with id, listen port
     shut()                              shutdown a VON peer (will close down listen port)
-    query(center, acceptor_CB)          find the re a app-specific data along with the node (will pass during node discovery)                      
+    query(center, onAcceptor)           find the re a app-specific data along with the node (will pass during node discovery)                      
     get()                               retrieve app-specific data for this node
     
     // accessors
@@ -145,7 +144,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
     var _that = this;
     
     // function to create a new net layer
-    this.init = function (self_id, port, done_CB) {
+    this.init = function (self_id, port, onDone) {
    
         self_id = self_id || VAST.ID_UNASSIGNED;
         port = port || VON_DEFAULT_PORT;
@@ -157,8 +156,8 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
             handler.addHandler(_that);
 
             // notify done
-            if (typeof done_CB === 'function')
-                done_CB(local_addr);            
+            if (typeof onDone === 'function')
+                onDone(local_addr);            
         });
     }
     
@@ -190,13 +189,13 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
     }
     
     // join a VON network with a given aoi 
-    var _join = this.join = function (GW_addr, aoi, done_CB) {
+    var _join = this.join = function (GW_addr, aoi, onDone) {
                         
         // check if already joined
         if (_state === VAST.state.JOINED) {
             LOG.warn('VON_peer.join(): node already joined');
-            if (typeof done_CB === 'function')
-                done_CB(_self.id);
+            if (typeof onDone === 'function')
+                onDone(_self.id);
             return;
         }
 
@@ -216,7 +215,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
         _state = VAST.state.JOINING; 
                 
         // keep reference to call future once join is completed
-        _join_done_CB = done_CB;
+        _join_onDone = onDone;
 
         // if id is empty, send PING to gateway to learn of my id first
         // otherwise attempt to join by contacting gateway
@@ -608,8 +607,8 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
         _state = VAST.state.JOINED;
         
         // notify join is done
-        if (typeof _join_done_CB === 'function')
-            _join_done_CB(_self.id);         
+        if (typeof _join_onDone === 'function')
+            _join_onDone(_self.id);         
             
         // start ticking
         //_interval_id = setInterval(_tick, TICK_INTERVAL);
@@ -1064,7 +1063,12 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
                 // forward the request if a more appropriate node exists
                 // TODO: contains() might recompute Voronoi, isRelevantNeighbor below 
                 //       also will recompute Voronoi. possible to combine into one calculation?
-                if (_voro.contains(_self.id, pos) === false &&
+                if (closest === null) {
+					LOG.warn('closest node is null, something is not right.. please check', 'VON_QUERY');
+				}				
+
+				if (closest !== null &&
+					_voro.contains(_self.id, pos) === false &&
                     _isSelf(closest) === false &&
                     closest != from_id) {
 
@@ -1508,10 +1512,10 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
     var _self = new VAST.node(); 
              
     // callback to use once join is successful
-    var _join_done_CB = undefined;
+    var _join_onDone = undefined;
 
     // callback to use once init is successful (got self ID from server)
-    var _init_done_CB = undefined;
+    var _init_onDone = undefined;
     
     // interval id for removing periodic ticking
     //var _interval_id = undefined;

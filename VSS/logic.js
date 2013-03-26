@@ -21,7 +21,7 @@ var _default_radius = 0;
 var _nodes_created = 0;
 
 // API keys -> layers -> nodes mapping
-// NOTE: it's a 3-dimensional array
+// NOTE: it's a 3-dimensional map
 var _keys = {};
 
 // node id -> ident mapping
@@ -35,8 +35,45 @@ var _id2neighbors = {};
 // public calls
 //
 
-var _registerNode = exports.registerNode = function (position, info, done_CB) {
+// get a specific node given its API key, layer, and name (i.e., ident)
+// returns 'undefined' if key ident is missing
+// returns 'null' if not found
+// NOTE: the node returned is a VON_peer instance
+var _getNode = exports.getNode = function (ident) {
 
+    // check if any essential ident is missing
+    if (ident.apikey === '' || ident.layer === '' || ident.name === '')
+        return undefined;
+                                  
+    for (var key in _keys)
+        LOG.debug('key: ' + key);
+    
+    if (_keys.hasOwnProperty(ident.apikey)) {
+        var layers = _keys[ident.apikey];
+        
+        for (var layer in layers)
+            LOG.debug('layer: ' + layer);
+        
+        if (layers.hasOwnProperty(ident.layer)) {
+            var nodes = layers[ident.layer];
+            
+            for (var node in nodes)
+                LOG.debug('node: ' + node);
+            
+            if (nodes.hasOwnProperty(ident.name)) { 
+				var node = nodes[ident.name];
+				LOG.warn('returning a node: ' + node.getSelf().id);
+                return node;
+            }
+        }
+    }
+       
+	// no node found, warn in advance    
+	return null;
+}
+
+var _registerNode = exports.registerNode = function (ident, position, onDone) {
+	
     var pos = new VAST.pos(position.x, position.y);
     
     // append additional z value
@@ -54,15 +91,12 @@ var _registerNode = exports.registerNode = function (position, info, done_CB) {
     
         _nodes_created++;                   
 
-        // store node ident for ident discovery across different VSS servers
-        var ident = {
-            apikey: info.apikey,
-            layer:  info.layer,
-            name:   info.name
-        };
-        
-		// store as meta-data
-        new_node.put(ident);
+        // store node ident for ident discovery across different VSS servers        
+        new_node.put({
+            apikey: ident.apikey,
+            layer:  ident.layer,
+            name:   ident.name
+        });
         
         new_node.join(ip_port, aoi,
         
@@ -72,40 +106,35 @@ var _registerNode = exports.registerNode = function (position, info, done_CB) {
                 LOG.warn('\njoined successfully! id: ' + self_id + ' self id: ' + new_node.getSelf().id);
                
                 // keep track of newly joined node in internal record
-                if (_keys.hasOwnProperty(info.apikey) === false)
-                    _keys[info.apikey] = {};
-                if (_keys[info.apikey].hasOwnProperty(info.layer) === false)
-                    _keys[info.apikey][info.layer] = {};
+                if (_keys.hasOwnProperty(ident.apikey) === false)
+                    _keys[ident.apikey] = {};
+                if (_keys[ident.apikey].hasOwnProperty(ident.layer) === false)
+                    _keys[ident.apikey][ident.layer] = {};
                     
-                _keys[info.apikey][info.layer][info.name] = new_node;
+                _keys[ident.apikey][ident.layer][ident.name] = new_node;
     
                 // store id to ident mapping
-                LOG.debug('store mapping for node id: ' + self_id + ' name: ' + info.name);
-                _id2ident[self_id] = info;
-                
-                //new_node.put(info);
-                
+                LOG.debug('store mapping for node id: ' + self_id + ' name: ' + ident.name);
+                _id2ident[self_id] = ident;
+                                
                 // check content
                 LOG.debug('new_node (after join): ' + new_node.getSelf().toString());
     
-                // perform initial publish pos
-                // (so we can get a list of neighbors)
-                // NOTE: doesn't appear to work...
-                //_publishPos(new_node, info, new_node.getSelf().aoi.radius);
+                // NOTE: perform initial publish pos (so we can get a list of neighbors) doesn't appear to work
                 
-                done_CB(new_node);
+                onDone(new_node);
             }
         );              
-    });    
+    });   
 }
 
-var _revokeNode = exports.revokeNode = function (info, done_CB) {
+var _revokeNode = exports.revokeNode = function (ident, onDone) {
 
     // check if node exists, return error if not yet exist (need to publishPos first)
-    var node = _getNode(info);
-    
+    var node = getNode(ident);
+	
     if (node === undefined || node === null) 
-        return done_CB(false);
+        return onDone(false);
     
     var node_id = node.getSelf().id;
     
@@ -114,62 +143,30 @@ var _revokeNode = exports.revokeNode = function (info, done_CB) {
     node.shut();
     node = null;
     
-    delete _keys[info.apikey][info.layer][info.name];
+    delete _keys[ident.apikey][ident.layer][ident.name];
     
     // check if we need to remove layer and/or API key
-    if (Object.keys(_keys[info.apikey][info.layer]).length === 0)
-        delete _keys[info.apikey][info.layer];
-    if (Object.keys(_keys[info.apikey]).length === 0)
-        delete _keys[info.apikey];
+    if (Object.keys(_keys[ident.apikey][ident.layer]).length === 0)
+        delete _keys[ident.apikey][ident.layer];
+    if (Object.keys(_keys[ident.apikey]).length === 0)
+        delete _keys[ident.apikey];
         
     // remove id to ident mapping
-    LOG.debug('remove mapping for node id: ' + node_id + ' name: ' + info.name);
+    LOG.debug('remove mapping for node id: ' + node_id + ' name: ' + ident.name);
     delete _id2ident[node_id];    
         
-    done_CB(true);
+    onDone(true);
 }
 
-// get a specific node given its API key, layer, and name (i.e., ident)
-// returns 'undefined' if key info is missing
-// returns 'null' if not found
-var _getNode = exports.getNode = function (ident) {
+var _publishPos = exports.publishPos = function (node, pos, radius, onDone) {
 
-    // check if any essential info is missing
-    if (ident.apikey === '' || ident.layer === '' || ident.name === '')
-        return undefined;
-                              
-    for (var key in _keys)
-        LOG.debug('key: ' + key);
-    
-    if (_keys.hasOwnProperty(ident.apikey)) {
-        var layers = _keys[ident.apikey];
-        
-        for (var layer in layers)
-            LOG.debug('layer: ' + layer);
-        
-        if (layers.hasOwnProperty(ident.layer)) {
-            var nodes = layers[ident.layer];
-            
-            for (var node in nodes)
-                LOG.debug('node: ' + node);
-            
-            if (nodes.hasOwnProperty(ident.name)) { 
-                return nodes[ident.name];
-            }
-        }     
-    }
-       
-    // no node found, warn in advance    
-    return null;
-}
-
-var _publishPos = exports.publishPos = function (node, pos, radius) {
-
-    // build new AOI info
+    // build new AOI ident
     var aoi = new VAST.area(pos, radius);
     
     // perform movement
     node.move(aoi);
+
+	onDone();
 }
 
 // get a list of subscribers, new neighbors, left neighbors
@@ -206,44 +203,44 @@ exports.getLists = function (node) {
         
         // get node ident (from either 'meta' field or from mapping)
 		// 'meta' means remote, mapping means on this server (?)
-        var info = undefined;
+        var ident = undefined;
         if (neighbor.hasOwnProperty('meta'))
-            info = neighbor.meta;
+            ident = neighbor.meta;
         else if (_id2ident.hasOwnProperty(id))
-            info = _id2ident[id];
+            ident = _id2ident[id];
                                     
         // skip if
         //    1. is self
         //    2. no mapping for ident (the node is not created via VSS)
         if (self.id == id ||
-            info    === undefined)
+            ident   === undefined)
 			continue;
 
 		// build unique ident for this neighbor
-		var ident = info.apikey + ':' + info.layer + ':' + info.name;
+		var ident_str = ident.apikey + ':' + ident.layer + ':' + ident.name;
 
 		// check if this neighbor should be put to subscriber list
 		// is a subscriber to myself (i.e., subscribed area covers me)
 		if (_isSubscriber(neighbors[id], self.aoi))
-			subscribe_list.push(ident);
+			subscribe_list.push(ident_str);
         
 		// check if I am a subscriber to this neighbor
 		if (_isSubscriber(self, neighbors[id].aoi)) {
 					            
 			// store this neighbor to a map
-			curr_neighbors[id] = info;
+			curr_neighbors[id] = ident;
 		    				
 			// check if this neighbor is new neighbor
 			if (prev_neighbors.hasOwnProperty(id) === false)
-				new_list.push(ident);
+				new_list.push(ident_str);
 		}
     }
 
 	// check if any previously known neighbor are no longer neighbors
 	for (var nid in prev_neighbors) {
 		if (curr_neighbors.hasOwnProperty(nid) === false) {
-			var info = prev_neighbors[nid];
-			left_list.push(info.apikey + ':' + info.layer + ':' + info.name);
+			var ident = prev_neighbors[nid];
+			left_list.push(ident.apikey + ':' + ident.layer + ':' + ident.name);
 		}
 	}
 
@@ -268,3 +265,47 @@ var _isSubscriber = function (node, aoi) {
     LOG.debug('isSubscriber check if node ' + node.toString() + ' covers ' + aoi.center.toString() + ': ' + result);
     return result;
 }
+
+
+/*
+// perform same functions, except remotely
+var l_remoteRPC = exports.remoteRPC = function (ident, func_name, parameters, local_func) {
+
+	// build ident string if it's an object
+	if (typeof ident === 'object')
+		ident = (ident.apikey + ':' + ident.layer + ':' + ident.name);
+
+	// check if this should be local action
+	_validateIdent(ident, function (addr_validated) {
+
+		// should be locally executed
+		if (addr_validated === '') {
+			LOG.warn('addr found is local. locally executing: ' + func_name);
+			local_func();
+		}
+
+		// action should be executed remotely
+		else {
+
+			LOG.warn('local service not available, call RPC for: ' + func_name + ' target: ' + addr_validated);
+
+			// convert all arguments to array
+			var args = Array.prototype.slice.call(parameters);
+			
+			// assume last argument is callback
+			var onDone = args[args.length-1];
+			LOG.warn('func_name: ' + func_name + ' onDone: ' + typeof onDone, 'remoteRPC');
+
+			var url = 'http://' + addr_validated + '/manage/remote/';
+            UTIL.HTTPpost(url, {func: func_name, args: args.slice(0, args.length-1)},
+                function (data, res) {
+
+					LOG.warn('RPC response received', 'remoteRPC');
+					LOG.warn(data);
+					onDone(data);
+                }
+            );
+		}			
+	});
+}
+*/
