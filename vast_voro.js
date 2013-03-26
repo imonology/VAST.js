@@ -319,7 +319,7 @@ function VAST_Voronoi(bbox) {
     // (i.e. when two or more sites are both closest to the point, smaller ID is returned)
     this.closest_to = function (pos) {
 
-        // add function
+        // make sure position has a distance function
         if (typeof pos.distance !== 'function')
             pos = new point2d(pos.x, pos.y);
         

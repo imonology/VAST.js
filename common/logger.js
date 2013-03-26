@@ -41,6 +41,12 @@ function logger() {
         _level = level;
         console.log('set error level to be: ' + level);
     }
+
+    this.sys = function (msg) {
+        msg = _convert(msg);    
+        if (_level >= 4)
+            console.log(_curr_time() + msg);
+    }
     
     this.debug = function (msg) {
         msg = _convert(msg);    

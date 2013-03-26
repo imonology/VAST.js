@@ -30,9 +30,9 @@
     msg  = {from_id, size, type, data, is_reliable}  // message sent & received by clients
     sub  = {sub_id, subscriber, layer, aoi, relay}   // subscription info
     
-    sub_CB(result, subID)               // callback to receive subscribe result (success/fail)
-    neighbor_CB(list)                   // callback to receive neighbor (node) list
-    recv_CB(msg)                        // callback to receive any messages
+    onSubscribed(result, subID)               // callback to receive subscribe result (success/fail)
+    onNeighbors(list)                   // callback to receive neighbor (node) list
+    onReceive(msg)                        // callback to receive any messages
     
     // constructor
     VAST_matcher()
@@ -55,14 +55,14 @@ var msg_handler = msg_handler || require('./net/msg_handler.js');
 function VAST_matcher(recv_callback, settings) {
     
     // store callback to notify received messages
-    var _recv_CB = recv_callback;
+    var _onReceive = recv_callback;
     
     //
     // public methods
     //
     
     // join the matcher to a VON 
-    this.join = function (done_CB) {
+    this.join = function (onDone) {
     
         // join VON network
         var id, port;
@@ -341,7 +341,7 @@ function VAST_matcher(recv_callback, settings) {
     var _that = this;
 
     // function to create a new net layer
-    this.init = function (self_id, port, done_CB) {
+    this.init = function (self_id, port, onDone) {
     
         self_id = self_id || VAST.ID_UNASSIGNED;
         port = port || VAST_DEFAULT_PORT;
@@ -353,8 +353,8 @@ function VAST_matcher(recv_callback, settings) {
             handler.addHandler(_that);
             
             // notify done
-            if (typeof done_CB === 'function')
-                done_CB(local_addr);        
+            if (typeof onDone === 'function')
+                onDone(local_addr);        
         });
     }    
     

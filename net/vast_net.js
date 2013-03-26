@@ -571,7 +571,7 @@ function vast_net(onReceive, onConnect, onDisconnect, id) {
             // pass message to upper layer for handling
             if (typeof onReceive === 'function') {           
 				LOG.warn('[' + _self_id + '] process pack by upper layer from [' + remote_id + ']: ');
-				LOG.warn(pack);
+				//LOG.warn(pack);
                 // TODO: queue-up message to be processed later?
                 onReceive(remote_id, pack);
             }            

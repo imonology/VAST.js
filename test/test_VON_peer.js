@@ -19,21 +19,15 @@ var is_client = false;
 
 // IP/port
 if (process.argv[2] !== undefined) {
-    var ip_port = process.argv[2];
-    // check if this is port only
-    var idx = ip_port.search(':');
-    
-    // ':' not found, port only
-    if (idx === (-1))
-        gateway_addr.port = parseInt(ip_port);       
-    else {
-        var ip = ip_port.slice(0, idx);
-        var port = ip_port.slice(idx+1, ip_port.length);
-        gateway_addr.host = ip;
-        gateway_addr.port = parseInt(port);        
-        
-        is_client = true;
-    }
+	var addr = UTIL.parseAddress(process.argv[2]);
+
+	// if this is IP + port
+	if (addr.host === '')
+		addr.host = VAST.Settings.IP_gateway;
+	else
+		is_client = true;
+		
+	gateway_addr = addr;
 }
 
 LOG.debug('GW ip: ' + gateway_addr.host + ' port: ' + gateway_addr.port);
