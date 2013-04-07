@@ -47,9 +47,6 @@ net_layer.on(
 
 console.log( "before connect attempt..." );
 
-// make a localhost connection
-//var connID = net_layer.connect( 80, "203.84.219.114" );
-
 // check command-line parameter
 var port = 1037;
 var IP = "127.0.0.1";

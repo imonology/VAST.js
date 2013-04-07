@@ -94,6 +94,8 @@ var l_HTTPpost = exports.HTTPpost = function (url_request, data_obj, onDone) {
 // TODO: this is borrowed from ImonCloud, possibly share them?
 var l_HTTPget = exports.HTTPget = function (url, onDone) {
 
+	LOG.warn(url);
+
 	// send request to app server to get stat
 	http.get(url, function (res) {
 

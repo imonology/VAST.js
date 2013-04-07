@@ -7,16 +7,20 @@
 // utilities
 //
 
-var logger  = require('./common/logger');
-global.LOG  = new logger();
-global.UTIL = require('./common/util');
+// define log if not defined
+if (typeof global.LOG === 'undefined') {
+	var logger  = require('./common/logger');
+	global.LOG  = new logger();
 
-// set default error level
-LOG.setLevel(3);
+	// set default error level
+	LOG.setLevel(3);
+}
+
 
 //
 // VAST & VON
 //
+global.UTIL			= require('./common/util');
 
 global.VAST         = require('./vast_types');
 global.VAST.net     = require('./net/vast_net');
