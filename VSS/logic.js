@@ -6,6 +6,8 @@
 //		2013-03-12	separated from handler.js to be sharable
 //		
 
+// TODO: need to 
+
 // include VAST
 require('../VAST');
 
@@ -86,10 +88,11 @@ var _registerNode = exports.registerNode = function (ident, position, onDone) {
     var ip_port  = new VAST.addr(_VON_gateway, _VON_port);                
     var new_node = new VON.peer();
                            
-    // join in the network        
+    // join in the network    
+	// TODO: keep track and recycle ports?    
     new_node.init(VAST.ID_UNASSIGNED, ip_port.port + _nodes_created, function () {
     
-        _nodes_created++;                   
+        _nodes_created++;          
 
         // store node ident for ident discovery across different VSS servers        
         new_node.put({
@@ -158,6 +161,7 @@ var _revokeNode = exports.revokeNode = function (ident, onDone) {
     onDone(true);
 }
 
+// update position or radius (AOI)
 var _publishPos = exports.publishPos = function (node, pos, radius, onDone) {
 
     // build new AOI ident
@@ -267,45 +271,3 @@ var _isSubscriber = function (node, aoi) {
 }
 
 
-/*
-// perform same functions, except remotely
-var l_remoteRPC = exports.remoteRPC = function (ident, func_name, parameters, local_func) {
-
-	// build ident string if it's an object
-	if (typeof ident === 'object')
-		ident = (ident.apikey + ':' + ident.layer + ':' + ident.name);
-
-	// check if this should be local action
-	_validateIdent(ident, function (addr_validated) {
-
-		// should be locally executed
-		if (addr_validated === '') {
-			LOG.warn('addr found is local. locally executing: ' + func_name);
-			local_func();
-		}
-
-		// action should be executed remotely
-		else {
-
-			LOG.warn('local service not available, call RPC for: ' + func_name + ' target: ' + addr_validated);
-
-			// convert all arguments to array
-			var args = Array.prototype.slice.call(parameters);
-			
-			// assume last argument is callback
-			var onDone = args[args.length-1];
-			LOG.warn('func_name: ' + func_name + ' onDone: ' + typeof onDone, 'remoteRPC');
-
-			var url = 'http://' + addr_validated + '/manage/remote/';
-            UTIL.HTTPpost(url, {func: func_name, args: args.slice(0, args.length-1)},
-                function (data, res) {
-
-					LOG.warn('RPC response received', 'remoteRPC');
-					LOG.warn(data);
-					onDone(data);
-                }
-            );
-		}			
-	});
-}
-*/
