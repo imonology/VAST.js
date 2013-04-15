@@ -74,7 +74,7 @@ var _getNode = exports.getNode = function (ident) {
 	return null;
 }
 
-var _registerNode = exports.registerNode = function (ident, position, onDone) {
+var _createNode = exports.createNode = function (ident, position, onDone) {
 	
     var pos = new VAST.pos(position.x, position.y);
     
@@ -131,7 +131,7 @@ var _registerNode = exports.registerNode = function (ident, position, onDone) {
     });   
 }
 
-var _revokeNode = exports.revokeNode = function (ident, onDone) {
+var _destroyNode = exports.destroyNode = function (ident, onDone) {
 
     // check if node exists, return error if not yet exist (need to publishPos first)
     var node = getNode(ident);

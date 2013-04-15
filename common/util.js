@@ -81,6 +81,7 @@ var l_HTTPpost = exports.HTTPpost = function (url_request, data_obj, onDone) {
     });
 
 	req.on('error', function (e) {
+		LOG.error("HTTP post error: " + e.message);
 		onDone(e);
 	});
 

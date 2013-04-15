@@ -42,7 +42,7 @@ var _queryNodeAddress = function (ident_str, onDone) {
 		var is_local = (addr === CONFIG.localAddr ? '(local)' : '(remote)');
 
 		LOG.warn('record [' + ident_str + '] mapping to addr: ' + addr + ' ' + is_local, 'queryNodeAddress');
-		directory.registerNode(ident_str, addr);
+		directory.createNode(ident_str, addr);
 		onDone(addr);
 	});
 }
@@ -167,7 +167,7 @@ var publish = function (target, ident, para, onDone) {
                 case null: {
 
                     // if node does not exist, create one                            
-                    logic.registerNode(ident, pos, function (new_node) {
+                    logic.createNode(ident, pos, function (new_node) {
                         
                         LOG.debug('new_node: ' + JSON.stringify(new_node));                                                                        
                         var response = _replyPublishPos(ident);
@@ -307,7 +307,7 @@ var revoke = function (target, ident, para, onDone) {
             LOG.debug('node ...');
 
             // ensure this method doesn't get abused            
-            logic.revokeNode(ident, function (result) {
+            logic.destroyNode(ident, function (result) {
                 // return success
                 if (result === true)
                     onDone(["OK", []]);
@@ -348,7 +348,7 @@ var manage = function (target, ident, para, onDone) {
 			}
 			
 			LOG.debug('node [' + ident_str + '] register succcessful...');                                          
-			var result = directory.registerNode(ident_str, addr);
+			var result = directory.createNode(ident_str, addr);
 			onDone({addr: ''});
 			break;    
         }
@@ -358,7 +358,7 @@ var manage = function (target, ident, para, onDone) {
             LOG.debug('unregistering node...');
             
             // extract node ident and the IP/port info of its VSS server
-			var result = directory.unregisterNode(ident_str);
+			var result = directory.destroyNode(ident_str);
 			onDone({result: result}); 
             break;        
         }

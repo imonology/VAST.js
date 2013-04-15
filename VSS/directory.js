@@ -13,7 +13,7 @@ var _ident2addr = {};
 //
 
 // record a newly created node (replacing existing record under the same ident)
-exports.registerNode = function (ident, addr) {
+exports.createNode = function (ident, addr) {
 
 	if (_ident2addr.hasOwnProperty(ident))
 		return false;
@@ -23,7 +23,7 @@ exports.registerNode = function (ident, addr) {
 }
 
 // erase record for a node
-exports.unregisterNode = function (ident) {
+exports.destroyNode = function (ident) {
 	if (_ident2addr.hasOwnProperty(ident)) {
 		delete _ident2addr[ident];
 		return true;
