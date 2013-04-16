@@ -9,7 +9,7 @@ process.on('uncaughtException', function(err) {
 require('../VAST');
 
 // show only warnings
-LOG.setLevel(2);
+LOG.setLevel(3);
 
 /*
     NOTE:
@@ -53,7 +53,7 @@ var nodes_created = 0;
 // open a server at this port
 var io = require('socket.io').listen(server_port);
 
-io.set('log level', 1);
+io.set('log level', 2);
 
 // warpper functions around a VAST node
 // NOTE: when connection establishes, it means that there's a new VAST node joined
