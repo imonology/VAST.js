@@ -90,7 +90,9 @@ var vast = (typeof module === 'undefined' ? {} : module.exports);
         // TODO: validate parameters (addr has 'host' 'port'?)
 
         // create socket
-        socket = io.connect('http://' + addr.host + ':' + addr.port);
+        var socketio_url = 'http://' + addr.host + ':' + addr.port;
+        console.log('url: ' + socketio_url);
+        socket = io.connect(socketio_url);
         
         // first connect to socket.io server (to join VON)
         // NOTE: addr specify the socket.io server and not VON gateway (is setup at the socket.io server)

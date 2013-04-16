@@ -134,7 +134,7 @@ var _createNode = exports.createNode = function (ident, position, onDone) {
 var _destroyNode = exports.destroyNode = function (ident, onDone) {
 
     // check if node exists, return error if not yet exist (need to publishPos first)
-    var node = getNode(ident);
+    var node = _getNode(ident);
 	
     if (node === undefined || node === null) 
         return onDone(false);
