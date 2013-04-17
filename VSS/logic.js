@@ -131,7 +131,7 @@ var _createNode = exports.createNode = function (ident, position, onDone) {
     });   
 }
 
-var _destroyNode = exports.destroyNode = function (ident, onDone) {
+var _deleteNode = exports.deleteNode = function (ident, onDone) {
 
     // check if node exists, return error if not yet exist (need to publishPos first)
     var node = _getNode(ident);
@@ -141,7 +141,7 @@ var _destroyNode = exports.destroyNode = function (ident, onDone) {
     
     var node_id = node.getSelf().id;
     
-    //destroy node
+    //delete node
     node.leave();
     node.shut();
     node = null;
@@ -255,6 +255,47 @@ exports.getLists = function (node) {
 	         ' left: ' + left_list.length + ' subscribe: ' + subscribe_list.length);
 
 	return [new_list, left_list, subscribe_list];
+}
+
+// get a list of subscribers to myself
+// TODO: combine overlapped functions with getLists()
+exports.getSubscribers = function (node) {
+
+	var neighbors = node.list();
+	var self      = node.getSelf();
+
+	var subscribe_list = [];
+	
+    for (var id in neighbors) {
+        var neighbor = neighbors[id];
+                
+        // get node ident (from either 'meta' field or from mapping)
+		// 'meta' means remote, mapping means on this server (?)
+        var ident = undefined;
+        
+		if (neighbor.hasOwnProperty('meta'))
+            ident = neighbor.meta;
+        else if (_id2ident.hasOwnProperty(id))
+            ident = _id2ident[id];
+                                    
+        // skip if
+        //    1. is self
+        //    2. no mapping for ident (the node is not created via VSS)
+        if (self.id == id ||
+            ident   === undefined)
+			continue;
+
+		// build unique ident for this neighbor
+		var ident_str = ident.apikey + ':' + ident.layer + ':' + ident.name;
+
+		// check if this neighbor should be put to subscriber list
+		// is a subscriber to myself (i.e., subscribed area covers me)
+		if (_isSubscriber(neighbors[id], self.aoi))
+			subscribe_list.push(ident_str);
+
+	}
+
+	return subscribe_list;
 }
 
 //
