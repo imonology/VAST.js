@@ -23,7 +23,7 @@ exports.createNode = function (ident, addr) {
 }
 
 // erase record for a node
-exports.destroyNode = function (ident) {
+exports.deleteNode = function (ident) {
 	if (_ident2addr.hasOwnProperty(ident)) {
 		delete _ident2addr[ident];
 		return true;

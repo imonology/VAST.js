@@ -108,7 +108,7 @@ var _checkForwarding = exports.checkForwarding = function (ident_str, pathname, 
 //
 
 
-// send back subscriber list to client
+// send back lists of in/out neighbors & subscribers to client
 var _replyPublishPos = function (ident) {
 
     var error = [];
@@ -129,6 +129,29 @@ var _replyPublishPos = function (ident) {
                         
     // return result
     return [lists, error];
+}
+
+// send back list of subscribers
+var _replySubscribers = function (ident) {
+
+    var error = [];
+	var subscribers = [];
+    var node = logic.getNode(ident);
+	
+    if (node === undefined || node === null) {
+		var err_msg = 'node not found or response object invalid';
+		LOG.error(err_msg, 'replySubscribers');
+		error.push(err_msg);
+	}
+	else {
+		// list to be returned (subscribers, new neighbors, left neighbors)
+		subscribers = logic.getSubscribers(node);
+	}
+
+    LOG.debug('node id: ' + node.getSelf().id, 'replySubscribers');
+                        
+    // return result
+    return [subscribers, error];
 }
 
 
@@ -286,7 +309,7 @@ var query = function (target, ident, para, onDone) {
             // TODO: ensure this method doesn't get abused (or DDoS attack)
 					  
             // check if node exists, return error if not yet exist (need to publishPos first)
-            var response = _replyPublishPos(ident);
+            var response = _replySubscribers(ident);
 			onDone(response);                                      
             break;          
         }
@@ -307,7 +330,7 @@ var revoke = function (target, ident, para, onDone) {
             LOG.debug('node ...');
 
             // ensure this method doesn't get abused            
-            logic.destroyNode(ident, function (result) {
+            logic.deleteNode(ident, function (result) {
                 // return success
                 if (result === true)
                     onDone(["OK", []]);
@@ -358,7 +381,7 @@ var manage = function (target, ident, para, onDone) {
             LOG.debug('unregistering node...');
             
             // extract node ident and the IP/port info of its VSS server
-			var result = directory.destroyNode(ident_str);
+			var result = directory.deleteNode(ident_str);
 			onDone({result: result}); 
             break;        
         }
