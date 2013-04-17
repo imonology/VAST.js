@@ -123,10 +123,9 @@ var _replyPublishPos = function (ident) {
 	else {
 		// list to be returned (subscribers, new neighbors, left neighbors)
 		lists = logic.getLists(node);
+		LOG.debug('node id: ' + node.getSelf().id, 'replyPublishPos');
 	}
-
-    LOG.debug('node id: ' + node.getSelf().id, 'replyPublishPos');
-                        
+                            
     // return result
     return [lists, error];
 }
