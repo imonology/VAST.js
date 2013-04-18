@@ -145,10 +145,9 @@ var _replySubscribers = function (ident) {
 	else {
 		// list to be returned (subscribers, new neighbors, left neighbors)
 		subscribers = logic.getSubscribers(node);
+		LOG.debug('node id: ' + node.getSelf().id, 'replySubscribers');
 	}
-
-    LOG.debug('node id: ' + node.getSelf().id, 'replySubscribers');
-                        
+                            
     // return result
     return [subscribers, error];
 }
@@ -328,11 +327,16 @@ var revoke = function (target, ident, para, onDone) {
         case 'node': {
             LOG.debug('node ...');
 
+			// first prepare list of subscribers as return value
+			var response = _replySubscribers(ident);
+
             // ensure this method doesn't get abused            
             logic.deleteNode(ident, function (result) {
                 // return success
-                if (result === true)
-                    onDone(["OK", []]);
+                if (result === true) {
+                    //onDone(["OK", []]);
+					onDone(response);
+				}
                 else
                     onDone(["", ["revoke fail"]]);
             });
