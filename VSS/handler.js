@@ -47,6 +47,33 @@ var _queryNodeAddress = function (ident_str, onDone) {
 	});
 }
 
+// remove the VSS server address for a particular node from central directory
+var _deleteNodeAddress = function (ident_str, onDone) {
+
+	var ident_path = ident_str.replace(/:/g, '/');
+
+	// parameters are: ident/addr
+	var url = 'http://' + CONFIG.gatewayIP + ':' + CONFIG.gatewayPort + '/manage/unreg/' + ident_path + '/' + CONFIG.localAddr;
+	
+	LOG.warn('url: ' + url, 'deleteNodeAddress');
+
+	UTIL.HTTPget(url, function (res_obj) {
+
+		LOG.warn('HTTPget res: ', 'deleteNodeAddress');
+		LOG.warn(res_obj);
+
+		var result = true;
+		if (res_obj === null) {			
+			LOG.warn('error or gateway is down, delete may have failed', 'deleteNodeAddress');			
+			result = false;
+		}
+
+		if (typeof onDone === 'function')
+			onDone(result);
+	});
+}
+
+
 // check if a particular ident belongs to this VSS server 
 // or should be re-directed to another VSS server
 var _validateIdent = exports.validateIdent = function (ident_str, onDone) {
@@ -125,7 +152,7 @@ var _replyPublishPos = function (ident) {
 		lists = logic.getLists(node);
 		LOG.debug('node id: ' + node.getSelf().id, 'replyPublishPos');
 	}
-                            
+
     // return result
     return [lists, error];
 }
@@ -151,6 +178,8 @@ var _replySubscribers = function (ident) {
     // return result
     return [subscribers, error];
 }
+
+// return a list of nodes within subscribed area
 
 
 
@@ -246,8 +275,11 @@ var subscribe = function (target, ident, para, onDone) {
             else {
                 // update AOI radius for area subscription
                 logic.publishPos(node, node.getSelf().aoi.center, radius, function () {				
-	                // return success
-		            onDone(["OK", []]);
+	                // return list of nodes within subscribed area
+					var response = logic.getNeighbors(node);
+					onDone([response, []]);
+
+					//onDone(["OK", []]);
 				});                
             }			
             break; 
@@ -309,8 +341,9 @@ var query = function (target, ident, para, onDone) {
             // check if node exists, return error if not yet exist (need to publishPos first)
             var response = _replySubscribers(ident);
 			onDone(response);                                      
-            break;          
+            break;
         }
+
         default: {
             onDone();
             break;
@@ -334,7 +367,11 @@ var revoke = function (target, ident, para, onDone) {
             logic.deleteNode(ident, function (result) {
                 // return success
                 if (result === true) {
-                    //onDone(["OK", []]);
+					var ident_str = ident.apikey + ':' + ident.layer + ':' + ident.name;
+					 
+					// TODO: clear record at directory server 
+					_deleteNodeAddress(ident_str);
+
 					onDone(response);
 				}
                 else
@@ -387,6 +424,22 @@ var manage = function (target, ident, para, onDone) {
 			var result = directory.deleteNode(ident_str);
 			onDone({result: result}); 
             break;        
+        }
+
+        // unregister an existing node 
+        case 'listnodes': {
+            
+			// TODO: not really correct (but just to get the field content)
+			var addr = ident.apikey; 
+			LOG.warn('list nodes at: ' + addr);
+
+            // extract node ident and the IP/port info of its VSS server
+			var list = directory.listNodes(addr);
+
+            LOG.debug('listing nodes at addr: ' + addr + ', total: ' + list.length);
+
+			onDone(list);
+            break;
         }
 
 		// execute remote function locally

@@ -38,3 +38,19 @@ exports.checkNode = function (ident) {
 		return _ident2addr[ident];
 	return '';
 }
+
+// list node ident list at a matching address
+exports.listNodes = function (local_addr) {
+	var list = [];
+
+	for (var ident in _ident2addr) {
+
+		if (local_addr && local_addr !== _ident2addr[ident])
+			continue;
+
+		LOG.warn(ident + ' addr: ' + _ident2addr[ident]);
+		list.push(ident);
+	}
+
+	return list;
+}

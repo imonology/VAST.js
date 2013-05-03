@@ -173,11 +173,13 @@ var _publishPos = exports.publishPos = function (node, pos, radius, onDone) {
 	onDone();
 }
 
+
+
 // get a list of subscribers, new neighbors, left neighbors
 exports.getLists = function (node) {
 
     // get a list of current neighbors's id
-    var neighbors = node.list();
+    var neighbors = _getValidNeighbors(node);
     var self      = node.getSelf();
 
 	var new_list = [];
@@ -192,7 +194,101 @@ exports.getLists = function (node) {
 	if (_id2neighbors.hasOwnProperty(self.id) === true)
 		prev_neighbors = _id2neighbors[self.id];
 
-    // TODO: send only those who's AOI covers me (as true subscribers, not simply enclosing neighbors)
+	for (var ident in neighbors) {
+
+		var neighbor = neighbors[ident];
+
+		// check if this neighbor should be put to subscriber list
+		// is a subscriber to myself (i.e., subscribed area covers me)
+		if (_isSubscriber(neighbors[ident], self.aoi.center))
+			subscribe_list.push(ident);
+        
+		// check if I am a subscriber to this neighbor
+		if (_isSubscriber(self, neighbors[ident].aoi.center)) {
+					            
+			// store this neighbor to a map
+			curr_neighbors[ident] = true;
+		    				
+			// check if this neighbor is new neighbor
+			if (prev_neighbors.hasOwnProperty(ident) === false)
+				new_list.push(ident);
+		}
+    }
+
+	// check if any previously known neighbor are no longer neighbors
+	for (var left_ident in prev_neighbors) {
+		if (curr_neighbors.hasOwnProperty(left_ident) === false) {
+			left_list.push(left_ident);
+		}
+	}
+
+	// replace neighbor list for this node
+	_id2neighbors[self.id] = curr_neighbors;
+
+	LOG.warn('neighbors returned. new: ' + new_list.length + 
+	         ' left: ' + left_list.length + ' subscribe: ' + subscribe_list.length);
+
+	return [new_list, left_list, subscribe_list];
+}
+
+// get a list of subscribers to myself
+exports.getSubscribers = function (node) {
+
+	var neighbors = _getValidNeighbors(node);
+	var self      = node.getSelf();
+
+	var subscribe_list = [];
+	
+    for (var ident in neighbors) {
+        var neighbor = neighbors[ident];
+                
+		// check if this neighbor should be put to subscriber list
+		// is a subscriber to myself (i.e., subscribed area covers me)
+		if (_isSubscriber(neighbor, self.aoi.center))
+			subscribe_list.push(ident);
+	}
+
+	return subscribe_list;
+}
+
+// get a list of neighbors to a node
+exports.getNeighbors = function (node) {
+	var neighbors = _getValidNeighbors(node);
+	var self      = node.getSelf();
+	var list = [];
+	
+    for (var ident in neighbors) {
+        var neighbor = neighbors[ident];
+
+		// store if I am a subscriber to this neighbor
+		if (_isSubscriber(self, neighbor.aoi.center))
+			list.push(ident); 
+	}
+
+	return list;
+}
+
+//
+//	helpers
+//
+
+// check if a given node is a direct area subscriber for a center point
+var _isSubscriber = function (node, center) {
+
+    // NOTE: if subscription radius is 0, then we consider it's not subscribing anything
+    var result = (node.aoi.radius != 0 && node.aoi.covers(center));
+    LOG.debug('isSubscriber check if node ' + node.toString() + ' covers ' + center.toString() + ': ' + result);
+    return result;
+}
+
+// return a map of neighbors that are VSS-generated
+// indexed by ident strings
+var _getValidNeighbors = function (node) {
+
+    var neighbors = node.list();
+    var self      = node.getSelf();
+	var list = {};
+
     for (var id in neighbors) {
         
         LOG.debug('checking neighbor id: ' + id + ' against self id: ' + self.id);
@@ -201,10 +297,7 @@ exports.getLists = function (node) {
         // NOTE: current approach can only do ident translation for nodes created via this VSS server
         
         var neighbor = neighbors[id];
-        
-        //for (var i in neighbor) 
-        //    LOG.debug(i + ': ' + typeof neighbor[i]);
-        
+                
         // get node ident (from either 'meta' field or from mapping)
 		// 'meta' means remote, mapping means on this server (?)
         var ident = undefined;
@@ -222,93 +315,11 @@ exports.getLists = function (node) {
 
 		// build unique ident for this neighbor
 		var ident_str = ident.apikey + ':' + ident.layer + ':' + ident.name;
-
-		// check if this neighbor should be put to subscriber list
-		// is a subscriber to myself (i.e., subscribed area covers me)
-		if (_isSubscriber(neighbors[id], self.aoi))
-			subscribe_list.push(ident_str);
-        
-		// check if I am a subscriber to this neighbor
-		if (_isSubscriber(self, neighbors[id].aoi)) {
-					            
-			// store this neighbor to a map
-			curr_neighbors[id] = ident;
-		    				
-			// check if this neighbor is new neighbor
-			if (prev_neighbors.hasOwnProperty(id) === false)
-				new_list.push(ident_str);
-		}
-    }
-
-	// check if any previously known neighbor are no longer neighbors
-	for (var nid in prev_neighbors) {
-		if (curr_neighbors.hasOwnProperty(nid) === false) {
-			var ident = prev_neighbors[nid];
-			left_list.push(ident.apikey + ':' + ident.layer + ':' + ident.name);
-		}
+		
+		list[ident_str] = neighbor;
 	}
 
-	// replace neighbor list for this node
-	_id2neighbors[self.id] = curr_neighbors;
-
-	LOG.warn('neighbors returned. new: ' + new_list.length + 
-	         ' left: ' + left_list.length + ' subscribe: ' + subscribe_list.length);
-
-	return [new_list, left_list, subscribe_list];
-}
-
-// get a list of subscribers to myself
-// TODO: combine overlapped functions with getLists()
-exports.getSubscribers = function (node) {
-
-	var neighbors = node.list();
-	var self      = node.getSelf();
-
-	var subscribe_list = [];
-	
-    for (var id in neighbors) {
-        var neighbor = neighbors[id];
-                
-        // get node ident (from either 'meta' field or from mapping)
-		// 'meta' means remote, mapping means on this server (?)
-        var ident = undefined;
-        
-		if (neighbor.hasOwnProperty('meta'))
-            ident = neighbor.meta;
-        else if (_id2ident.hasOwnProperty(id))
-            ident = _id2ident[id];
-                                    
-        // skip if
-        //    1. is self
-        //    2. no mapping for ident (the node is not created via VSS)
-        if (self.id == id ||
-            ident   === undefined)
-			continue;
-
-		// build unique ident for this neighbor
-		var ident_str = ident.apikey + ':' + ident.layer + ':' + ident.name;
-
-		// check if this neighbor should be put to subscriber list
-		// is a subscriber to myself (i.e., subscribed area covers me)
-		if (_isSubscriber(neighbors[id], self.aoi))
-			subscribe_list.push(ident_str);
-
-	}
-
-	return subscribe_list;
-}
-
-//
-//	helpers
-//
-
-// check if a given node is a direct area subscriber for a center point
-var _isSubscriber = function (node, aoi) {
-
-    // NOTE: if subscription radius is 0, then we consider it's not subscribing anything
-    var result = (node.aoi.radius != 0 && node.aoi.covers(aoi.center));
-    LOG.debug('isSubscriber check if node ' + node.toString() + ' covers ' + aoi.center.toString() + ': ' + result);
-    return result;
+	return list;
 }
 
 
