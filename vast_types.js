@@ -162,7 +162,6 @@ var l_addr = exports.addr = function (host, port) {
     // convert from a generic javascript object
     this.parse = function (js_obj) {
 
-        //console.log('addr parse called, obj: ' + js_obj);
         try {
             //console.log('js obj host: ' + js_obj.host + ' port: ' + js_obj.port);
             if (js_obj.hasOwnProperty('host'))
