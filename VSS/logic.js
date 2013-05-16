@@ -201,6 +201,7 @@ exports.getLists = function (node) {
 		prev_neighbors = _id2neighbors[self.id];
 
 	// get prev subscriber list if available
+	var curr_subscribers = {};
 	var prev_subscribers = {};
 	if (_id2subscribers.hasOwnProperty(self.id) === true)
 		prev_subscribers = _id2subscribers[self.id];
@@ -211,8 +212,10 @@ exports.getLists = function (node) {
 
 		// check if this neighbor should be put to subscriber list
 		// is a subscriber to myself (i.e., subscribed area covers me)
-    	if (_isSubscriber(neighbors[ident], self.aoi.center))
+    	if (_isSubscriber(neighbors[ident], self.aoi.center)) {
 			subscribe_list.push(ident);
+			curr_subscribers[ident] = true;
+		}
         
 		// check if I am a subscriber to this neighbor
 		if (_isSubscriber(self, neighbors[ident].aoi.center)) {
@@ -235,14 +238,14 @@ exports.getLists = function (node) {
 
 	// check any previous subscriber is no longer a subscriber
 	for (var left_ident in prev_subscribers) {
-		if (subscribers.hasOwnProperty(left_ident) === false) {
+		if (curr_subscribers.hasOwnProperty(left_ident) === false) {
 			unsubscribe_list.push(left_ident);
 		}
 	}
 
 	// replace neighbor list for this node
 	_id2neighbors[self.id] = curr_neighbors;
-	_id2subscribers[self.id] = subscribe_list;
+	_id2subscribers[self.id] = curr_subscribers;
 
 	LOG.warn('neighbors returned. ' + 
 			 ' new: ' + new_list.length + 
