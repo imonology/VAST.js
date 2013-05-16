@@ -5,7 +5,7 @@ require('../VAST');
 // default settings
 global.CONFIG = {
 	gatewayIP:	'127.0.0.1',
-	gatewayPort: 39900	
+	gatewayPort: 39900
 };
 
 // do not show debug

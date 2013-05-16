@@ -36,7 +36,7 @@
     pack    = {type, msg, group, priority, targets}  // message package during delivery
     vast_net (see definition in vast_net.js)
     
-    // constructoracceptor for a given center point 
+    // VON functions
     join(addr, aoi, onDone)             join a VON network at a gateway with a given aoi 
     leave()                             leave the VON network
     move(aoi, send_time)                move the AOI to a new position (or change radius)
@@ -44,10 +44,10 @@
     send(id, msg)                       send a message to a given node
     put(obj)                            store app-specific data to the node
     
-    // basic functions
+    // basic external functions
     init(id, port, onDone)              init a VON peer with id, listen port
     shut()                              shutdown a VON peer (will close down listen port)
-    query(center, onAcceptor)           find the re a app-specific data along with the node (will pass during node discovery)                      
+    query(center, onAcceptor)           find app-specific data along with the node (will pass during node discovery)
     get()                               retrieve app-specific data for this node
     
     // accessors
@@ -533,7 +533,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
         //_time_drop[node.id] = 0;
 
         // update last access time of this node
-        node.endpt.lastAccessed = UTIL.getTimestamp ();
+        node.endpt.lastAccessed = UTIL.getTimestamp();
 
         // set flag so that updated nodes' states are also sent 
         // instead of sending only updates for newly inserted node
