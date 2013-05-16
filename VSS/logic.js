@@ -32,6 +32,9 @@ var _id2ident = {};
 // node id -> neighbor list mapping
 var _id2neighbors = {};
 
+// node id -> subscriber list mapping
+var _id2subscribers = {};
+
 
 //
 // public calls
@@ -74,6 +77,8 @@ var _getNode = exports.getNode = function (ident) {
 	return null;
 }
 
+// NOTE: the 'ident' passed in should be an object with element:
+// {apikey: string, layer: string, name: string}
 var _createNode = exports.createNode = function (ident, position, onDone) {
 	
     var pos = new VAST.pos(position.x, position.y);
@@ -175,7 +180,7 @@ var _publishPos = exports.publishPos = function (node, pos, radius, onDone) {
 
 
 
-// get a list of subscribers, new neighbors, left neighbors
+// get a list of new neighbors, left neighbors, subscribers, left subscribers
 exports.getLists = function (node) {
 
     // get a list of current neighbors's id
@@ -185,6 +190,7 @@ exports.getLists = function (node) {
 	var new_list = [];
 	var left_list = [];
 	var subscribe_list = [];
+	var unsubscribe_list = [];
 
 	// list of current neighbors
 	var curr_neighbors = {};
@@ -194,13 +200,18 @@ exports.getLists = function (node) {
 	if (_id2neighbors.hasOwnProperty(self.id) === true)
 		prev_neighbors = _id2neighbors[self.id];
 
+	// get prev subscriber list if available
+	var prev_subscribers = {};
+	if (_id2subscribers.hasOwnProperty(self.id) === true)
+		prev_subscribers = _id2subscribers[self.id];
+
 	for (var ident in neighbors) {
 
 		var neighbor = neighbors[ident];
 
 		// check if this neighbor should be put to subscriber list
 		// is a subscriber to myself (i.e., subscribed area covers me)
-		if (_isSubscriber(neighbors[ident], self.aoi.center))
+    	if (_isSubscriber(neighbors[ident], self.aoi.center))
 			subscribe_list.push(ident);
         
 		// check if I am a subscriber to this neighbor
@@ -208,7 +219,7 @@ exports.getLists = function (node) {
 					            
 			// store this neighbor to a map
 			curr_neighbors[ident] = true;
-		    				
+
 			// check if this neighbor is new neighbor
 			if (prev_neighbors.hasOwnProperty(ident) === false)
 				new_list.push(ident);
@@ -222,16 +233,28 @@ exports.getLists = function (node) {
 		}
 	}
 
+	// check any previous subscriber is no longer a subscriber
+	for (var left_ident in prev_subscribers) {
+		if (subscribers.hasOwnProperty(left_ident) === false) {
+			unsubscribe_list.push(left_ident);
+		}
+	}
+
 	// replace neighbor list for this node
 	_id2neighbors[self.id] = curr_neighbors;
+	_id2subscribers[self.id] = subscribe_list;
 
-	LOG.warn('neighbors returned. new: ' + new_list.length + 
-	         ' left: ' + left_list.length + ' subscribe: ' + subscribe_list.length);
+	LOG.warn('neighbors returned. ' + 
+			 ' new: ' + new_list.length + 
+	         ' left: ' + left_list.length + 
+			 ' subscribe: ' + subscribe_list.length + 
+			 ' unsubscribe: ' + unsubscribe_list.length);
 
-	return [new_list, left_list, subscribe_list];
+	return [new_list, left_list, subscribe_list, unsubscribe_list];
 }
 
 // get a list of subscribers to myself
+// TODO: make it more efficient (not repeat what getLists already does)
 exports.getSubscribers = function (node) {
 
 	var neighbors = _getValidNeighbors(node);
