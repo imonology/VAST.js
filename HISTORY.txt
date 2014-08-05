@@ -1,4 +1,0 @@
-
-0.0.1-0 / 2014-07-30
-====================
- * FIX: make sure tests / html can execute in tests directory
