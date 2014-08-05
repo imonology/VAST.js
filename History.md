@@ -1,4 +1,8 @@
 
+0.0.1-0 / 2014-08-05
+====================
+ * FIX: License file shows GPLv3
+
 0.0.1 / 2014-08-05
 ==================
  * FIX: package.json can't be used by npm (remove "/" )
