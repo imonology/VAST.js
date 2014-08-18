@@ -1,6 +1,6 @@
 {
   "name": "vast.js",
-  "version": "0.0.1-1",
+  "version": "0.0.1-2",
   "description": "a P2P library for spatial publish subscribe (SPS)",
   "main": "index.js",
   "scripts": {

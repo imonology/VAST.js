@@ -1,4 +1,9 @@
 
+0.0.1-3 / 2014-08-19
+====================
+ * MOD: extract working original vast.js files to /lib
+ * test working code in /test/gw.bat and /test/client.bat
+
 0.0.1-2 / 2014-08-18
 ====================
  * ADD: test/vast.js for testing purpose
