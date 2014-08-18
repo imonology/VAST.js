@@ -1,4 +1,9 @@
 
+0.0.1-2 / 2014-08-18
+====================
+ * ADD: test/vast.js for testing purpose
+ * MOD: move original vast.js files to /lib/original
+
 0.0.1-0 / 2014-08-05
 ====================
  * FIX: License file shows GPLv3
