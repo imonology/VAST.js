@@ -1,0 +1,34 @@
+{
+  "name": "vast.js",
+  "version": "0.0.1-2",
+  "description": "a P2P library for spatial publish subscribe (SPS)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Imonology/VAST.js"
+  },
+  "dependencies": {
+    "socket.io": "1.0.6",
+    "debug": "0.7.4"
+  },
+  "keywords": [
+    "peer-to-peer",
+	"P2P",
+    "spatial",
+    "publish",
+    "subscribe",
+    "pubsub",	
+    "real-time",
+    "games",
+    "vast"
+  ],
+  "author": "Shun-Yun Hu",
+  "license": "GPLv3",
+  "bugs": {
+    "url": "https://github.com/Imonology/VAST.js/issues"
+  },
+  "homepage": "https://github.com/Imonology/VAST.js"
+}
