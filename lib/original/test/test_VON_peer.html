@@ -3,12 +3,12 @@
 
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 
-<script type="text/javascript" src="./typedef/point2d.js"></script>
-<script type="text/javascript" src="./typedef/segment.js"></script>
-<script type="text/javascript" src="./typedef/line2d.js"></script>
-<script type="text/javascript" src="./rhill-voronoi-core.js"></script>
-<script type="text/javascript" src="./common/logger.js"></script>
-<script type="text/javascript" src="./vast_voro.js"></script>
+<script type="text/javascript" src="../typedef/point2d.js"></script>
+<script type="text/javascript" src="../typedef/segment.js"></script>
+<script type="text/javascript" src="../typedef/line2d.js"></script>
+<script type="text/javascript" src="../rhill-voronoi-core.js"></script>
+<script type="text/javascript" src="../common/logger.js"></script>
+<script type="text/javascript" src="../vast_voro.js"></script>
 
 <script type="text/javascript">
 <!--
@@ -188,7 +188,7 @@ var VASTDemo = {
             //context.fillRect (x, y, 5, 5);
                         
             // get reference to voronoi
-            var voro = VoronoiDemo.getVoro();
+            var voro = VASTDemo.getVoro();
             var result = voro.get_result();         
 
             // draw all edges for a region given it's site id
@@ -232,7 +232,7 @@ var VASTDemo = {
             
             // if AOI radius exists or site has changed, then re-draw
             if (AOI_radius !== '' || site_changed) {
-                VoronoiDemo.render();               
+                VASTDemo.render();               
                 
                 // draw AOI radius if exists
                 if (AOI_radius !== '') {
@@ -285,14 +285,14 @@ var VASTDemo = {
 
 </head>
 
-<body onload="VoronoiDemo.init();">
+<body onload="VASTDemo.init();">
 <h1>VONpeer Test</h1>
 <div id="divroot" style="width:800px;">
 
 <h4 class="divhdr">Sites generator</h4>
 <div class="divinfo" id="voronoiGenerator">
-<input type="button" value="Generate" onclick="VoronoiDemo.randomSites(parseInt(document.getElementById('voronoiNumberSites').value,10),true);VoronoiDemo.render();"/> or <input type="button" value="Add" onclick="VoronoiDemo.randomSites(parseInt(document.getElementById('voronoiNumberSites').value,10),false);VoronoiDemo.render();"/><input id="voronoiNumberSites" type="text" value="100" size="5" maxlength="5"/> sites randomly 
-<input id="voronoiClearSites" type="button" value="Clear all sites" onclick="VoronoiDemo.clearSites();VoronoiDemo.render();"/>
+<input type="button" value="Generate" onclick="VASTDemo.randomSites(parseInt(document.getElementById('voronoiNumberSites').value,10),true);VASTDemo.render();"/> or <input type="button" value="Add" onclick="VASTDemo.randomSites(parseInt(document.getElementById('voronoiNumberSites').value,10),false);VASTDemo.render();"/><input id="voronoiNumberSites" type="text" value="100" size="5" maxlength="5"/> sites randomly 
+<input id="voronoiClearSites" type="button" value="Clear all sites" onclick="VASTDemo.clearSites();VASTDemo.render();"/>
 <br/>
 mouse_x: 
 <input id="mouse_x" type="text" value="100" size="5" maxlength="5"/>

@@ -8,7 +8,7 @@
 // flags
 var AUTOMATIC_LEAVE_PERIOD = 3;     // number of seconds 
 
-require('../VAST');
+require('../lib/common.js');
 
 // do not show debug
 LOG.setLevel(3);
@@ -18,7 +18,7 @@ var gateway_addr = {host: VAST.Settings.IP_gateway, port: VAST.Settings.port_gat
 var is_client = false;
 
 // IP/port
-if (process.argv[2] !== undefined) {
+if (process.argv[2]) {
 	var addr = UTIL.parseAddress(process.argv[2]);
 
 	// if this is IP + port
