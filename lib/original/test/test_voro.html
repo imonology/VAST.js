@@ -2,9 +2,9 @@
 <html>
 <head>
 <script type="text/javascript" src="../wz_jsgraphics.js"></script>
-<script type="text/javascript" src="../typedef/point2d.js"></script>
-<script type="text/javascript" src="../typedef/segment.js"></script>
-<script type="text/javascript" src="../typedef/line2d.js"></script>
+<script type="text/javascript" src="../../voronoi/point2d.js"></script>
+<script type="text/javascript" src="../../voronoi/segment.js"></script>
+<script type="text/javascript" src="../../voronoi/line2d.js"></script>
 <script type="text/javascript" src="../sf_voronoi.js"></script>
 
 </head>
@@ -21,7 +21,8 @@ Char: <input type="text" id="charfield" size="15" /> Time: <input type="text" id
 
 // create Voronoi object
 
-var voro = new SFVoronoi();
+// var voro = new SFVoronoi();
+var voro = new Voronoi();
 
 var points = [];
 var n = 100;
@@ -78,6 +79,7 @@ function drawEdges(edges) {
 function redrawVoronoi(x_lim, y_lim, size) 
 {
     // remove all sites
+    // FIXME: undefined function clear() in SFVoronoi
     voro.clear();
 	points = [];
     
