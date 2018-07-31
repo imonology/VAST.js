@@ -11,16 +11,18 @@
     "url": "git://github.com/Imonology/VAST.js"
   },
   "dependencies": {
-    "socket.io": "1.0.6",
-    "debug": "0.7.4"
+    "debug": "^0.7.4",
+    "hash": "^0.2.0",
+    "package.json": "^2.0.1",
+    "socket.io": "^1.7.4"
   },
   "keywords": [
     "peer-to-peer",
-	"P2P",
+    "P2P",
     "spatial",
     "publish",
     "subscribe",
-    "pubsub",	
+    "pubsub",
     "real-time",
     "games",
     "vast"
