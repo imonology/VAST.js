@@ -3,12 +3,12 @@
 
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 
-<script type="text/javascript" src="../../voronoi/point2d.js"></script>
-<script type="text/javascript" src="../../voronoi/segment.js"></script>
-<script type="text/javascript" src="../../voronoi/line2d.js"></script>
-<script type="text/javascript" src="../../rhill-voronoi-core-min.js"></script>
-<script type="text/javascript" src="../../common/logger.js"></script>
-<script type="text/javascript" src="../../voronoi/vast_voro.js"></script>
+<script type="text/javascript" src="../lib/voronoi/point2d.js"></script>
+<script type="text/javascript" src="../lib/voronoi/segment.js"></script>
+<script type="text/javascript" src="../lib/voronoi/line2d.js"></script>
+<script type="text/javascript" src="../lib/rhill-voronoi-core-min.js"></script>
+<script type="text/javascript" src="../lib/common/logger.js"></script>
+<script type="text/javascript" src="../lib/voronoi/vast_voro.js"></script>
 
 <script type="text/javascript">
 <!--
@@ -110,9 +110,9 @@ var VoronoiDemo = {
 			iSite = sites.length;
 		while (iSite--) {
 			v = sites[iSite];
-            var idx = sites[iSite].id;
+            //var idx = sites[iSite].id;
 			ctx.rect(v.x-2/3,v.y-2/3,2,2);
-            ctx.fillText(idx,v.x,v.y);
+            //ctx.fillText(idx,v.x,v.y);
 			}
         // draw a center point
         //ctx.rect(500-2/3, 500-2/3, 5, 5);
@@ -277,7 +277,6 @@ var VoronoiDemo = {
 
                 // get enclosing neighbors
                 var en_list = voro.get_en(curr_id);
-                LOG.debug(en_list);
                 if (en_list === undefined)
                     return;
 
