@@ -1,12 +1,10 @@
 <html>
 <head>
-<script type="text/javascript" src="../rhill-voronoi-core-min.js"></script>
-<!--
+<script type="text/javascript" src="../rhill-voronoi-core.js"></script>
 <script type="text/javascript" src="../../voronoi/point2d.js"></script>
 <script type="text/javascript" src="../../voronoi/segment.js"></script>
 <script type="text/javascript" src="../../voronoi/line2d.js"></script>
 <script type="text/javascript" src="../sf_voronoi.js"></script>
--->
 
 <script type="text/javascript">
 <!--
@@ -38,8 +36,7 @@ var VoronoiDemo = {
 		var dx = this.canvas.width-this.margin*2;
 		var yo = this.margin;
 		var dy = this.canvas.height-this.margin*2;
-		
-        for (var i=0; i<n; i++) {
+    for (var i=0; i<n; i++) {
 			this.sites.push({x:self.Math.round((xo+self.Math.random()*dx)*10)/10,y:self.Math.round((yo+self.Math.random()*dy)*10)/10});
 			}
         /*
@@ -53,7 +50,7 @@ var VoronoiDemo = {
         this.sites.push({x: 421, y: 435});
         this.sites.push({x: 634, y: 792});
         this.sites.push({x: 811, y: 535});
-        */  
+        */
 		this.diagram = this.voronoi.compute(this.sites, this.bbox);
 		this.updateStats();
 		},
@@ -102,7 +99,7 @@ var VoronoiDemo = {
 			}
         // draw a center point
         //ctx.rect(500-2/3, 500-2/3, 5, 5);
-        
+
 		ctx.fill();
 		},
 	};
