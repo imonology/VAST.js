@@ -291,7 +291,7 @@ var VoronoiDemo = {
                 var bound_list = voro.get_bound(id, AOI_radius, mouse_x, mouse_y);
 
                 for (var i=0; i < bound_list.length; i++) {
-                    var id = bound_list[i].site.id;
+                    var id = bound_list[i];
 
                     drawEdges(id, "rgb(0, 0, 255)");
                 }
