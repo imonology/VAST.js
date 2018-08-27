@@ -20,7 +20,7 @@ var display_type = 'boundary';
 var VoronoiDemo = {
 
 	// voronoi: new Voronoi(),
-  voronoi: new VAST_Voronoi(),
+    voronoi: new VAST_Voronoi(),
 	sites: [],
 	diagram: null,
 	margin: 50,
@@ -77,6 +77,8 @@ var VoronoiDemo = {
 		},
 
 	render: function() {
+        console.log("Sites: ");
+        console.log(this.sites);
 		var ctx = this.canvas.getContext('2d');
 		// background
 		ctx.globalAlpha = 1;
