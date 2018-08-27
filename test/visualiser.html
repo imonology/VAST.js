@@ -1,0 +1,262 @@
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+    <script type="text/javascript" src="../lib/voronoi/point2d.js"></script>
+    <script type="text/javascript" src="../lib/voronoi/segment.js"></script>
+    <script type="text/javascript" src="../lib/voronoi/line2d.js"></script>
+    <script type="text/javascript" src="../lib/rhill-voronoi-core-min.js"></script>
+    <script type="text/javascript" src="../lib/common/logger.js"></script>
+    <script type="text/javascript" src="../lib/voronoi/vast_voro.js"></script>
+    <script type="text/javascript" src="../lib/Visualiser.js"></script>
+    <script src="../lib/net/socket.io.js"></script>
+
+
+    <script type="text/javascript">
+        var _id = -1;
+        var Visualiser = {
+            visualiser : new Visualiser(),
+            voronoi: new VAST_Voronoi(),
+            gateway: {host: "127.0.0.1", port: 37700},
+            aoi  : {x: 0, y: 0, aoi: 10},
+            sites: [],
+            diagram: null,
+            margin: 50,
+            canvas: null,
+            bbox: {xl:0,xr:100,yt:0,yb:100},
+
+            init: function(port) {
+                sites = [];
+                this.canvas = document.getElementById("voronoiCanvas");
+                console.log("init");
+                this.setID();
+                //console.log(this.visualiser);
+                this.visualiser.init(port,function(site_data) {
+                    this.sites = site_data;
+                    //console.log("Html sites:");
+                    //console.log(this.sites);;
+                    //console.log(Object.keys(this.sites).length);
+
+                    //populate voronoi diagram
+                    Visualiser.initVoro();
+                });
+            },
+
+            switchPort: function(port){
+                sites = [];
+                //console.clear();
+                console.log("Switching to port: "+port);
+                this.visualiser.init(port, function(site_data) {
+                    this.sites = site_data;
+                    Visualiser.recalculate();
+                });
+            },
+
+            initVoro: function() {
+                //console.log("Sites in initVoro");
+                //console.log(sites);
+                this.voronoi.set_bounding_box(this.bbox);
+                this.recalculate();
+            },
+
+            setID: function() {
+                this.visualiser.set_onID(function(id) {
+                    _id = id;
+                });
+            },
+
+            recalculate: function() {
+                    this.sites2voro();
+                    this.diagram = this.voronoi.get_result();
+                    this.updateStats();
+                    this.render();
+            },
+
+            sites2voro: function() {
+                this.voronoi.clear();
+                for (var key in sites) {
+                    //console.log(sites[key]);
+                    this.voronoi.insert(key,sites[key]);
+                }
+            },
+
+            updateDiagram: function(){
+                this.voronoi.set_bounding_box(this.bbox);
+                this.diagram = this.voronoi.get_result();
+            },
+
+            updateStats: function(){
+                if (!this.diagram) {return;}
+                var e = document.getElementById('voronoiStats');
+                if (!e) {return;}
+        		e.innerHTML = '('+this.diagram.cells.length+' Voronoi cells computed from '+Object.keys(sites).length+' Voronoi sites in '+this.diagram.execTime+' ms &ndash; rendering <i>not</i> included)';
+            },
+
+            render: function() {
+                var ctx = this.canvas.getContext('2d');
+
+                //background
+                ctx.globalAlpha = 1;
+                ctx.beginPath();
+                ctx.rect(0,0,this.canvas.width,this.canvas.height);
+        		ctx.fillStyle = 'white';
+        		ctx.fill();
+        		ctx.strokeStyle = '#888';
+                ctx.lineWidth = 1;
+        		ctx.stroke();
+
+        		// voronoi
+                if (!this.diagram) {return;}
+
+        		// edges
+        		ctx.beginPath();
+        		ctx.strokeStyle='#000';
+        		var edges = this.diagram.edges,
+        			iEdge = edges.length,
+        			edge, v;
+        		while (iEdge--) {
+        			edge = edges[iEdge];
+        			v = edge.va;
+        			ctx.moveTo(v.x*8,v.y*8);
+        			v = edge.vb;
+        			ctx.lineTo(v.x*8,v.y*8);
+        			}
+        		ctx.stroke();
+
+                // sites
+        		ctx.beginPath();
+                ctx.fillStyle = '#44f';
+                ctx.font = "15px Verdana";
+
+                for (var key in sites) {
+                    v = sites[key];
+                    var idx = v.id;
+
+                    ctx.rect(v.x*8,v.y*8,4,4);
+                    ctx.fillText(idx, v.x*8+7,v.y*8+7);
+                }
+
+                ctx.fill();
+            },
+            getVoro: function() {
+                return this.voronoi;
+            }
+        };
+
+        Element.prototype.leftTopScreen = function () {
+            var x = 0;
+            var y = 0;
+
+            return new Array (x, y);
+        }
+
+        var curr_id = 0;
+        document.addEventListener ("DOMContentLoaded", function () {
+            var canvas = document.getElementById ("voronoiCanvas");
+
+            var mouse_x = document.getElementById ("mouse_x");
+            var mouse_y = document.getElementById ("mouse_y");
+
+            var xy = canvas.leftTopScreen();
+
+            canvas.addEventListener ("click", function (event) {
+                var x,y;
+
+                if (event.offsetX) {
+                    x = event.offsetX;
+                    y = event.offsetY;
+                }
+                else if (event.layerX) {
+                    x = event.layerX;
+                    y = event.layerY;
+                }
+
+                // get adjusted x & y coordinates
+                x = x - xy[0];
+                y = y - xy[1];
+
+                // display coordinates
+                mouse_x.value = x;
+                mouse_y.value = y;
+
+                var voro = Visualiser.getVoro();
+                var result = voro.get_result();
+
+                // draw all edges for a region given it's site id
+                var drawEdges = function (id, color_style) {
+
+                    var idx = voro.getidx(id);
+                    var halfedges = result.cells[idx].halfedges;
+
+                    var edges = [];
+                    for(var j=0; j < halfedges.length; j++)
+                        edges.push(halfedges[j].edge);
+
+                    // draw new enclosing neighbors
+    				// draw edges of enclosing neighbors
+    				context.beginPath();
+                    context.strokeStyle = color_style;
+                    context.lineWidth = 3;
+
+    				var	iEdge = edges.length,
+    					edge, v;
+    				while (iEdge--) {
+    					edge = edges[iEdge];
+    					v = edge.va;
+    					context.moveTo(v.x,v.y);
+    					v = edge.vb;
+    					context.lineTo(v.x,v.y);
+    					}
+    				context.stroke();
+                }
+
+                Visualiser.visualiser.move(x,y,aoi_radius.value);
+            })
+        });
+    </script>
+</head>
+
+<body onload="Visualiser.init(8888);">
+    <table width = "100%" border = 0>
+        <tr>
+            <td>
+                <h1>VAST gateway and client visualiser</h1>
+                <div id="divroot" style="width:800px;">
+
+                <h4 class="divhdr">Client selector</h4>
+                <div class="divinfo" id="voronoiGenerator">
+                <input type="button" value="Select port" onclick="Visualiser.switchPort(document.getElementById('port').value);"/> <input id="port" type="text" value="8888" size="4" maxlength="5"/>
+                <br/>
+                mouse_x:
+                <input id="mouse_x" type="text" value="100" size="5" maxlength="5"/>
+                mouse_y:
+                <input id="mouse_y" type="text" value="100" size="5" maxlength="5"/>
+                AOI radius:
+                <input id="aoi_radius" type="text" value="10" size="5" maxlength="5"/>
+                <br />
+                <form id="disp_form">
+                Display Type:
+                <input type="radio" name="disp_type" value="enclosing" checked="true"/>enclosing &nbsp &nbsp
+                <input type="radio" name="disp_type" value="boundary" /> boundary
+                </form>
+                </div>
+
+            </td>
+        </tr>
+        <tr>
+            <td width = "50%">
+                <h4 class="divhdr">Canvas <span id="voronoiStats" style="font:normal 11px sans"></span></h4>
+                <div id="canvasParent">
+                    <noscript>You need to enable Javascript in your browser for this page to display properly.</noscript>
+                    <canvas id="voronoiCanvas" width="800" height="800" onclick=""></canvas>
+                </div>
+            </td>
+            <td width = "50%" valign="top">
+                <h2 style="text-align:center; font-size: 30px;">Neighbour Stats</br><span id="neighbourStats" style="font:bold 30px sans;"></span></h2>
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>
