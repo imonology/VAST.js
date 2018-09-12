@@ -20,6 +20,7 @@
             gateway: {host: "127.0.0.1", port: 37700},
             aoi  : {x: 0, y: 0, aoi: 10},
             sites: [],
+            neighbours: [],
             diagram: null,
             margin: 50,
             canvas: null,
@@ -31,24 +32,70 @@
                 console.log("init");
                 this.setID();
                 //console.log(this.visualiser);
-                this.visualiser.init(port,function(site_data) {
+                this.visualiser.init(port,function(site_data, neighbour_data) {
                     this.sites = site_data;
-                    //console.log("Html sites:");
-                    //console.log(this.sites);;
-                    //console.log(Object.keys(this.sites).length);
+                    this.neighbours = neighbour_data;
+                    /*
+                    console.log("Html sites:");
+                    console.log(this.sites);
+                    console.log(Object.keys(this.sites).length);
+
+                    console.log("Html neighbours:");
+                    console.log(this.neighbours);
+                    console.log(Object.keys(this.neighbours).length);
+                    */
 
                     //populate voronoi diagram
                     Visualiser.initVoro();
+                }, function(direction,type,data) {
+                    Visualiser.updateMessage(direction,type,data);
+                }, function(bool) {
+                    Visualiser.updateIndicator(bool);
                 });
             },
 
             switchPort: function(port){
                 sites = [];
-                //console.clear();
+
+                // clear incoming and outgoing messages
+                document.getElementById("outgoing").innerHTML = "";
+                document.getElementById("incoming").innerHTML = "";
+
+                this.canvas = document.getElementById("voronoiCanvas");
+                /*
+                messages = this.visualiser.get_messages();
+
+                do {} while (messages != undefined);
+
+                console.log(messages);
+
+                // repopulate message list with whatever messages have already been sent
+                for (var i=0; i<messages.length; i++) {
+                    this.appendList(messages[i]);
+                }
+                */
+
                 console.log("Switching to port: "+port);
-                this.visualiser.init(port, function(site_data) {
+                this.setID();
+                this.visualiser.init(port, function(site_data, neighbour_data) {
                     this.sites = site_data;
+                    this.neighbours = neighbour_data;
+
+                    /*
+                    console.log("Html sites:");
+                    console.log(this.sites);
+                    console.log(Object.keys(this.sites).length);
+
+                    console.log("Html neighbours:");
+                    console.log(this.neighbours);
+                    console.log("Neighbour length: "+Object.keys(this.neighbours).length);
+                    */
+
                     Visualiser.recalculate();
+                }, function(direction,type,data) {
+                    Visualiser.updateMessage(direction,type,data);
+                }, function(bool) {
+                    Visualiser.updateIndicator(bool);
                 });
             },
 
@@ -62,14 +109,51 @@
             setID: function() {
                 this.visualiser.set_onID(function(id) {
                     _id = id;
+                    document.getElementById("selected").innerHTML = _id;
                 });
             },
 
+            updateMessage: function(type,data) {
+                console.log(data);
+                console.log("Updating message in the "+data.direction+" direction with "+data.name+" message");
+                if (type < 8) {
+                    this.appendList(data);
+                }
+            },
+
+            // Indicator shows whether there are still messages to process or not 
+            updateIndicator: function(data){
+                var ctx = this.canvas.getContext("2d");
+                ctx.beginPath();
+                if (data) {
+                    ctx.fillStyle="red";
+                } else {
+                    ctx.fillStyle="green";
+                }
+                ctx.rect(0,0,10,10);
+                ctx.fill();
+            },
+
+            appendList: function(data){
+                var node = document.createElement("LI");
+                var sender = data.msg.aid != undefined ? data.msg.aid : data.sender;
+                var textnode = document.createTextNode("["+sender+"] "+data.name+" to targets "+data.targets);
+
+                node.appendChild(textnode);
+                document.getElementById(data.direction).appendChild(node);
+            },
+
             recalculate: function() {
-                    this.sites2voro();
-                    this.diagram = this.voronoi.get_result();
-                    this.updateStats();
-                    this.render();
+                //console.log("recalculate sites:");
+                //console.log(sites);
+                this.sites2voro();
+                //console.log("after sites2voro:");
+                //console.log(sites);
+                this.diagram = this.voronoi.get_result();
+                //console.log("after get_result:");
+                //console.log(sites);
+                this.updateStats();
+                this.render();
             },
 
             sites2voro: function() {
@@ -85,6 +169,10 @@
                 this.diagram = this.voronoi.get_result();
             },
 
+            next: function(bool) {
+                this.visualiser.next(bool);
+            },
+
             updateStats: function(){
                 if (!this.diagram) {return;}
                 var e = document.getElementById('voronoiStats');
@@ -94,6 +182,13 @@
 
             render: function() {
                 var ctx = this.canvas.getContext('2d');
+
+                //clear sites and neighbours list
+                var site_list = document.getElementById("sites");
+                var neighbour_list = document.getElementById("neighbours");
+
+                site_list.innerHTML = "";
+                neighbour_list.innerHTML = "";
 
                 //background
                 ctx.globalAlpha = 1;
@@ -111,6 +206,7 @@
         		// edges
         		ctx.beginPath();
         		ctx.strokeStyle='#000';
+
         		var edges = this.diagram.edges,
         			iEdge = edges.length,
         			edge, v;
@@ -134,9 +230,36 @@
 
                     ctx.rect(v.x*8,v.y*8,4,4);
                     ctx.fillText(idx, v.x*8+7,v.y*8+7);
+
+                    // add site to info on right
+                    var node = document.createElement("LI");
+                    var textnode = document.createTextNode("["+idx+"] Site: ("+Math.round(v.x)+","+Math.round(v.y)+") voronoiID: "+v.voronoiId);
+
+                    node.appendChild(textnode);
+                    site_list.appendChild(node);
                 }
 
                 ctx.fill();
+
+                for (var key in neighbours) {
+                    v = neighbours[key];
+                    idx = v.id;
+
+                    if (idx == _id) {
+                        ctx.beginPath();
+    					ctx.strokeStyle='#000';
+                        ctx.lineWidth = 1;
+
+                        ctx.arc(v.aoi.center.x*8, v.aoi.center.y*8, v.aoi.radius*8, 0, Math.PI*2, true);
+                        ctx.stroke();
+                    }
+
+                    node = document.createElement("LI");
+                    textnode = document.createTextNode("["+v.id+"] Site: ("+Math.round(v.aoi.center.x)+","+Math.round(v.aoi.center.y)+") voronoiID: "+v.aoi.center.voronoiId);
+
+                    node.appendChild(textnode);
+                    neighbour_list.appendChild(node);
+                }
             },
             getVoro: function() {
                 return this.voronoi;
@@ -216,16 +339,16 @@
     </script>
 </head>
 
-<body onload="Visualiser.init(8888);">
-    <table width = "100%" border = 0>
+<body onload="">
+    <table width="100%" border=0>
         <tr>
             <td>
                 <h1>VAST gateway and client visualiser</h1>
                 <div id="divroot" style="width:800px;">
 
-                <h4 class="divhdr">Client selector</h4>
+                <h4 class="divhdr">Client selected: <span id="selected" style="font: bold 20px sans;"></span></h4>
                 <div class="divinfo" id="voronoiGenerator">
-                <input type="button" value="Select port" onclick="Visualiser.switchPort(document.getElementById('port').value);"/> <input id="port" type="text" value="8888" size="4" maxlength="5"/>
+                <input type="button" value="Select port" onclick="Visualiser.switchPort(document.getElementById('port').value);"/> <input id="port" type="text" value="8888" size="4" maxlength="5"/><input id="next" type="button" value="Next command" onclick="Visualiser.next(true);"><input id="halt" type="button" value="Run normally" onclick="Visualiser.next(false);">
                 <br/>
                 mouse_x:
                 <input id="mouse_x" type="text" value="100" size="5" maxlength="5"/>
@@ -243,7 +366,7 @@
 
             </td>
         </tr>
-        <tr>
+        <tr max-height="840px">
             <td width = "50%">
                 <h4 class="divhdr">Canvas <span id="voronoiStats" style="font:normal 11px sans"></span></h4>
                 <div id="canvasParent">
@@ -252,7 +375,38 @@
                 </div>
             </td>
             <td width = "50%" valign="top">
-                <h2 style="text-align:center; font-size: 30px;">Neighbour Stats</br><span id="neighbourStats" style="font:bold 30px sans;"></span></h2>
+                <h2 style="text-align:center; font-size: 30px;">Neighbour Stats</br></h2>
+                <table width="100%" border = 0 style="text-align:center;">
+                    <tr>
+                        <td width="50%">
+                            <h4>Sites</h4>
+                            <ul id="sites" style="text-align:left;"></ul>
+                        </td>
+                        <td width="50%">
+                            <h4>Neighbours</h4>
+                            <ul id="neighbours" style="text-align:left;"></ul>
+                        </td>
+                    </tr>
+                    <tr style="text-align:center;">
+                        <td colspan="2">
+                            <h2 style="text-align:center; font-size:30px;">Messages</h2>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="50%">
+                            <nav  style="overflow-y:scroll; max-height:560px;">
+                                <h4>Outgoing</h4>
+                                <ul id="outgoing" style="text-align:left;"></ul>
+                            </nav>
+                        </td>
+                        <td width="50%">
+                            <nav  style="overflow-y:scroll; max-height:560px;">
+                                <h4>Incoming</h4>
+                                <ul id="incoming" style="text-align:left;"></ul>
+                            </nav>
+                        </td>
+                    </tr>
+                </table>
             </td>
         </tr>
     </table>

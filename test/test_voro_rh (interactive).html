@@ -290,7 +290,7 @@ var VoronoiDemo = {
             }
             else if (display_type === 'boundary' && AOI_radius !== '') {
                 //get a list of boundary neighbours
-                var bound_list = voro.get_bound(id, AOI_radius, mouse_x, mouse_y);
+                var bound_list = voro.get_bound(id, AOI_radius, mouse_x.value, mouse_y.value);
 
                 for (var i=0; i < bound_list.length; i++) {
                     var id = bound_list[i];
