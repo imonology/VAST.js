@@ -21,6 +21,7 @@
             aoi  : {x: 0, y: 0, aoi: 10},
             sites: [],
             neighbours: [],
+            halt: undefined,
             diagram: null,
             margin: 50,
             canvas: null,
@@ -28,40 +29,19 @@
 
             init: function(port) {
                 sites = [];
+                neighbours = [];
                 this.canvas = document.getElementById("voronoiCanvas");
                 console.log("init");
-                this.setID();
-                //console.log(this.visualiser);
-                this.visualiser.init(port,function(site_data, neighbour_data) {
-                    this.sites = site_data;
-                    this.neighbours = neighbour_data;
-                    /*
-                    console.log("Html sites:");
-                    console.log(this.sites);
-                    console.log(Object.keys(this.sites).length);
-
-                    console.log("Html neighbours:");
-                    console.log(this.neighbours);
-                    console.log(Object.keys(this.neighbours).length);
-                    */
-
-                    //populate voronoi diagram
-                    Visualiser.initVoro();
-                }, function(direction,type,data) {
-                    Visualiser.updateMessage(direction,type,data);
-                }, function(bool) {
-                    Visualiser.updateIndicator(bool);
-                });
+                this.voronoi.set_bounding_box(this.bbox);
             },
 
             switchPort: function(port){
                 sites = [];
+                neighbours = [];
 
                 // clear incoming and outgoing messages
                 document.getElementById("outgoing").innerHTML = "";
                 document.getElementById("incoming").innerHTML = "";
-
-                this.canvas = document.getElementById("voronoiCanvas");
                 /*
                 messages = this.visualiser.get_messages();
 
@@ -77,9 +57,10 @@
 
                 console.log("Switching to port: "+port);
                 this.setID();
-                this.visualiser.init(port, function(site_data, neighbour_data) {
+                this.visualiser.init(port, function(site_data, neighbour_data, halt) {
                     this.sites = site_data;
                     this.neighbours = neighbour_data;
+                    this.halt = halt;
 
                     /*
                     console.log("Html sites:");
@@ -102,7 +83,6 @@
             initVoro: function() {
                 //console.log("Sites in initVoro");
                 //console.log(sites);
-                this.voronoi.set_bounding_box(this.bbox);
                 this.recalculate();
             },
 
@@ -114,14 +94,14 @@
             },
 
             updateMessage: function(type,data) {
-                console.log(data);
-                console.log("Updating message in the "+data.direction+" direction with "+data.name+" message");
+                //console.log(data);
+                //console.log("Updating message in the "+data.direction+" direction with "+data.name+" message");
                 if (type < 8) {
                     this.appendList(data);
                 }
             },
 
-            // Indicator shows whether there are still messages to process or not 
+            // Indicator shows whether there are still messages to process or not
             updateIndicator: function(data){
                 var ctx = this.canvas.getContext("2d");
                 ctx.beginPath();
@@ -203,6 +183,13 @@
         		// voronoi
                 if (!this.diagram) {return;}
 
+                // debug mode indicator
+                ctx.fillStyle = halt ? "green" : "red";
+
+                ctx.beginPath();
+                ctx.rect(this.canvas.width-10, 0, 10, 10);
+                ctx.fill();
+
         		// edges
         		ctx.beginPath();
         		ctx.strokeStyle='#000';
@@ -241,6 +228,7 @@
 
                 ctx.fill();
 
+                //fill neighbour list and draw AoI
                 for (var key in neighbours) {
                     v = neighbours[key];
                     idx = v.id;
@@ -339,7 +327,7 @@
     </script>
 </head>
 
-<body onload="">
+<body onload="Visualiser.init();">
     <table width="100%" border=0>
         <tr>
             <td>
