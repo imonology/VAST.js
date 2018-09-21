@@ -1,7 +1,7 @@
 /*
-    unit test for VON_peer
+    unit test for VON_peer debugging
 
-    2012.07.10
+    2018/09/17
 */
 
 
@@ -11,14 +11,14 @@ var AUTOMATIC_LEAVE_PERIOD = 3;     // number of seconds
 require('../lib/common.js');
 
 // do not show debug
-LOG.setLevel(3);
+LOG.setLevel(1);
 
 // set default IP/port
 var gateway_addr = {host: VAST.Settings.IP_gateway, port: VAST.Settings.port_gateway};
 var is_client = false;
 
 // IP/port
-if (process.argv[4]) {
+if (process.argv[5]) {
 	var addr = UTIL.parseAddress(process.argv[2]);
 
 	// if this is IP + port
@@ -29,20 +29,24 @@ if (process.argv[4]) {
 
 	gateway_addr = addr;
 
-	var move = false;
+	//var move = false;
 
 	var x = parseInt(process.argv[3]);
 	var y = parseInt(process.argv[4]);
+	var halt = process.argv[5];
 } else {
 	var x = parseInt(process.argv[2]);
 	var y = parseInt(process.argv[3]);
+	var halt = process.argv[4];
 }
+LOG.warn("halt: "+halt);
 
 LOG.debug('GW ip: ' + gateway_addr.host + ' port: ' + gateway_addr.port);
 LOG.debug('is_client: ' + is_client);
 
 // create GW or a connecting client;
 var peer = new VON.peer();
+peer.debug(halt);
 var aoi  = new VAST.area(new VAST.pos(x, y), 10);
 
 var moveAround = function () {
@@ -86,10 +90,12 @@ peer.init((is_client ? VAST.ID_UNASSIGNED : VAST.ID_GATEWAY), gateway_addr.port,
         function (id) {
             LOG.warn('joined successfully! id: ' + id + '\n');
 
+			/*
             // try to move around once in a while...  (if not gateway)
             if (id !== VAST.ID_GATEWAY && move == 'true') {
-                interval_id = setInterval(function(){ moveAround() }, 5000);
+                //interval_id = setInterval(function(){ moveAround() }, 5000);
             }
+			*/
         }
     );
 });
