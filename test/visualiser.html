@@ -25,7 +25,7 @@
             diagram: null,
             margin: 50,
             canvas: null,
-            bbox: {xl:0,xr:100,yt:0,yb:100},
+            bbox: {xl:0,xr:1000,yt:0,yb:1000},
 
             init: function(port) {
                 sites = [];
@@ -33,9 +33,11 @@
                 this.canvas = document.getElementById("voronoiCanvas");
                 console.log("init");
                 this.voronoi.set_bounding_box(this.bbox);
+                this.setID();
             },
 
             switchPort: function(port){
+                this.visualiser.close();
                 sites = [];
                 neighbours = [];
 
@@ -56,7 +58,6 @@
                 */
 
                 console.log("Switching to port: "+port);
-                this.setID();
                 this.visualiser.init(port, function(site_data, neighbour_data, halt) {
                     this.sites = site_data;
                     this.neighbours = neighbour_data;
@@ -200,9 +201,10 @@
         		while (iEdge--) {
         			edge = edges[iEdge];
         			v = edge.va;
-        			ctx.moveTo(v.x*8,v.y*8);
+                    // NOTE: multiply by 8
+        			ctx.moveTo(v.x,v.y);
         			v = edge.vb;
-        			ctx.lineTo(v.x*8,v.y*8);
+        			ctx.lineTo(v.x,v.y);
         			}
         		ctx.stroke();
 
@@ -215,8 +217,9 @@
                     v = sites[key];
                     var idx = v.id;
 
-                    ctx.rect(v.x*8,v.y*8,4,4);
-                    ctx.fillText(idx, v.x*8+7,v.y*8+7);
+                    // NOTE: Multiply by 8
+                    ctx.rect(v.x,v.y,4,4);
+                    ctx.fillText(idx, v.x+7,v.y+7);
 
                     // add site to info on right
                     var node = document.createElement("LI");
@@ -238,7 +241,8 @@
     					ctx.strokeStyle='#000';
                         ctx.lineWidth = 1;
 
-                        ctx.arc(v.aoi.center.x*8, v.aoi.center.y*8, v.aoi.radius*8, 0, Math.PI*2, true);
+                        // NOTE: multiply by 8
+                        ctx.arc(v.aoi.center.x, v.aoi.center.y, v.aoi.radius, 0, Math.PI*2, true);
                         ctx.stroke();
                     }
 
@@ -285,6 +289,7 @@
                 // get adjusted x & y coordinates
                 x = x - xy[0];
                 y = y - xy[1];
+                console.log("x:"+x+" y:"+y);
 
                 // display coordinates
                 mouse_x.value = x;
@@ -359,7 +364,7 @@
                 <h4 class="divhdr">Canvas <span id="voronoiStats" style="font:normal 11px sans"></span></h4>
                 <div id="canvasParent">
                     <noscript>You need to enable Javascript in your browser for this page to display properly.</noscript>
-                    <canvas id="voronoiCanvas" width="800" height="800" onclick=""></canvas>
+                    <canvas id="voronoiCanvas" width="1000" height="1000" onclick=""></canvas>
                 </div>
             </td>
             <td width = "50%" valign="top">

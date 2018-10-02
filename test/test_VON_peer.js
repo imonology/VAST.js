@@ -11,7 +11,7 @@ var AUTOMATIC_LEAVE_PERIOD = 3;     // number of seconds
 require('../lib/common.js');
 
 // do not show debug
-LOG.setLevel(3);
+LOG.setLevel(1);
 
 // set default IP/port
 var gateway_addr = {host: VAST.Settings.IP_gateway, port: VAST.Settings.port_gateway};
@@ -29,47 +29,45 @@ if (process.argv[2]) {
 
 	gateway_addr = addr;
 
-	var move = process.argv[3];
+	var move = JSON.parse(process.argv[3]);
 }
 
 LOG.debug('GW ip: ' + gateway_addr.host + ' port: ' + gateway_addr.port);
 LOG.debug('is_client: ' + is_client);
 
-var x = Math.floor(Math.random() * 100);
-var y = Math.floor(Math.random() * 100);
+var x = Math.floor(Math.random() * 1000);
+var y = Math.floor(Math.random() * 1000);
 
 x = x == 0 ? x+1: x;
 y = y == 0 ? y+1: y;
 
 // create GW or a connecting client;
 var peer = new VON.peer();
+peer.debug(false);
 var aoi  = new VAST.area(new VAST.pos(x, y), 10);
 
 var moveAround = function () {
+	aoi = peer.getSelf().aoi;
 
-    // move if not GW
-    if (peer.getSelf().id !== VAST.ID_GATEWAY) {
-        // random walk new location (5 units within current center position)
-        aoi.center.x += Math.floor((Math.random()*10) - 5);
-        aoi.center.y += Math.floor((Math.random()*10) - 5);
+    // random walk new location (5 units within current center position)
+    aoi.center.x += Math.floor((Math.random()*10) - 5);
+    aoi.center.y += Math.floor((Math.random()*10) - 5);
 
-        if (aoi.center.x < 0)
-            aoi.center.x *= -1;
-		if (aoi.center.x == 0)
-			aoi.center.x = 1;
-		if (aoi.center.x >= 100)
-			aoi.center.x = 99;
-		if (aoi.center.y >= 100)
-			aoi.center.y = 99;
-		if (aoi.center.y == 0)
-			aoi.center.y = 1;
-        if (aoi.center.y < 0)
-            aoi.center.y *= -1;
-
-    }
+    if (aoi.center.x < 0)
+        aoi.center.x *= -1;
+	if (aoi.center.x == 0)
+		aoi.center.x = 1;
+	if (aoi.center.x >= 1000)
+		aoi.center.x = 999;
+	if (aoi.center.y >= 1000)
+		aoi.center.y = 999;
+	if (aoi.center.y == 0)
+		aoi.center.y = 1;
+    if (aoi.center.y < 0)
+        aoi.center.y *= -1;
 
     var neighbor_size = Object.keys(peer.list()).length;
-    console.log('move around to ' + aoi.center.toString() + ' neighbor size: ' + neighbor_size);
+    LOG.debug('move around to ' + aoi.center.toString() + ' neighbor size: ' + neighbor_size);
     peer.move(aoi);
 }
 
@@ -87,8 +85,8 @@ peer.init((is_client ? VAST.ID_UNASSIGNED : VAST.ID_GATEWAY), gateway_addr.port,
             LOG.warn('joined successfully! id: ' + id + '\n');
 
             // try to move around once in a while...  (if not gateway)
-            if (id !== VAST.ID_GATEWAY && move == 'true') {
-                interval_id = setInterval(function(){ moveAround() }, 5000);
+            if (id !== VAST.ID_GATEWAY && move) {
+                interval_id = setInterval(function(){ moveAround() }, 1000);
             }
         }
     );
