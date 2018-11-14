@@ -27,7 +27,7 @@ var count = 0;
 
 LOG.debug("Start movement");
 // run for 10 seconds
-while (count < 3000) {
+while (count < 10) {
     movement.move();
     count++;
 }
@@ -37,7 +37,7 @@ LOG.debug("Movement complete");
 _movement = movement.getMove();
 
 // set up write stream to write to file
-var stream = fs.createWriteStream('MovementPoints.txt');
+var stream = fs.createWriteStream('MovementPoints_test.txt');
 
 LOG.debug("write to text file started");
 // write to the text file

@@ -11,7 +11,9 @@
     "url": "git://github.com/Imonology/VAST.js"
   },
   "dependencies": {
+    "bson": "^3.0.2",
     "debug": "^2.6.9",
+    "event-stream": "^4.0.1",
     "express": "^4.15.2",
     "hash": "^0.2.0",
     "package.json": "^2.0.1",
