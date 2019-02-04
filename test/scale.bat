@@ -1,1 +1,1 @@
-node test_VON_scale.js 127.0.0.1:37700 10
+node test_VON_scale.js 127.0.0.1:37700 50 false
