@@ -105,7 +105,7 @@
 
             move: function() {
                 console.log("Start move");
-                this.visualiser.move();
+                //this.visualiser.move();
             },
 
             startReplay: function(filename) {
@@ -148,7 +148,6 @@
         		while (iEdge--) {
         			edge = edges[iEdge];
         			v = edge.va;
-                    // NOTE: multiply by 8
         			ctx.moveTo(v.x,v.y);
         			v = edge.vb;
         			ctx.lineTo(v.x,v.y);
@@ -164,7 +163,6 @@
                     v = sites[key];
                     var idx = v.id;
 
-                    // NOTE: Multiply by 8
                     ctx.rect(v.x,v.y,4,4);
                     ctx.fillText(idx, v.x+7,v.y+7);
 
@@ -208,7 +206,9 @@
             <td width = "50%" valign="top">
                 <h2 style="text-align:center; font-size: 30px;">Neighbour Stats</br></h2>
                     <h4>Sites</h4>
-                    <ul id="sites" style="text-align:left;"></ul>
+                        <nav  style="overflow-y:scroll; max-height:1000px;">
+                            <ul id="sites" style="text-align:left;"></ul>
+                        </nav>
             </td>
         </tr>
     </table>

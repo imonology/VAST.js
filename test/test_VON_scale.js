@@ -50,11 +50,13 @@ LOG.debug('GW ip: ' + gateway_addr.host + ' port: ' + gateway_addr.port);
 
 // nodes to create
 var node_size = JSON.parse(process.argv[3]) || 10;
+var create_gateway = process.argv[4] || true;
+create_gateway = JSON.parse(create_gateway);
 
 // a VON node unit
 var VONnode = function (num, GWaddr, radius) {
     var isClient = true;
-    if (num == 1) {
+    if (num == 1 && create_gateway) {
         console.log("Gateway created");
         var isClient = false;
     }
@@ -109,6 +111,14 @@ var VONnode = function (num, GWaddr, radius) {
             // done callback
             function (id) {
                 LOG.warn('joined successfully! id: ' + id + '\n');
+
+
+                if (id !== VAST.ID_GATEWAY){
+                    tick_id = setInterval(function(){moveNode(peer)}, tick_interval);
+                } else {
+                    console.log("Gateway move has started");
+                    setInterval(function(){moveGW(peer)}, tick_interval);
+                }
             },
 
             function (id) {
@@ -129,14 +139,14 @@ var nodes_created = 0;
 var nodes = [];
 
 // read movement from a textfile
-var getLines = function (filename) {
+var getLines = function (filename, node_size) {
     var tempHolder;
 
     var lineNr = 0;
 
     console.log("start reading lines");
 
-    var stream = fs.createReadStream('MovementPoints.txt')
+    var stream = fs.createReadStream(filename)
         .pipe(es.split())
         .pipe(es.mapSync(function(line) {
                 stream.pause();

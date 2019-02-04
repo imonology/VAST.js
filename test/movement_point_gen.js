@@ -8,7 +8,7 @@ var fs = require('fs');
 var common = require('../lib/common.js');
 var point2d = point2d || require( "../lib/voronoi/point2d.js" );
 
-var NUM_NODES = 100;
+var NUM_NODES = process.argv[2];
 
 var topleft = new point2d(0,0);
 var bottomright = new point2d(1000,1000);
@@ -27,7 +27,7 @@ var count = 0;
 
 LOG.debug("Start movement");
 // run for 10 seconds
-while (count < 10) {
+while (count < 1200) {
     movement.move();
     count++;
 }
@@ -37,7 +37,7 @@ LOG.debug("Movement complete");
 _movement = movement.getMove();
 
 // set up write stream to write to file
-var stream = fs.createWriteStream('MovementPoints_test.txt');
+var stream = fs.createWriteStream('MovementPoints200.txt');
 
 LOG.debug("write to text file started");
 // write to the text file
