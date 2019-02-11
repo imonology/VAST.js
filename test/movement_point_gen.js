@@ -3,7 +3,7 @@
 *           Movement point generator for scalability test
 *
 */
-var model = require('../lib/original/move_cluster.js');
+var model = require('../lib/move_cluster.js');
 var fs = require('fs');
 var common = require('../lib/common.js');
 var point2d = point2d || require( "../lib/voronoi/point2d.js" );

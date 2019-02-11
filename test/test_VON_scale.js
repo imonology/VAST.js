@@ -7,7 +7,7 @@
 
 // flags
 require('../lib/common.js');
-var cluster_model = require('../lib/original/move_cluster');
+var cluster_model = require('../lib/move_cluster.js');
 var fs = require('fs')
     , es = require('event-stream');
 
@@ -18,7 +18,7 @@ LOG.setLevel(1);
 var bound = {x: 1000, y: 1000};
 var tick_interval   = 500;
 var node_speed      = 5;
-var node_radius     = 20;
+var node_radius     = 100;
 
 // 2D array for movement points
 var movement = {};
@@ -46,7 +46,6 @@ if (process.argv[2] !== undefined) {
 }
 
 LOG.debug('GW ip: ' + gateway_addr.host + ' port: ' + gateway_addr.port);
-
 
 // nodes to create
 var node_size = JSON.parse(process.argv[3]) || 10;
