@@ -161,6 +161,10 @@
 
                 for (var key in sites) {
                     v = sites[key];
+                    if (v == undefined) {
+                        delete sites[key]
+                        continue;
+                    }
                     var idx = v.id;
 
                     ctx.rect(v.x,v.y,4,4);
