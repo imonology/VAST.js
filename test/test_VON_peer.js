@@ -11,7 +11,7 @@ var AUTOMATIC_LEAVE_PERIOD = 3;     // number of seconds
 require('../lib/common.js');
 
 // do not show debug
-LOG.setLevel(1);
+LOG.setLevel(3);
 
 // set default IP/port
 var gateway_addr = {host: VAST.Settings.IP_gateway, port: VAST.Settings.port_gateway};

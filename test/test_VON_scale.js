@@ -12,7 +12,7 @@ var fs = require('fs')
     , es = require('event-stream');
 
 // set error level
-LOG.setLevel(1);
+LOG.setLevel(3);
 
 // boundary of the test dimensions
 var bound = {x: 1000, y: 1000};
