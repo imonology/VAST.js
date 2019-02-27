@@ -1,1 +1,1 @@
-node test_von_peer 127.0.0.1:37700 false
+node test_VON_peer 10.10.11.179:37700 false

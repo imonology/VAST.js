@@ -12,7 +12,7 @@ var fs = require('fs')
     , es = require('event-stream');
 
 // set error level
-LOG.setLevel(3);
+LOG.setLevel(1);
 
 // boundary of the test dimensions
 var bound = {x: 1000, y: 1000};
@@ -189,7 +189,7 @@ var createNode = function () {
 
     // see if we want to create more
     if (nodes_created < node_size)
-        setTimeout(createNode, 500);
+        setTimeout(createNode, tick_interval);
 }
 
 var incMoveCount = function() {
