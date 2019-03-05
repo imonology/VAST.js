@@ -19,7 +19,6 @@
             gateway: {host: "10.10.11.179", port: 37700},
             aoi  : {x: 0, y: 0, aoi: 10},
             sites: [],
-            neighbours: [],
             halt: undefined,
             diagram: null,
             margin: 50,
@@ -28,21 +27,18 @@
 
             init: function() {
                 sites = [];
-                neighbours = [];
 
                 this.canvas = document.getElementById("voronoiCanvas");
                 console.log("init");
                 this.voronoi.set_bounding_box(this.bbox);
                 this.setID();
 
-                this.visualiser.init(function(client_data, neighbour_data, id) {
+                this.visualiser.init(function(client_data, id) {
                     this.sites[id] = client_data;
-                    this.neighbours[id] = neighbour_data;
 
                     Visualiser.recalculate();
-                }, function(site_data, neighbour_data, id) {
+                }, function(site_data) {
                     this.sites = site_data;
-                    this.neighbours = neighbour_data;
 
                     Visualiser.recalculate();
                 });
