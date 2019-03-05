@@ -59,7 +59,7 @@ var VONnode = function (num, GWaddr, radius) {
         console.log("Gateway created");
         var isClient = false;
     }
-
+    console.log(num);
     var port = GWaddr.port;
 
     var tick_id = undefined;
