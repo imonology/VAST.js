@@ -45,15 +45,18 @@ if (process.argv[2] !== undefined) {
     }
 }
 
-LOG.debug('GW ip: ' + gateway_addr.host + ' port: ' + gateway_addr.port);
+console.log('GW ip: ' + gateway_addr.host + ' port: ' + gateway_addr.port);
 
 // nodes to create
 var node_size = JSON.parse(process.argv[3]) || 10;
 var create_gateway = process.argv[4] || true;
 create_gateway = JSON.parse(create_gateway);
+var local_IP = process.argv[5];
+console.log("Node size: " + node_size);
+console.log("local_IP: " + local_IP);
 
 // a VON node unit
-var VONnode = function (num, GWaddr, radius) {
+var VONnode = function (num, GWaddr, radius, localIP) {
     var isClient = true;
     if (num == 1 && create_gateway) {
         console.log("Gateway created");
@@ -103,7 +106,7 @@ var VONnode = function (num, GWaddr, radius) {
         peer.move(aoi);
     }
 
-    peer.init((isClient ? VAST.ID_UNASSIGNED : VAST.ID_GATEWAY), port, function () {
+    peer.init((isClient ? VAST.ID_UNASSIGNED : VAST.ID_GATEWAY), port, localIP, function () {
 
         peer.join(GWaddr, aoi,
 
@@ -183,13 +186,13 @@ var createNode = function () {
     nodes_created++;
     LOG.debug('creating node [' + nodes_created + ']');
 
-    var node = new VONnode(nodes_created, gateway_addr, node_radius);
+    var node = new VONnode(nodes_created, gateway_addr, node_radius, local_IP);
 
     nodes.push(node);
 
     // see if we want to create more
     if (nodes_created < node_size)
-        setTimeout(createNode, tick_interval);
+        setTimeout(createNode, 600);
 }
 
 var incMoveCount = function() {
