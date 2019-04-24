@@ -2,12 +2,17 @@
 /*
     test for many VON_peer
 
+
+
     2012.08.28 init
 */
 
 // flags
+console.log("Set level")
 require('../lib/common.js');
+console.log("Set level 2")
 var cluster_model = require('../lib/move_cluster.js');
+console.log("Set level 3")
 var fs = require('fs')
     , es = require('event-stream');
 
@@ -18,7 +23,7 @@ LOG.setLevel(1);
 var bound = {x: 1000, y: 1000};
 var tick_interval   = 500;
 var node_speed      = 5;
-var node_radius     = 100;
+var node_radius     = process.argv[6];
 
 // 2D array for movement points
 var movement = {};
