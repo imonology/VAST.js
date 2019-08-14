@@ -34,10 +34,12 @@
                 this.setID();
 
                 this.visualiser.init(function(client_data, id) {
+                    console.log(client_data);
                     this.sites[id] = client_data;
 
                     Visualiser.recalculate();
                 }, function(site_data) {
+                    console.log(site_data)
                     this.sites = site_data;
 
                     Visualiser.recalculate();
@@ -67,14 +69,14 @@
             },
 
             recalculate: function() {
-                //console.log("recalculate sites:");
-                //console.log(sites);
+                console.log("recalculate sites:");
+                console.log(sites);
                 this.sites2voro();
-                //console.log("after sites2voro:");
-                //console.log(sites);
+                console.log("after sites2voro:");
+                console.log(sites);
                 this.diagram = this.voronoi.get_result();
-                //console.log("after get_result:");
-                //console.log(sites);
+                console.log("after get_result:");
+                console.log(sites);
                 this.updateStats();
                 this.render();
             },
