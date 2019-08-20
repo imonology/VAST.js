@@ -1,1 +1,1 @@
-node test_VON_scale.js 10.10.11.179:37700 1 false 10.10.11.179 100
+node test_VON_scale.js 10.10.11.179:37700 30 false 10.10.11.179 100
