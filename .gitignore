@@ -1,3 +1,9 @@
 node_modules
 doc
 test/console.txt
+test/Data/1-.txt
+test/Data/2-.txt
+test/Data/3-.txt
+test/Data/4-.txt
+test/Data/5-.txt
+test/entryServer.txt
