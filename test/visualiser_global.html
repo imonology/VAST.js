@@ -19,6 +19,9 @@
             gateway: {host: "10.10.11.179", port: 37700},
             aoi  : {x: 0, y: 0, aoi: 10},
             sites: [],
+            matchers: [],
+            clients: [],
+            colors: ['#0f0','#f00','#00f', '#880', '#f0f', '#0ff','#000'],
             halt: undefined,
             diagram: null,
             margin: 50,
@@ -27,6 +30,8 @@
 
             init: function() {
                 sites = [];
+                matchers= [];
+                clients= [];
 
                 this.canvas = document.getElementById("voronoiCanvas");
                 console.log("init");
@@ -34,7 +39,7 @@
                 this.setID();
 
                 this.visualiser.init(function(client_data, id) {
-                    console.log(client_data);
+                    //console.log(client_data);
                     this.sites[id] = client_data;
 
                     Visualiser.recalculate();
@@ -43,6 +48,13 @@
                     this.sites = site_data;
 
                     Visualiser.recalculate();
+                }, function (id, matcher, clients) {
+                    this.matchers[id] = matcher;
+                    this.clients[id] = clients;
+
+                    Visualiser.recalculate();
+                }, function (id) {
+                    delete this.clients[id];
                 });
             },
 
@@ -69,14 +81,18 @@
             },
 
             recalculate: function() {
-                console.log("recalculate sites:");
-                console.log(sites);
-                this.sites2voro();
-                console.log("after sites2voro:");
-                console.log(sites);
+                //console.log("recalculate sites:");
+                //console.log(sites);
+                if (document.getElementById('VON').checked) {
+                    this.sites2voro();
+                } else if (document.getElementById('VSO').checked) {
+                    this.matchers2voro();
+                }
+                //console.log("after sites2voro:");
+                //console.log(sites);
                 this.diagram = this.voronoi.get_result();
-                console.log("after get_result:");
-                console.log(sites);
+                //console.log("after get_result:");
+                //console.log(sites);
                 this.updateStats();
                 this.render();
             },
@@ -86,6 +102,13 @@
                 for (var key in sites) {
                     //console.log(sites[key]);
                     this.voronoi.insert(key,sites[key]);
+                }
+            },
+
+            matchers2voro: function() {
+                this.voronoi.clear();
+                for (var key in matchers) {
+                    this.voronoi.insert(key,matchers[key]);
                 }
             },
 
@@ -120,8 +143,10 @@
 
                 //clear sites and neighbours list
                 var site_list = document.getElementById("sites");
+                var neighbour_list = document.getElementById("neighbours");
 
                 site_list.innerHTML = "";
+                neighbour_list.innerHTML = "";
 
                 //background
                 ctx.globalAlpha = 1;
@@ -152,12 +177,13 @@
         			}
         		ctx.stroke();
 
-                // sites
-        		ctx.beginPath();
-                ctx.fillStyle = '#44f';
-                ctx.font = "15px Verdana";
 
-                for (var key in sites) {
+
+                if (document.getElementById("VON").checked) {// sites
+        		          ctx.beginPath();
+                          ctx.fillStyle = '#44f';
+                          ctx.font = "15px Verdana";
+                    for (var key in sites) {
                     v = sites[key];
                     if (v == undefined) {
                         delete sites[key]
@@ -174,9 +200,83 @@
 
                     node.appendChild(textnode);
                     site_list.appendChild(node);
-                }
+                    ctx.fill();
+                    }
+                } else {
+                    for (var key in matchers) {
+                    v = matchers[key];
+                    if (v == undefined) {
+                        delete matchers[key]
+                        continue;
+                    }
+                    var idx = v.id;
+                    var mod = idx%7;
 
-                ctx.fill();
+                    ctx.beginPath();
+                    ctx.font = "15px Verdana";
+                    ctx.fillStyle = this.colors[mod];
+                    ctx.strokeStyle = this.colors[mod];
+                    ctx.rect(v.x,v.y,4,4);
+                    ctx.fillText(idx, v.x+7,v.y+7);
+
+                    // add site to info on right
+                    var node = document.createElement("LI");
+                    var textnode = document.createTextNode("["+idx+"] Site: ("+Math.round(v.x)+","+Math.round(v.y)+") voronoiID: "+v.voronoiId);
+
+                    node.appendChild(textnode);
+                    site_list.appendChild(node);
+                    ctx.closePath();
+                    ctx.fill();
+                    }
+
+                    for (var key in clients) {
+                        v = clients[key];
+                        if (v == undefined) {
+                            delete clients[key]
+                            continue;
+                        }
+
+                        for (var keys in v) {
+                            var c = v[keys];
+                            console.log(c);
+                            var idy = c.id;
+
+                            var mod = key%7;
+
+                            ctx.beginPath();
+                            ctx.font = "15px Verdana";
+                            ctx.fillStyle = this.colors[mod];
+                            ctx.rect(c.aoi.center.x,c.aoi.center.y,4,4);
+                            if (c.aoi.center.x > 970 && c.aoi.center.y > 30) {
+                                ctx.fillText(idy, c.aoi.center.x-15,c.aoi.center.y+15);
+                            } else if (c.aoi.center.x < 970 && c.aoi.center.y < 30) {
+                                ctx.fillText(idy, c.aoi.center.x+15,c.aoi.center.y-15);
+                            } else if (c.aoi.center.x > 970 && c.aoi.center.y < 30) {
+                                ctx.fillText(idy, c.aoi.center.x-15,c.aoi.center.y-15);
+                            } else if (c.aoi.center.x < 970 && c.aoi.center.y > 30) {
+                                ctx.fillText(idy, c.aoi.center.x+15,c.aoi.center.y+15);
+                            }
+
+                            ctx.closePath();
+                            ctx.fill();
+
+                            ctx.beginPath();
+                            ctx.strokeStyle = this.colors[mod];
+                            ctx.lineWidth = 2;
+                            ctx.arc(c.aoi.center.x, c.aoi.center.y, 100, 0, Math.PI*2, true);
+                            ctx.closePath();
+                            ctx.stroke();
+
+                            // add site to info on right
+                            var node = document.createElement("LI");
+                            var textnode = document.createTextNode("["+idy+"] Site: ("+Math.round(c.aoi.center.x)+","+Math.round(c.aoi.center.y)+")");
+
+                            node.appendChild(textnode);
+                            neighbour_list.appendChild(node);
+
+                        }
+                    }
+                }
             },
 
             getVoro: function() {
@@ -196,6 +296,13 @@
                 <input type="button" value="Reconnect" onclick="Visualiser.init();"/>
                 <input type="button" value="Start Movement" onclick="Visualiser.move();"/>
             </td>
+            <td>
+                <form id="disp_form">
+                Display Type:
+                <input type="radio" id="VON" name="disp_type" value="VON_peers" checked="true"/>VON &nbsp &nbsp
+                <input type="radio" id="VSO" name="disp_type" value="VSO_peers" /> VSO
+                </form>
+            </td>
         </tr>
         <tr max-height="840px">
             <td width = "50%">
@@ -205,11 +312,18 @@
                     <canvas id="voronoiCanvas" width="1000" height="1000" onclick=""></canvas>
                 </div>
             </td>
-            <td width = "50%" valign="top">
-                <h2 style="text-align:center; font-size: 30px;">Neighbour Stats</br></h2>
+            <td width = "25%" valign="top">
+                <h2 style="text-align:center; font-size: 30px;">Site Stats</br></h2>
                     <h4>Sites</h4>
                         <nav  style="overflow-y:scroll; max-height:1000px;">
                             <ul id="sites" style="text-align:left;"></ul>
+                        </nav>
+            </td>
+            <td width = "25%" valign="top">
+                <h2 style="text-align:center; font-size: 30px;">Neighbour Stats</br></h2>
+                    <h4>Neighbours</h4>
+                        <nav  style="overflow-y:scroll; max-height:1000px;">
+                            <ul id="neighbours" style="text-align:left;"></ul>
                         </nav>
             </td>
         </tr>
