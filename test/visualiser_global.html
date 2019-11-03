@@ -49,7 +49,9 @@
 
                     Visualiser.recalculate();
                 }, function (id, matcher, clients) {
+                    delete this.matchers[id];
                     this.matchers[id] = matcher;
+                    delete this.clients[id];
                     this.clients[id] = clients;
 
                     Visualiser.recalculate();
@@ -299,8 +301,8 @@
             <td>
                 <form id="disp_form">
                 Display Type:
-                <input type="radio" id="VON" name="disp_type" value="VON_peers" checked="true"/>VON &nbsp &nbsp
-                <input type="radio" id="VSO" name="disp_type" value="VSO_peers" /> VSO
+                <input type="radio" id="VON" name="disp_type" value="VON_peers"/>VON &nbsp &nbsp
+                <input type="radio" id="VSO" name="disp_type" value="VSO_peers"  checked="true"/> VSO
                 </form>
             </td>
         </tr>
