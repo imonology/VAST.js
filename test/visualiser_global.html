@@ -21,6 +21,7 @@
             sites: [],
             matchers: [],
             clients: [],
+            boundary:[],
             colors: ['#0f0','#f00','#00f', '#880', '#f0f', '#0ff','#000'],
             halt: undefined,
             diagram: null,
@@ -32,6 +33,7 @@
                 sites = [];
                 matchers= [];
                 clients= [];
+                boundary=[];
 
                 this.canvas = document.getElementById("voronoiCanvas");
                 console.log("init");
@@ -44,15 +46,16 @@
 
                     Visualiser.recalculate();
                 }, function(site_data) {
-                    console.log(site_data)
                     this.sites = site_data;
 
                     Visualiser.recalculate();
-                }, function (id, matcher, clients) {
+                }, function (id, matcher, clients, boundary) {
                     delete this.matchers[id];
                     this.matchers[id] = matcher;
                     delete this.clients[id];
                     this.clients[id] = clients;
+                    delete this.boundary[id];
+                    this.boundary[id] = boundary;
 
                     Visualiser.recalculate();
                 }, function (id) {
@@ -231,6 +234,25 @@
                     site_list.appendChild(node);
                     ctx.closePath();
                     ctx.fill();
+
+                    // edges
+            		ctx.beginPath();
+            		ctx.strokeStyle=this.colors[mod];
+
+                    if (!boundary.hasOwnProperty(key))
+                        continue;
+
+            		var iEdge = boundary[key].length,
+            			edge, v;
+            		while (iEdge--) {
+            			edge = boundary[key][iEdge];
+            			v = edge.p1;
+                        console.log()
+            			ctx.moveTo(v.x,v.y);
+            			v = edge.p2;
+            			ctx.lineTo(v.x,v.y);
+            			}
+            		ctx.stroke();
                     }
 
                     for (var key in clients) {
@@ -242,7 +264,6 @@
 
                         for (var keys in v) {
                             var c = v[keys];
-                            console.log(c);
                             var idy = c.id;
 
                             var mod = key%7;
