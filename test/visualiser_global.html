@@ -16,7 +16,7 @@
         var Visualiser = {
             visualiser : new VisualiserGlobal(),
             voronoi: new VAST_Voronoi(),
-            gateway: {host: "10.10.11.179", port: 37700},
+            gateway: {host: "10.110.117.14", port: 37700},
             aoi  : {x: 0, y: 0, aoi: 10},
             sites: [],
             matchers: [],
@@ -162,6 +162,7 @@
         		ctx.fillStyle = 'white';
         		ctx.fill();
         		ctx.strokeStyle = '#888';
+                ctx.setLineDash([]);
                 ctx.lineWidth = 1;
         		ctx.stroke();
 
@@ -238,6 +239,7 @@
                     // edges
             		ctx.beginPath();
             		ctx.strokeStyle=this.colors[mod];
+                    ctx.setLineDash([5,3]);
 
                     if (!boundary.hasOwnProperty(key))
                         continue;
@@ -287,6 +289,7 @@
 
                             ctx.beginPath();
                             ctx.strokeStyle = this.colors[mod];
+                            ctx.setLineDash([]);
                             ctx.lineWidth = 2;
                             ctx.arc(c.aoi.center.x, c.aoi.center.y, 100, 0, Math.PI*2, true);
                             ctx.closePath();
