@@ -21,6 +21,8 @@
             aoi  : {x: 0, y: 0, aoi: 10},
             sites: [],
             neighbours: [],
+            matchers: [],
+            matcherNeighbours: [],
             halt: undefined,
             diagram: null,
             margin: 50,
@@ -58,10 +60,16 @@
                 */
 
                 console.log("Switching to port: "+port);
-                this.visualiser.init(port, function(site_data, neighbour_data, halt) {
-                    this.sites = site_data;
-                    this.neighbours = neighbour_data;
-                    this.halt = halt;
+                this.visualiser.init(port, function(site_data, neighbour_data, halt, layer) {
+                    if (layer == 0) {
+                        this.sites = site_data;
+                        this.neighbours = neighbour_data;
+                        this.halt = halt;
+                    } else {
+                        console.log("Received");
+                        this.matchers = site_data;
+                        this.matcherNeighbours = neighbour_data;
+                    }
 
                     /*
                     console.log("Html sites:");
@@ -124,7 +132,7 @@
                 document.getElementById(data.direction).appendChild(node);
             },
 
-            recalculate: function() {
+            recalculate: function(layer) {
                 //console.log("recalculate sites:");
                 //console.log(sites);
                 this.sites2voro();
@@ -139,9 +147,15 @@
 
             sites2voro: function() {
                 this.voronoi.clear();
-                for (var key in sites) {
-                    //console.log(sites[key]);
-                    this.voronoi.insert(key,sites[key]);
+                if (document.getElementById('VON').checked) {
+                    for (var key in sites) {
+                        console.log(sites[key]);
+                        this.voronoi.insert(key,sites[key]);
+                    }
+                } else if (document.getElementById('VSO').checked) {
+                    for (var key in matchers) {
+                            this.voronoi.insert(key,matchers[key]);
+                    }
                 }
             },
 
@@ -213,44 +227,75 @@
                 ctx.fillStyle = '#44f';
                 ctx.font = "15px Verdana";
 
-                for (var key in sites) {
-                    v = sites[key];
-                    var idx = v.id;
+                if (document.getElementById("VON").checked) {// sites
+                    for (var key in sites) {
+                        v = sites[key];
+                        var idx = v.id;
 
-                    // NOTE: Multiply by 8
-                    ctx.rect(v.x,v.y,4,4);
-                    ctx.fillText(idx, v.x+7,v.y+7);
+                        // NOTE: Multiply by 8
+                        ctx.rect(v.x,v.y,4,4);
+                        ctx.fillText(idx, v.x+7,v.y+7);
 
-                    // add site to info on right
-                    var node = document.createElement("LI");
-                    var textnode = document.createTextNode("["+idx+"] Site: ("+Math.round(v.x)+","+Math.round(v.y)+") voronoiID: "+v.voronoiId);
+                        // add site to info on right
+                        var node = document.createElement("LI");
+                        var textnode = document.createTextNode("["+idx+"] Site: ("+Math.round(v.x)+","+Math.round(v.y)+") voronoiID: "+v.voronoiId);
 
-                    node.appendChild(textnode);
-                    site_list.appendChild(node);
-                }
-
-                ctx.fill();
-
-                //fill neighbour list and draw AoI
-                for (var key in neighbours) {
-                    v = neighbours[key];
-                    idx = v.id;
-
-                    if (idx == _id) {
-                        ctx.beginPath();
-    					ctx.strokeStyle='#000';
-                        ctx.lineWidth = 1;
-
-                        // NOTE: multiply by 8
-                        ctx.arc(v.aoi.center.x, v.aoi.center.y, v.aoi.radius, 0, Math.PI*2, true);
-                        ctx.stroke();
+                        node.appendChild(textnode);
+                        site_list.appendChild(node);
                     }
 
-                    node = document.createElement("LI");
-                    textnode = document.createTextNode("["+v.id+"] Site: ("+Math.round(v.aoi.center.x)+","+Math.round(v.aoi.center.y)+") voronoiID: "+v.aoi.center.voronoiId);
+                    ctx.fill();
 
-                    node.appendChild(textnode);
-                    neighbour_list.appendChild(node);
+                    //fill neighbour list and draw AoI
+                    for (var key in neighbours) {
+                        v = neighbours[key];
+                        idx = v.id;
+
+                        if (idx == _id) {
+                            ctx.beginPath();
+        					ctx.strokeStyle='#000';
+                            ctx.lineWidth = 1;
+
+                            // NOTE: multiply by 8
+                            ctx.arc(v.aoi.center.x, v.aoi.center.y, v.aoi.radius, 0, Math.PI*2, true);
+                            ctx.stroke();
+                        }
+
+                        node = document.createElement("LI");
+                        textnode = document.createTextNode("["+v.id+"] Site: ("+Math.round(v.aoi.center.x)+","+Math.round(v.aoi.center.y)+") voronoiID: "+v.aoi.center.voronoiId);
+
+                        node.appendChild(textnode);
+                        neighbour_list.appendChild(node);
+                    }
+                } else {
+                    for (var key in matchers) {
+                        v = matchers[key];
+
+                        // NOTE: Multiply by 8
+                        ctx.rect(v.x,v.y,4,4);
+                        ctx.fillText(key, v.x+7,v.y+7);
+
+                        // add site to info on right
+                        var node = document.createElement("LI");
+                        var textnode = document.createTextNode("["+key+"] Site: ("+Math.round(v.x)+","+Math.round(v.y)+") voronoiID: "+v.voronoiId);
+
+                        node.appendChild(textnode);
+                        site_list.appendChild(node);
+                    }
+
+                    ctx.fill();
+
+                    //fill neighbour list and draw AoI
+                    for (var key in matcherNeighbours) {
+                        v = matcherNeighbours[key];
+                        idx = v.id;
+
+                        node = document.createElement("LI");
+                        textnode = document.createTextNode("["+v.id+"] Site: ("+Math.round(v.x)+","+Math.round(v.y)+")");
+
+                        node.appendChild(textnode);
+                        neighbour_list.appendChild(node);
+                    }
                 }
             },
             getVoro: function() {
@@ -357,6 +402,13 @@
                 </form>
                 </div>
 
+            </td>            
+            <td>
+                <form id="disp_form">
+                Display Type:
+                <input type="radio" id="VON" name="disp_type" value="VON_peers"/>VON &nbsp &nbsp
+                <input type="radio" id="VSO" name="disp_type" value="VSO_peers"  checked="true"/> VSO
+                </form>
             </td>
         </tr>
         <tr max-height="840px">

@@ -151,9 +151,11 @@
                 //clear sites and neighbours list
                 var site_list = document.getElementById("sites");
                 var neighbour_list = document.getElementById("neighbours");
+                var client_count = document.getElementById("clients");
 
                 site_list.innerHTML = "";
                 neighbour_list.innerHTML = "";
+                client_count.innerHTML = "";
 
                 //background
                 ctx.globalAlpha = 1;
@@ -233,6 +235,7 @@
 
                     node.appendChild(textnode);
                     site_list.appendChild(node);
+
                     ctx.closePath();
                     ctx.fill();
 
@@ -263,6 +266,14 @@
                             delete clients[key]
                             continue;
                         }
+
+                        var length = Object.keys(clients[key]).length == 0 ? 0 : Object.keys(clients[key]).length;
+
+                        node = document.createElement("LI");
+                        textnode = document.createTextNode("["+key+"]: " + length);
+
+                        node.appendChild(textnode);
+                        client_count.appendChild(node);
 
                         for (var keys in v) {
                             var c = v[keys];
@@ -343,9 +354,14 @@
             <td width = "25%" valign="top">
                 <h2 style="text-align:center; font-size: 30px;">Site Stats</br></h2>
                     <h4>Sites</h4>
-                        <nav  style="overflow-y:scroll; max-height:1000px;">
+                        <nav  style="overflow-y:scroll; max-height:500px;">
                             <ul id="sites" style="text-align:left;"></ul>
                         </nav>
+                <h2 style="text-align:bottom; font-size: 30px;"> Client count</br></h2>
+                <h4>Matchers</h4>
+                    <nav style="overflow-y:scroll; max-height:500px">
+                        <ul id="clients" style="text-align:left;"></ul>
+                    </nav>
             </td>
             <td width = "25%" valign="top">
                 <h2 style="text-align:center; font-size: 30px;">Neighbour Stats</br></h2>
@@ -353,6 +369,11 @@
                         <nav  style="overflow-y:scroll; max-height:1000px;">
                             <ul id="neighbours" style="text-align:left;"></ul>
                         </nav>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Testing where this goes
             </td>
         </tr>
     </table>
