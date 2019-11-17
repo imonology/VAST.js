@@ -1,1 +1,1 @@
-node test_VAST_client.js false 192.168.43.101 37700 100 192.168.43.101 200 200 > C:\Users\judge\OneDrive\Documents\"University work"\Masters\Logs\clientMatch0.txt
+node test_VAST_client.js false 10.110.117.14 37700 100 10.110.117.14 200 200 > C:\Users\"Miguel Smith"\Documents\"Varsity Work"\Masters\"Minecraft data parser"\Logs\clientMatch0.txt
