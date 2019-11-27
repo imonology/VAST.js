@@ -13,6 +13,7 @@ var radius = process.argv[5];
 var local_IP = process.argv[6];
 var x = parseInt(process.argv[7]);
 var y = parseInt(process.argv[8]);
+var entryServers = parseInt(process.argv[9]);
 LOG.debug("Done capturing variables");
 
-var vast = new VAST.client(is_Client, host, port, radius, local_IP, x, y);
+var vast = new VAST.client(is_Client, host, port, radius, local_IP, x, y, entryServers);

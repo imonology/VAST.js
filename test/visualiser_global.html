@@ -27,7 +27,7 @@
             diagram: null,
             margin: 50,
             canvas: null,
-            bbox: {xl:0,xr:1000,yt:0,yb:1000},
+            bbox: {xl:0,xr:10000,yt:0,yb:10000},
 
             init: function() {
                 sites = [];
@@ -59,8 +59,6 @@
 
                     Visualiser.recalculate();
                 }, function (id) {
-                    console.log("Deleting client with id " + id);
-                    console.log(this.clients);
                     delete this.clients[id];
                 });
             },
@@ -181,9 +179,9 @@
         		while (iEdge--) {
         			edge = edges[iEdge];
         			v = edge.va;
-        			ctx.moveTo(v.x,v.y);
+        			ctx.moveTo(v.x/10,v.y/10);
         			v = edge.vb;
-        			ctx.lineTo(v.x,v.y);
+        			ctx.lineTo(v.x/10,v.y/10);
         			}
         		ctx.stroke();
 
@@ -201,8 +199,8 @@
                     }
                     var idx = v.id;
 
-                    ctx.rect(v.x,v.y,4,4);
-                    ctx.fillText(idx, v.x+7,v.y+7);
+                    ctx.rect(v.x/10,v.y/10,4,4);
+                    ctx.fillText(idx, v.x/10+7,v.y/10+7);
 
                     // add site to info on right
                     var node = document.createElement("LI");
@@ -226,8 +224,8 @@
                     ctx.font = "15px Verdana";
                     ctx.fillStyle = this.colors[mod];
                     ctx.strokeStyle = this.colors[mod];
-                    ctx.rect(v.x,v.y,4,4);
-                    ctx.fillText(idx, v.x+7,v.y+7);
+                    ctx.rect(v.x/10,v.y/10,4,4);
+                    ctx.fillText(idx, v.x/10+7,v.y/10+7);
 
                     // add site to info on right
                     var node = document.createElement("LI");
@@ -252,10 +250,9 @@
             		while (iEdge--) {
             			edge = boundary[key][iEdge];
             			v = edge.p1;
-                        console.log()
-            			ctx.moveTo(v.x,v.y);
+            			ctx.moveTo(v.x/10,v.y/10);
             			v = edge.p2;
-            			ctx.lineTo(v.x,v.y);
+            			ctx.lineTo(v.x/10,v.y/10);
             			}
             		ctx.stroke();
                     }
@@ -284,15 +281,15 @@
                             ctx.beginPath();
                             ctx.font = "15px Verdana";
                             ctx.fillStyle = this.colors[mod];
-                            ctx.rect(c.aoi.center.x,c.aoi.center.y,4,4);
-                            if (c.aoi.center.x > 970 && c.aoi.center.y > 30) {
-                                ctx.fillText(idy, c.aoi.center.x-15,c.aoi.center.y+15);
-                            } else if (c.aoi.center.x < 970 && c.aoi.center.y < 30) {
-                                ctx.fillText(idy, c.aoi.center.x+15,c.aoi.center.y-15);
-                            } else if (c.aoi.center.x > 970 && c.aoi.center.y < 30) {
-                                ctx.fillText(idy, c.aoi.center.x-15,c.aoi.center.y-15);
-                            } else if (c.aoi.center.x < 970 && c.aoi.center.y > 30) {
-                                ctx.fillText(idy, c.aoi.center.x+15,c.aoi.center.y+15);
+                            ctx.rect(c.aoi.center.x/10,c.aoi.center.y/10,4,4);
+                            if (c.aoi.center.x/10 > 970 && c.aoi.center.y/10 > 30) {
+                                ctx.fillText(idy, c.aoi.center.x/10-15,c.aoi.center.y/10+15);
+                            } else if (c.aoi.center.x/10 < 970 && c.aoi.center.y/10 < 30) {
+                                ctx.fillText(idy, c.aoi.center.x/10+15,c.aoi.center.y/10-15);
+                            } else if (c.aoi.center.x/10 > 970 && c.aoi.center.y/10 < 30) {
+                                ctx.fillText(idy, c.aoi.center.x/10-15,c.aoi.center.y/10-15);
+                            } else if (c.aoi.center.x/10 < 970 && c.aoi.center.y/10 > 30) {
+                                ctx.fillText(idy, c.aoi.center.x/10+15,c.aoi.center.y/10+15);
                             }
 
                             ctx.closePath();
@@ -302,7 +299,7 @@
                             ctx.strokeStyle = this.colors[mod];
                             ctx.setLineDash([]);
                             ctx.lineWidth = 2;
-                            ctx.arc(c.aoi.center.x, c.aoi.center.y, 100, 0, Math.PI*2, true);
+                            ctx.arc(c.aoi.center.x/10, c.aoi.center.y/10, 100, 0, Math.PI*2, true);
                             ctx.closePath();
                             ctx.stroke();
 
