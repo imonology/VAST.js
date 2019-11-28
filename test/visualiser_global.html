@@ -18,6 +18,7 @@
             voronoi: new VAST_Voronoi(),
             gateway: {host: "10.110.117.14", port: 37700},
             aoi  : {x: 0, y: 0, aoi: 10},
+            radius: 20,
             sites: [],
             matchers: [],
             clients: [],
@@ -27,7 +28,8 @@
             diagram: null,
             margin: 50,
             canvas: null,
-            bbox: {xl:0,xr:10000,yt:0,yb:10000},
+            bbox: {xl:0,xr:1000,yt:0,yb:1000},
+            SCALING_FACTOR: 1,
 
             init: function() {
                 sites = [];
@@ -179,9 +181,9 @@
         		while (iEdge--) {
         			edge = edges[iEdge];
         			v = edge.va;
-        			ctx.moveTo(v.x/10,v.y/10);
+        			ctx.moveTo(v.x/this.SCALING_FACTOR,v.y/this.SCALING_FACTOR);
         			v = edge.vb;
-        			ctx.lineTo(v.x/10,v.y/10);
+        			ctx.lineTo(v.x/this.SCALING_FACTOR,v.y/this.SCALING_FACTOR);
         			}
         		ctx.stroke();
 
@@ -199,8 +201,8 @@
                     }
                     var idx = v.id;
 
-                    ctx.rect(v.x/10,v.y/10,4,4);
-                    ctx.fillText(idx, v.x/10+7,v.y/10+7);
+                    ctx.rect(v.x/this.SCALING_FACTOR,v.y/this.SCALING_FACTOR,4,4);
+                    ctx.fillText(idx, v.x/this.SCALING_FACTOR+7,v.y/this.SCALING_FACTOR+7);
 
                     // add site to info on right
                     var node = document.createElement("LI");
@@ -224,8 +226,8 @@
                     ctx.font = "15px Verdana";
                     ctx.fillStyle = this.colors[mod];
                     ctx.strokeStyle = this.colors[mod];
-                    ctx.rect(v.x/10,v.y/10,4,4);
-                    ctx.fillText(idx, v.x/10+7,v.y/10+7);
+                    ctx.rect(v.x/this.SCALING_FACTOR,v.y/this.SCALING_FACTOR,4,4);
+                    ctx.fillText(idx, v.x/this.SCALING_FACTOR+7,v.y/this.SCALING_FACTOR+7);
 
                     // add site to info on right
                     var node = document.createElement("LI");
@@ -250,9 +252,9 @@
             		while (iEdge--) {
             			edge = boundary[key][iEdge];
             			v = edge.p1;
-            			ctx.moveTo(v.x/10,v.y/10);
+            			ctx.moveTo(v.x/this.SCALING_FACTOR,v.y/this.SCALING_FACTOR);
             			v = edge.p2;
-            			ctx.lineTo(v.x/10,v.y/10);
+            			ctx.lineTo(v.x/this.SCALING_FACTOR,v.y/this.SCALING_FACTOR);
             			}
             		ctx.stroke();
                     }
@@ -281,15 +283,15 @@
                             ctx.beginPath();
                             ctx.font = "15px Verdana";
                             ctx.fillStyle = this.colors[mod];
-                            ctx.rect(c.aoi.center.x/10,c.aoi.center.y/10,4,4);
-                            if (c.aoi.center.x/10 > 970 && c.aoi.center.y/10 > 30) {
-                                ctx.fillText(idy, c.aoi.center.x/10-15,c.aoi.center.y/10+15);
-                            } else if (c.aoi.center.x/10 < 970 && c.aoi.center.y/10 < 30) {
-                                ctx.fillText(idy, c.aoi.center.x/10+15,c.aoi.center.y/10-15);
-                            } else if (c.aoi.center.x/10 > 970 && c.aoi.center.y/10 < 30) {
-                                ctx.fillText(idy, c.aoi.center.x/10-15,c.aoi.center.y/10-15);
-                            } else if (c.aoi.center.x/10 < 970 && c.aoi.center.y/10 > 30) {
-                                ctx.fillText(idy, c.aoi.center.x/10+15,c.aoi.center.y/10+15);
+                            ctx.rect(c.aoi.center.x/this.SCALING_FACTOR,c.aoi.center.y/this.SCALING_FACTOR,4,4);
+                            if (c.aoi.center.x/this.SCALING_FACTOR > 970 && c.aoi.center.y/this.SCALING_FACTOR > 30) {
+                                ctx.fillText(idy, c.aoi.center.x/this.SCALING_FACTOR-15,c.aoi.center.y/this.SCALING_FACTOR+15);
+                            } else if (c.aoi.center.x/this.SCALING_FACTOR < 970 && c.aoi.center.y/this.SCALING_FACTOR < 30) {
+                                ctx.fillText(idy, c.aoi.center.x/this.SCALING_FACTOR+15,c.aoi.center.y/this.SCALING_FACTOR-15);
+                            } else if (c.aoi.center.x/this.SCALING_FACTOR > 970 && c.aoi.center.y/this.SCALING_FACTOR < 30) {
+                                ctx.fillText(idy, c.aoi.center.x/this.SCALING_FACTOR-15,c.aoi.center.y/this.SCALING_FACTOR-15);
+                            } else if (c.aoi.center.x/this.SCALING_FACTOR < 970 && c.aoi.center.y/this.SCALING_FACTOR > 30) {
+                                ctx.fillText(idy, c.aoi.center.x/this.SCALING_FACTOR+15,c.aoi.center.y/this.SCALING_FACTOR+15);
                             }
 
                             ctx.closePath();
@@ -299,7 +301,7 @@
                             ctx.strokeStyle = this.colors[mod];
                             ctx.setLineDash([]);
                             ctx.lineWidth = 2;
-                            ctx.arc(c.aoi.center.x/10, c.aoi.center.y/10, 100, 0, Math.PI*2, true);
+                            ctx.arc(c.aoi.center.x/this.SCALING_FACTOR, c.aoi.center.y/this.SCALING_FACTOR, this.radius, 0, Math.PI*2, true);
                             ctx.closePath();
                             ctx.stroke();
 
