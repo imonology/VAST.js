@@ -18,7 +18,7 @@
             voronoi: new VAST_Voronoi(),
             gateway: {host: "10.110.117.14", port: 37700},
             aoi  : {x: 0, y: 0, aoi: 10},
-            radius: 50,
+            radius: 20,
             sites: [],
             matchers: [],
             clients: [],
@@ -61,8 +61,6 @@
 
                     Visualiser.recalculate();
                 }, function (id) {
-                    console.log("Deleting client with id " + id);
-                    console.log(this.clients);
                     delete this.clients[id];
                 });
             },
@@ -254,7 +252,6 @@
             		while (iEdge--) {
             			edge = boundary[key][iEdge];
             			v = edge.p1;
-                        console.log()
             			ctx.moveTo(v.x/this.SCALING_FACTOR,v.y/this.SCALING_FACTOR);
             			v = edge.p2;
             			ctx.lineTo(v.x/this.SCALING_FACTOR,v.y/this.SCALING_FACTOR);
