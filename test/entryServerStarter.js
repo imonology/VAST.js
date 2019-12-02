@@ -1,3 +1,4 @@
+console.log("Start");
 var ES = require('../lib/entryServer');
 LOG.debug("Start ES")
 var startPort = parseInt(process.argv[2]);

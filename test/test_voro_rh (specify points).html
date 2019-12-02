@@ -40,6 +40,28 @@ var VoronoiDemo = {
         this.updateStats();
 		},
 
+    clearlastSite: function () {
+        this.sites.pop();
+
+        this.voronoi.clear();
+
+        for (var i=0; i<this.sites.length; i++)
+            this.voronoi.insert(i,this.sites[i]);
+
+        this.diagram = this.voronoi.get_result();
+        this.updateStats();
+    },
+
+    specifySites: function (x,y) {
+        var site_idx = this.sites.length;
+        this.sites.push({x:self.Math.round(x),y:self.Math.round(y)});
+        // store to voronoi
+        this.voronoi.insert((site_idx+1), this.sites[site_idx]);
+
+        this.voronoi.set_bounding_box(this.bbox);
+        this.diagram = this.voronoi.get_result();
+    },
+
 	randomSites: function(n,clear) {
 
         //console.log('add ' + n + ' random sites, clearing: ' + clear);
@@ -59,7 +81,7 @@ var VoronoiDemo = {
 			this.sites.push({x:self.Math.round((xo+self.Math.random()*dx)*10)/10,y:self.Math.round((yo+self.Math.random()*dy)*10)/10});
             // store to voronoi
             this.voronoi.insert((site_idx+i+1), this.sites[site_idx+i]);
-			}
+		}
 
 		//this.diagram = this.voronoi.compute(this.sites, this.bbox);
         this.voronoi.set_bounding_box(this.bbox);
@@ -265,8 +287,9 @@ var VoronoiDemo = {
 
 <h4 class="divhdr">Sites generator</h4>
 <div class="divinfo" id="voronoiGenerator">
-<input type="button" value="Generate" onclick="VoronoiDemo.randomSites(parseInt(document.getElementById('voronoiNumberSites').value,10),true);VoronoiDemo.render();"/> or <input type="button" value="Add" onclick="VoronoiDemo.randomSites(parseInt(document.getElementById('voronoiNumberSites').value,10),false);VoronoiDemo.render();"/><input id="voronoiNumberSites" type="text" value="100" size="5" maxlength="5"/> sites randomly
+<input type="button" value="Generate" onclick="VoronoiDemo.randomSites(parseInt(document.getElementById('voronoiNumberSites').value,10),true);VoronoiDemo.render();"/> or <input type="button" value="Add" onclick="VoronoiDemo.specifySites(parseInt(document.getElementById('mouse_x').value), parseInt(document.getElementById('mouse_y').value));VoronoiDemo.render();"/><input id="voronoiNumberSites" type="text" value="100" size="5" maxlength="5"/> sites randomly
 <input id="voronoiClearSites" type="button" value="Clear all sites" onclick="VoronoiDemo.clearSites();VoronoiDemo.render();"/>
+<input id="voronoiClearLast" type="button" value="Clear last sites" onclick="VoronoiDemo.clearlastSite();VoronoiDemo.render();"/>
 <br/>
 mouse_x:
 <input id="mouse_x" type="text" value="100" size="5" maxlength="5"/>
