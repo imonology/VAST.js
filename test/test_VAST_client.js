@@ -14,6 +14,8 @@ var local_IP = process.argv[6];
 var x = parseInt(process.argv[7]);
 var y = parseInt(process.argv[8]);
 var entryServers = parseInt(process.argv[9]);
+var clientThreshold = parseInt(process.argv[10]);
+var subThreshold = parseInt(process.argv[11]);
 LOG.debug("Done capturing variables");
 
-var vast = new VAST.client(is_Client, host, port, radius, local_IP, x, y, entryServers);
+var vast = new VAST.client(is_Client, host, port, radius, local_IP, x, y, entryServers, clientThreshold, subThreshold);
