@@ -11,7 +11,7 @@ SUB_THRESHOLD=(220 120 80 60 50 40 35 33 30 27 24 22 21 20 19 18 18)
 
 for RADIUS in {16..48..16}; do
     	echo "Starting test for $RADIUS"
-	for CLIENTS in {5..200..10}; do
+	for CLIENTS in {10..200..10}; do
 		echo "Starting test for $CLIENTS"
 		for MATCHERS in {1..16..1}; do
 			echo "Starting test for $MATCHERS"
@@ -24,20 +24,20 @@ for RADIUS in {16..48..16}; do
             echo "Folder created. Starting entry server"
 
     		screen -S entryServer -d -m bash -c "./entryServerStarterUnix.sh 2999 > entryServer.txt"
-            sleep 0.5
+            sleep 1
 
             echo "Entry server screen created. Creating gateway"
 
-            screen -S VASTNode_0 -d -m -L bash -c "./vast_client_gateway_unix.sh $GATEWAY 37700 100 ${CLIENT_THRESHOLD[$MATCHERS]} ${SUB_THRESHOLD[$MATCHERS]}"
-            sleep 0.5
+            screen -S VASTNode_0 -d -m bash -c "./vast_client_gateway_unix.sh $GATEWAY 37700 100 ${CLIENT_THRESHOLD[$MATCHERS]} ${SUB_THRESHOLD[$MATCHERS]}"
+            sleep 1
 
             echo "Gateway created. Creating matchers"
 
 			for ((c=1; c<=$((MATCHERS-1)); c++)) do
                 echo "Creating matcher $c"
-                echo "vast_client_unix.sh $GATEWAY 37700 100 ${POSX[$c]} ${POSY[$c]}"
+                echo "vast_client_unix.sh $GATEWAY 37700 100 ${POSX[$c]} ${POSY[$c]} ${CLIENT_THRESHOLD[$MATCHERS]} ${SUB_THRESHOLD[$MATCHERS]}"
                 screen -S VASTNode_"$c" -d -m bash -c "./vast_client_unix.sh $GATEWAY 37700 100 ${POSX[$c]} ${POSY[$c]} ${CLIENT_THRESHOLD[$MATCHERS]} ${SUB_THRESHOLD[$MATCHERS]}"
-                sleep 0.5
+                sleep 1
             done
 
             echo "Matcher creation done. Connecting clients"
@@ -46,8 +46,9 @@ for RADIUS in {16..48..16}; do
                 echo "Creating client $d"
                 ((client=$CLIENTS/5))
                 echo "Clients per script: $client"
-                screen -S Clients_"$d" -d -m -L bash -c " cd ../../../Pseudo\ MC\ client; ./test_client_unix.sh $client 1 $d 2999 $MATCHERS $CLIENTS $RADIUS"
-                sleep 1
+                echo "test_client_unix.sh $client 1 $d 2999 $MATCHERS $CLIENTS $RADIUS"
+                screen -S Clients_"$d" -d -m bash -c " cd ../../../Pseudo\ MC\ client; ./test_client_unix.sh $client 1 $d 2999 $MATCHERS $CLIENTS $RADIUS"
+                sleep 2
             done
 
     		echo "all clients started. waiting 1 minute until close"
@@ -57,15 +58,14 @@ for RADIUS in {16..48..16}; do
 
     		echo "All scripts stopped. Closing screens"
             screen -X -S entryServer quit
-            screen -X -S Visualiser quit
-            for ((c=0; c<=5; c++)) do
+            for ((c=0; c<=$((MATCHERS-1)); c++)) do
                 screen -X -S VASTNode_"$c" quit
             done
 
             for ((d=1; d<=5; d++)) do
                 screen -X -S Clients_"$d" quit
             done
-            sleep 0.5
+            sleep 1
 		done
 	done
 done
