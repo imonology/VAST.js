@@ -2,4 +2,4 @@
 
 startPort=%1
 
-node entryServerStarter.js $startPort 1> entryServer.txt
+node entryServerStarter.js $startPort 1 > entryServer.txt

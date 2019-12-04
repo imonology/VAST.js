@@ -1,1 +1,0 @@
-{"id":2,"time":1575365230834,"position":{"x":700,"y":700,"id":"2","voronoiId":1},"neighbours":{"1":{"x":300,"y":300,"id":"1","voronoiId":0},"2":{"x":700,"y":700,"id":"2","voronoiId":1}},"latMax":1,"latMin":1,"latAve":1,"bandwidth":0,"latencies":{"forwardTime":{"0":0,"1":0},"processTime":{"1":{"0":4,"1":1,"2":4}},"ping":{"0":0,"1":0,"2":0}}}
