@@ -10,9 +10,10 @@
     "type": "git",
     "url": "git://github.com/Imonology/VAST.js"
   },
-  "dependencies": {
-    "socket.io": "3.0.0",
+  "dependencies": {bb
+
     "debug": "0.8.1"
+    "socket.io": "3.0.4",
   },
   "keywords": [
     "peer-to-peer",
