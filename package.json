@@ -10,8 +10,7 @@
     "type": "git",
     "url": "git://github.com/Imonology/VAST.js"
   },
-  "dependencies": {bb
-
+  "dependencies": {
     "debug": "0.8.1"
     "socket.io": "3.0.4",
   },
