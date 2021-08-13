@@ -12,15 +12,15 @@
   },
   "dependencies": {
     "debug": "0.8.1",
-    "socket.io": "3.0.4"
+    "socket.io": "^3.0.4"
   },
   "keywords": [
     "peer-to-peer",
-	"P2P",
+    "P2P",
     "spatial",
     "publish",
     "subscribe",
-    "pubsub",	
+    "pubsub",
     "real-time",
     "games",
     "vast"
