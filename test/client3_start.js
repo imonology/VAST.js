@@ -1,8 +1,5 @@
 const client = require('../lib/client');
 
-// Testing Spatial Pub / Sub between 3 clients. Client A on left, Client B on right, Client C covers all
-// Client B is also subbed to small area at [620, 620]
-
 console.log('I am Client C');
 
 var C3 = new client('127.0.0.1', 20000, 120, 120, 1, function(){
