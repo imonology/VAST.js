@@ -9,7 +9,7 @@ var C2 = new client('127.0.0.1', 20000, 800, 800, 1, function(){
 
 
 function publishMessages(){
-//    C2.publish(680, 680,10,'Client B published at top-right, near themself', 1)
+    C2.publish(680, 680,10,'Client B published at top-right, near themself', 1)
 }
 
 // give time for clients to join and subscribe first
