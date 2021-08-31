@@ -6,7 +6,7 @@ var C1 = new client('127.0.0.1', 20000, 500, 500, 1,
     // When assigned to matcher, callback
     function(){
         console.log('Subscribing to overlap with top-right')
-//        C1.subscribe(650, 650, 50, 1);
+        C1.subscribe(650, 650, 50, 1);
     });
 
 function publishMessages(){
