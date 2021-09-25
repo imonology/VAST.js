@@ -1,0 +1,214 @@
+<!doctype html>
+<html>
+<head>
+    <title>Global Visualiser</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { height: 800px; }
+        body { font: 13px Helvetica, Arial; height: 100%; margin: 0px; }
+        form { background: #000; padding: 3px; flex-flow: auto; display:flex;}
+        form button { width: auto; background: rgb(130, 224, 255); border: none; padding: 10px; }
+        form input { border: 5px; border-color: #f00; border-radius: 4px; background-color: #ccc; padding: 10px; width: 90%; margin-right: .5%; margin: 5px 5px 5px 0px; }
+        form input[type="radio"] { padding: 0px; border: 0px; margin: 0px 5px 0px 0px; width: auto;}
+        span{ flex: 1 1 auto; }
+        #forms { position: fixed; bottom: 0; height: auto; display: flex; flex-direction: column; width: 100%; }
+        #coords-form { flex: auto;  }
+        #message { flex-flow: row; }
+        #publish { flex:auto; }
+        #x, #y, #AoI { }
+        #pub-message, #pub-x, #pub-y, #pub-AoI, #pub-channel { }
+        #sub-message, #sub-x, #sub-y, #sub-AoI, #sub-channel { }
+        div { flex-flow: row nowrap; flex-wrap: nowrap; height: 100%; display:flex;}
+        #key { min-height: 150px; position: absolute;  flex-direction: column;  top: 5px; right:5px; height: 15%; border-radius: 5px; background: #9595ea;}
+        #key:active { visibility: hidden; }
+        .key {   font-weight: bold; padding: 5px 5px 5px 5px;}
+        #voronoiCanvas { width: auto; height: auto; justify-content: center; align-items: center;  flex: auto;}
+        #flex-container { display: flex; }
+        #text { flex: 25%; min-width: 300px; flex-direction: column;}
+        #visual { flex: 75%; }
+        #coords { border: 5px; }
+        #select { flex:3%; padding: 5px 5px 5px 5px;  }
+        #radio { min-width: 110px; flex:15%; display:flex; flex-flow: column; background-color: #ccc; border-radius: 4px; margin: 5px 5px 5px 5px; padding: 5px 5px 5px 5px; justify-content: center; }
+        #input { flex: 70%; }
+        #messages { list-style-type: none; margin: 0; padding: 0; }
+        #messages li { padding: 5px 10px; }
+        #messages li:nth-child(odd) { background: #eee; }
+        #information { list-style-type: none; margin: 0; padding: 0; }
+        #information li { padding: 5px 10px; color: #55e }
+        </style>
+</head>
+<body>
+    <div id="flex-container">
+        <div id="text">
+            <ul id="information"></ul>
+            <ul id="messages"></ul>
+        </div>
+        <div id="visual">
+            <div id="key">
+
+            </div>
+            <canvas id="voronoiCanvas" width=1000 height=1000></canvas>
+        </div>
+    </div>
+    <div id="forms">
+        <form id="update" action="">
+            <button id = "update-button">Update</button>
+        </form>   
+    </div>
+    <script src="../voronoi/point2d.js"></script>
+    <script src="../voronoi/segment.js"></script>
+    <script src="../voronoi/line2d.js"></script>
+    <script src="../voronoi/rhill-voronoi-core.js"></script>
+    <script src="../common/logger.js"></script>
+    <script src="../voronoi/vast_voro.js"></script>
+
+    <script src="../../node_modules/socket.io-client/dist/socket.io.js"></script>
+    <script src="../../node_modules/jquery/dist/jquery.js"></script>
+
+    <script>
+        $(function(){
+
+            //initialise
+            console.log('visualiser started');
+
+            var matchers = {};
+            var clients = {};
+            var sites = {};
+            var voro = new VAST_Voronoi();
+            var diagram;
+
+            var SCALING_FACTOR = 1;
+
+            //Create references to canvas
+            var canvas = document.getElementById('voronoiCanvas');
+            var ctx = canvas.getContext("2d");
+
+            var init = function(){
+                socket = io.connect('http://127.0.0.1:7777');
+                socket.on('connect', function(){
+                    socket.emit('visualiser_connected');
+                    $('#information').append($('<li>').text('Connected to server'));
+                });
+
+                socket.on('update', function(data){
+                    matchers = data.matchers;
+                    clients = data.clients;
+                    $('#information').append($('<li>').text('Full update sent from server'));
+                    recalculate();
+                });
+
+                socket.on('new_matcher', function(matcher){
+                    console.log('new matcher');
+                    console.log(matcher);
+
+                    if(matcher.id !== -1 && matcher.id !== 'undefined'){
+                        matchers[matcher.id] = matcher;
+                        $('#information').append($('<li>').text('Matcher: '+matcher.id+' connected'));
+                        recalculate();
+                    } else{
+                        socket.emit('e_new_matcher', matcher);
+                    }
+                });
+
+                socket.on('matcher_leave', function(matcher){
+                    if (matchers[matcher.id] !== 'undefined'){
+                        delete matchers[matcher.id];
+                        $('#information').append($('<li>').text('Matcher: '+matcher.id+' disconnected'));
+                        recalculate();
+                    }
+                });
+            }
+
+            var recalculate = function(){
+                voro.clear();
+                var k;
+                for (var key in matchers){
+                    k = matchers[key];
+                    voro.insert(k.id, k.pos);
+                }
+                diagram = voro.get_result();
+                render();
+            }
+
+            var render = function(){
+                console.log("matchers: ");
+                console.log(matchers);
+
+                // background
+                ctx.globalAlpha = 1;
+                ctx.beginPath();
+                ctx.rect(0,0,canvas.width,canvas.height);
+                ctx.fillStyle = 'white';
+                ctx.fill();
+                ctx.strokeStyle = '#888';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // voronoi
+                if (!diagram) {return;}
+
+                // edges
+                ctx.beginPath();
+                ctx.strokeStyle='#000';
+                var edges = diagram.edges,
+                    iEdge = edges.length,
+                    edge, v, c;
+                while (iEdge--) {
+                    edge = edges[iEdge];
+                    v = edge.va;
+                    ctx.moveTo(v.x,v.y);
+                    v = edge.vb;
+                    ctx.lineTo(v.x,v.y);
+                    }
+                ctx.stroke();
+
+                // Matchers
+                for (var key in matchers) {
+                    // sites
+                    v = matchers[key];
+                    if (v == undefined) {
+                        delete matchers[key]
+                        continue;
+                    }
+                    var idx = v.id;
+                    var mod = idx%7;
+
+                    ctx.beginPath();
+                    ctx.font = "15px Verdana";
+                    ctx.fillStyle = '#44f';
+                    ctx.strokeStyle = '#44f';
+                    ctx.rect(v.pos.x/SCALING_FACTOR,v.pos.y/SCALING_FACTOR,6,6);
+                    ctx.fillText(idx, v.pos.x/SCALING_FACTOR+7,v.pos.y/SCALING_FACTOR+7);
+                    ctx.stroke();
+                    ctx.fill();
+
+                    //clients
+                    for (var j in v.clients){
+                        c = v.clients[j];
+                        idx = 'C['+ c.id +']';
+
+                        ctx.beginPath();
+                        ctx.font = "15px Verdana";
+                        ctx.fillStyle = '#ff0f15';
+                        ctx.strokeStyle = '#ff0f15';
+                        ctx.rect(c.pos.x/SCALING_FACTOR,c.pos.y/SCALING_FACTOR,6,6);
+                        ctx.fillText(idx, c.pos.x/SCALING_FACTOR+7,c.pos.y/SCALING_FACTOR+7);
+                        ctx.stroke();
+                        ctx.fill();
+
+                    }
+
+
+                }
+            }
+
+            $('#update').submit(function(){
+                socket.emit('request_update');
+            })
+
+            init();
+
+        })
+    </script>
+</body>
+</html>

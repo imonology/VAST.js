@@ -13,5 +13,5 @@ function publishMessages(){
 }
 
 // give time for clients to join and subscribe first
-setTimeout(publishMessages, 5000);
+setTimeout(publishMessages, 1000);
 
