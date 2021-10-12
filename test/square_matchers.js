@@ -6,9 +6,6 @@ function random(){
     return Math.random()*1000;
 }
 
-
-
-
 // slightly non-square
 function createGW(){
     var GW = new matcher(true, '127.0.0.1', 8000, 150, 832.5, 100, function(){

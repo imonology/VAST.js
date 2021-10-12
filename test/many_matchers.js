@@ -1,6 +1,6 @@
 const matcher = require('../lib/matcher.js');
 
-var matcherCount = 12;
+var matcherCount = 10;
 var matchers = [];
 
 function random(){
@@ -8,11 +8,11 @@ function random(){
 }
 
 //GW first
-matchers.push(new matcher(true, '127.0.0.1', 8000, random(), random(), 100));
+matchers.push(new matcher(true, '0.0.0.0', 8000, random(), random(), 100));
 
 function addMatcher(){
     if(matchers.length < matcherCount){
-        matchers.push(new matcher(false, '127.0.0.1', 8000, random(), random(), 100));
+        matchers.push(new matcher(false, '0.0.0.0', 8000, random(), random(), 100));
     }else{
         console.log('MATCHERS COMPLETE');
     }
