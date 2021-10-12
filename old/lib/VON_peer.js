@@ -67,7 +67,6 @@ require('./common.js');
 // to be inherited by VON.peer
 var msg_handler = msg_handler || require('./net/msg_handler.js');
 
-const { area } = require('./types.js');
 // voronoi computation
 var Voronoi = require('./voronoi/vast_voro.js');
 
@@ -78,10 +77,40 @@ var MAX_TIMELY_PERIOD       = 10;       // # of seconds considered to be still a
 var MAX_DROP_SECONDS        = 2;        // # of seconds to disconnect a non-overlapped neighbor
 var NONOVERLAP_MULTIPLIER   = 1.25;     // multiplier for aoi buffer for determining non-overlap
 var TICK_INTERVAL           = 100;      // interval (in milliseconds) to perform tick tasks
-var MAX_TICK_INTERVAL = 15000;
 
 // flags
 var OVERLAP_CHECK_ACCURATE  = false;     // whether VON overlap checks are accurate
+
+// enumation of VON message
+var VON_Message = {
+    VON_BYE:        0, // VON's disconnect
+    VON_PING:       1, // VON's ping, to check if a connected neighbor is still alive
+    VON_QUERY:      2, // VON's query, to find an acceptor to a given point 
+    VON_JOIN:       3, // VON's join, to learn of initial neighbors
+    VON_NODE:       4, // VON's notification of new nodes 
+    VON_HELLO:      5, // VON's hello, to let a newly learned node to be mutually aware
+    VON_HELLO_R:    6, // VON's hello response
+    VON_EN:         7, // VON's enclosing neighbor inquiry (to see if my knowledge of EN is complete)
+    VON_MOVE:       8, // VON's move, to notify AOI neighbors of new/current position
+    VON_MOVE_F:     9, // VON's move, full notification on AOI
+    VON_MOVE_B:    10, // VON's move for boundary neighbors
+    VON_MOVE_FB:   11  // VON's move for boundary neighbors with full notification on AOI
+};
+
+var VON_Message_String = [
+    'VON_BYE',
+    'VON_PING',
+    'VON_QUERY',
+    'VON_JOIN',
+    'VON_NODE', 
+    'VON_HELLO',
+    'VON_HELLO_R',
+    'VON_EN',
+    'VON_MOVE',
+    'VON_MOVE_F',
+    'VON_MOVE_B',    
+    'VON_MOVE_FB'
+];
 
 // status on known nodes in the neighbor list, can be either just inserted / deleted / updated
 var NeighborUpdateStatus = {
@@ -115,11 +144,10 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
     var _that = this;
     
     // function to create a new net layer
-    this.init = function (self_id, port, matcher, onDone) {
+    this.init = function (self_id, port, onDone) {
    
         self_id = self_id || VAST.ID_UNASSIGNED;
         port = port || VON_DEFAULT_PORT;
-        _my_matcher = matcher;
                                                         
         // create new layer
         var handler = new msg_handler(self_id, port, function (local_addr) {
@@ -221,6 +249,15 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
         
         // clean data structure
         _initStates();
+        
+        /*
+        // remove ticking interval
+        // TODO: remove js-specific code or collect them
+        if (_interval_id !== undefined) {
+            clearInterval(_interval_id);
+            _interval_id = undefined;
+        }
+        */
     }    
 
     // move the AOI to a new position (or change radius)    
@@ -308,6 +345,11 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
         return _self.aoi;    
     }
     
+    // get a list of AOI neighbors
+    this.list = function () {
+        return _neighbors; 
+    }
+    
     // send a message to a given node
     var _send = this.send = function (id, msg) {
 
@@ -327,240 +369,10 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
         LOG.debug('get() meta keys: ' + Object.keys(_meta).length);    
         return _meta;
     }
-
-    ////////////////////////////////////////////////
-    // Public methods / accessors used by matcher
-
-    // get a list of AOI neighbors
-    this.list = function () {
-        return _neighbors; 
-    }
-
-    // checks if id is an enclosing neighbour of center_node_id
-    this.is_enclosing_neighbour = function(id, center_node_id){
-        return _voro.is_enclosing(id, center_node_id);
-    }
-    //---------------------------------------
-    // BROKEN ALWAYS RETURNS FALSE
-    this.contains = function(pos){
-        return _voro.contains(_self.id, pos);
-    }
-
-    // TODO: Rename function to better describe what it does
-    // This function sends a point message only if I am the nearest recipient
-    // of all the common recipients between A and B.
-    // For reference, this function is used to avoid identical publications 
-    // getting forwarded from common overlapping neighbours for a subscription
-
-    this.pointMessageRecipients = function(pointPacket, recipientsA, recipientsB){
-        var setA = new Set(Object.values(recipientsA));
-        var setB = new Set(Object.values(recipientsB));
-        var common = Array.from( new Set([...setA].filter(x => setB.has(x))));
-
-        var tempNode;
-
-        var targetPos = new VAST.pos();
-        targetPos.parse(pointPacket.targetPos);
-
-        // distance from myself
-        var minDist = targetPos.distance(_self.aoi.center);
-        var minID = _self.id;
-
-        // for each common recipient, check distance
-        for (var i = 0; i < common.length; i++){
-            // I do not know this node
-            if (typeof(_neighbors[common[i]]) === 'undefined'){
-                continue;
-            }
-            
-            tempNode = _getNode(common[i]);
-            
-            tempDist = targetPos.distance(tempNode.aoi.center);
-            if (tempDist === minDist){
-                minID = tempNode.id < minID ? tempNode.id : minID;
-            }
-            else if (tempDist < minDist){
-                minDist = tempDist;
-                minID = tempNode.id;
-            }
-        }
-
-        // Am I the closest common neighbour? Send If I am
-        if(minID === _self.id){
-            l_pointMessage(pointPacket);
-        }
-    }
-
-    this.closest_to = function(pos){
-        return _voro.closest_to(pos);
-    }
-
-    // send message to a point via VON
-    var l_pointMessage = this.pointMessage = function(pointPacket){ 
-        var VON_pack = new VAST.pack(VON_Message.MATCHER_POINT, pointPacket, VAST.priority.HIGHEST);
-        VON_pack.targets.push(_voro.closest_to(pointPacket.targetPos));
-        _sendPack(VON_pack, true);
-    }
-
-    this.areaMessage = function(areaPacket){
-        
-        var VON_pack = new VAST.pack(VON_Message.MATCHER_AREA, areaPacket, VAST.priority.HIGHEST);
-        VON_pack.targets.push(_voro.closest_to(areaPacket.targetAoI.center));
-        _sendPack(VON_pack, true);
-    }
-
-    // forward message to all overlapping neighbours
-    this.forwardOverlapping = function(areaPacket, callback){
-
-        // get an array of overlapping neighbours (list of nodes)
-        var overlapping = _getOverlappingNeighbours(areaPacket.targetAoI);
-
-        // array of node IDs that have already received the message (not always complete)
-        var recipients = Object.values(areaPacket.recipients);
-
-        var chain = Object.values(areaPacket.chain); // "source" of nodes the message came from
-
-        var newNeighbours = [];  // array of overlapping neighbours who don't have the message yet 
-        var recNeighbours = []; // array of my neighbours that are already recipients
-
-        var targets = [];
-
-        var id, rootDist, rootPos, myRootDistance, targetNode, commonNeighbours, checkNeigbours, nearest;
-        
-        // For each overlapping neighbour
-        for (var i = 0; i < overlapping.length; i++){
-            id = overlapping[i];
-
-            // The neighbour has already received the message
-            if (recipients.includes(id)){
-                recNeighbours.push(id);
-            }
-            // The neighbour has not received the message.
-            else{
-                newNeighbours.push(id);
-                recipients.push(id);
-            }
-        }
-
-        console.log(_self.id + ': received area packet');
-        console.log(areaPacket);
-
-        rootPos = new VAST.pos();
-        rootPos.parse(areaPacket.targetAoI.center);
-        myRootDistance = rootPos.distance(_self.aoi.center);
-
-        // for each new neighbour
-        for (var j = 0; j < newNeighbours.length; j++){
-
-            targetNode = _getNode(newNeighbours[j]);
-            // get a list of the target's common neighbours (also our neighbours)
-            commonNeighbours = Object.values(_voro.get_neighbour(newNeighbours[j], targetNode.aoi.radius));
-            
-            // filter list to only include recieved neigbours (parse element as int because vast_voro 
-            // only returns keys and does not store real IDs :\  ))
-            checkNeigbours = commonNeighbours.filter(function(element){
-                return !newNeighbours.includes(parseInt(element));
-            });
-
-            nearest = true; // I am nearest to the root (for now)
-
-            console.log('check neighbours for: ' + targetNode.id);
-            console.log(checkNeigbours);
-
-            // for each common neigbour (that has received the message already)
-            for (var key in checkNeigbours){
-                tempNode = _getNode(checkNeigbours[key]);                
-                if (tempNode.id == _self.id){
-                    continue;
-                }
-
-                rootDist = rootPos.distance(tempNode.aoi.center);
-
-                // if the target is closer to the root than I am, 
-                // I should not forward this message and can break the loop
-                if (rootDist < myRootDistance){
-                    nearest = false;
-                    break;
-                }
-                if (rootDist == myRootDistance && tempNode.id < _self.id){
-                    nearest = false;
-                    break;
-                }            
-            }
-
-            // If i am the nearest to the root than all common received neigbours, I should forward
-            if (nearest === true){
-                targets.push(newNeighbours[j]);
-            }
-        }
-
-        chain.push(_self.id);
-        areaPacket.chain = chain;
-        areaPacket.recipients = recipients;
-
-        // pass updated packet back
-        if (typeof callback == 'function'){
-            callback(areaPacket);   
-        }
-
-        console.log('sending pack to '+ targets);
-        console.log('--------------------------------------');
-
-        // send the packet to the targets
-        var VON_pack = new VAST.pack(VON_Message.MATCHER_AREA, areaPacket, VAST.priority.HIGHEST)
-        VON_pack.targets = targets;      
-        _sendPack(VON_pack, true);
-    }
-
-
-    // return true if my voronoi region overlaps / contains 
-    this.isOverlapping = function (aoi){
-        
-        var region = new VAST.region();
-        region.update(_voro.getRegion(_self.id));
-        region.convertingEdges();
-
-        if(region.intersects(aoi.center, aoi.radius)){
-            return true;
-        }
-        else{
-            return false;
-        }
-    }
-
-    // return a list of neighbours that overlap with an AoI
-    var _getOverlappingNeighbours = function(aoi){
-        var overlapping = [];
-        var temp;
-
-        // Need to convert voronoi cell to VAST region for intersect checking
-        // TODO: combine required functionality into single region/cell type
-        var region = new VAST.region();
-
-        for (var key in _neighbors) {
-            temp = _neighbors[key].id;
-            // skip self
-            // TODO: accept list of nodes not to check? (Sub already forwarded to them, don't recheck and resend)
-            if (temp === _self.id)
-            continue 
-
-            region.update(_voro.getRegion(temp));
-            region.convertingEdges();
-            if(region.intersects(aoi.center, aoi.radius)){
-                overlapping.push(temp);
-            }
-        }
-        return overlapping;
-    }
     
     /////////////////////
     // public accessors
     //
-
-    this.getHandler = function () {
-        //LOG.debug("Get Handler", _self.id);
-        return _msg_handler;
-    }
     
     // check if we've joined the VON network
     var _isJoined = this.isJoined = function () {        
@@ -748,15 +560,10 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
     //
     
     // the master function for all things regular
-    // TODO: Generally find a better way of doing all of this.
-    // _tick() was removed for js version because of asynchronicity, 
-    // but we need to regularly check the relevant neighbours, etc.
+    /*
     var _tick = function () {
+    
         //_sendKeepAlive();
-
-        var now = UTIL.getTimestamp();
-        var dt = now - _lastTick;;
-
         try {
             _contactNewNeighbors();
             _checkNeighborDiscovery();
@@ -765,21 +572,8 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
         catch (e) {
             LOG.error('tick error:\n' + e.stack);
         }
-
-        //adjust tick interval
-        if(dt > MAX_TICK_INTERVAL){
-            TICK_INTERVAL = MAX_TICK_INTERVAL;
-            console.log('VON: max tick reached')
-        }else{
-            TICK_INTERVAL = dt;
-        }
-
-        _lastTick = now;
-
-        // set timeout is not memory-efficient, but I have bigger fish to fry
-        setTimeout(_tick, TICK_INTERVAL);
     }
-    
+    */
     
     // self creation once self ID is obtained
     var _setInited = function () {
@@ -816,7 +610,8 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
         if (typeof _join_onDone === 'function')
             _join_onDone(_self.id);         
             
-        _tick();
+        // start ticking
+        //_interval_id = setInterval(_tick, TICK_INTERVAL);
     }
         
     var _sendKeepAlive = function () {
@@ -920,19 +715,14 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
         _new_neighbors = {};
             
         LOG.debug('total neighbors (after process neighbors): ' + Object.keys(_neighbors).length);
-        LOG.debug('total voro nodes: ' + _voro.size() + '\n');
-
-        // remove neighbours that may no longer be relevant
-        //_removeNonOverlapped(); (called in tick function)
-        
-        return;
+        LOG.debug('total voro nodes: ' + _voro.size() + '\n');        
     }
 
     var _checkNeighborDiscovery = function (check_requester_only, check_en_only) {
-
+        
         var req_size = Object.keys(_req_nodes).length;
         if (req_size === 0)
-            return true; // done?
+            return;
             
         //LOG.debug(req_size + ' neighbors need neighbor discovery check');
         
@@ -1041,8 +831,6 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
         }
 
         _req_nodes = {};
-
-        return;
     }
 
     // check consistency of enclosing neighbors
@@ -1057,17 +845,17 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
             var target = en_list[i];
             if (target != skip_id)
                 _sendEN (target);
-        }        
+        }                    
     }
     
     // remove neighbors no longer in view
     var _removeNonOverlapped = function () {
-
+        
         var now = UTIL.getTimestamp ();
         
         // check if we should perform check (should check no more than once per second)
         if ((now - _lastRemoveNonOverlapped) < 1000)
-            return true; // done?
+            return 0;
             
         // update check time
         _lastRemoveNonOverlapped = now;
@@ -1076,7 +864,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
         var delete_list = [];
         
         // wait time in milliseconds
-        //var grace_period = now + (MAX_DROP_SECONDS * 1000);
+        var grace_period = now + (MAX_DROP_SECONDS * 1000);
 
         // go over each neighbor and do an overlap check
         //for (map<id_t, Node>::iterator it = _id2node.begin(); it != _id2node.end(); ++it)
@@ -1090,18 +878,9 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
             // TODO: possible to avoid checking every time, simply record some
             //       flag when messages come in, then check whether connection's still active?
             //       or.. simply use network timeout (if available)?
-
-            if (_isSelf(id) === false &&
-                _isRelevantNeighbor(_self, _neighbors[id], l_aoi_buffer * NONOVERLAP_MULTIPLIER) === false){
-                delete_list.push(id)
-            }
-            
-            
-            //CFM 2021: removed timedrop
-            /*
             if (_isSelf(id) ||
-                (_isRelevantNeighbor(_self, _neighbors[id], l_aoi_buffer * NONOVERLAP_MULTIPLIER))
-                 && _isTimelyNeighbor(id)) {
+                (_isRelevantNeighbor(_self, _neighbors[id], l_aoi_buffer * NONOVERLAP_MULTIPLIER)) && 
+                 _isTimelyNeighbor(id)) {
                 _time_drop[id] = grace_period;
                 continue;
             }
@@ -1111,13 +890,10 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
                 delete_list.push(id);
                 delete _time_drop[id];
             }
-            */
         }
         
         // send BYE message to disconnected node
-        _sendBye(delete_list);
-
-        return;
+        return _sendBye(delete_list);
     }
     
     //
@@ -1419,7 +1195,6 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
                         _stat[pack.type].normal++;
                         _new_neighbors[new_node.id] = new_node;
                     }
-
                 } // end going through node list                
 
                 // process new neighbors immediately after learning new nodes
@@ -1621,68 +1396,6 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
                 LOG.debug('after removal, neighbor size: ' + Object.keys(_neighbors).length);
             }
             break;
-
-            // Message from matcher layer being routed through VON to a point
-            case VON_Message.MATCHER_POINT: {
-                var closest = _voro.closest_to(pack.msg.targetPos);
-
-                // If I am not the nearest peer so forward it to the nearest neighbour
-                if (closest !== _self.id){
-                    pack.targets = [];
-                    pack.targets.push(closest);
-                    _sendPack(pack, true);
-                } 
-
-                // I am the nearest peer, so my matcher should handle it 
-                else if ((_my_matcher !== undefined) &&
-                (typeof _my_matcher.handlePacket === 'function')){
-                    _my_matcher.handlePacket(from_id, pack.msg);
-                }
-            }
-            break;
-
-            // Message from matcher layer being routed through VON to an area
-            case VON_Message.MATCHER_AREA: {
-
-                //console.log(_self.id+': received a packet:');
-                //console.log(pack.msg);
-
-                var closest = _voro.closest_to(pack.msg.targetAoI.center);
-                var recipients = Object.values(pack.msg.recipients);
-
-                // I contain the center but I have already received the message
-                // something went wrong
-                if ((closest === _self.id) && recipients.includes(_self.id)){
-                    console.log('Area Message received twice by center');
-                }
-
-                //I contain the center. I am the first recipient
-                if ((closest === _self.id) && recipients.length === 0){
-                    recipients.push(_self.id);
-                    pack.msg.recipients = recipients;
-                }
-
-                //I am not the nearest peer to centre and I am not a recipient, so forward it to the nearest neighbour               
-                if (closest !== _self.id && !recipients.includes(_self.id)){
-                    pack.targets = [];
-                    pack.targets.push(closest);
-                    
-                    _sendPack(pack, true);
-                } 
-                // The center was found, now forwarding to overlapping neighbours 
-                else {
-                    this.forwardOverlapping(pack.msg, function(updatedPacket){
-                        // the updated packet contains the newly discovered recipients
-
-                        // Give the updated message to my matcher
-                        if ((_my_matcher !== undefined) &&
-                        (typeof _my_matcher.handlePacket === 'function')){
-                            _my_matcher.handlePacket(from_id, updatedPacket);
-                        }   
-                    });
-                }
-            }
-            break
                                               
             default: 
                 // packet unhandled
@@ -1772,7 +1485,6 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
     //
     // constructor actions
     //
-    var _my_matcher;
     
     // set default AOI buffer size
     l_aoi_buffer = l_aoi_buffer || AOI_DETECTION_BUFFER;
@@ -1804,6 +1516,9 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
 
     // callback to use once init is successful (got self ID from server)
     var _init_onDone = undefined;
+    
+    // interval id for removing periodic ticking
+    //var _interval_id = undefined;
    
     // node state definition
     var _state; 
@@ -1821,10 +1536,7 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
     var _time_drop;
     
     var _lastRemoveNonOverlapped;   // last timestamp when removeNonOverlapped is called
-    
-    //CFM
-    var _lastTick;                  //timestamp of last tick event                     
-
+        
     // create an object to calculate Voronoi diagram for neighbor mangement/discovery 
     var _voro; 
     
@@ -1841,83 +1553,3 @@ function VONPeer(l_aoi_buffer, l_aoi_use_strict) {
 //       (that is, all msg_handler variables will become singleton, only one instance globally)
 if (typeof module !== 'undefined')
 	module.exports = VONPeer;
-
-
-    /* OLD FORWARDING ALGORITHM
-
-    // forward message to all overlapping neighbours
-    this.forwardOverlapping = function(areaPacket, callback){
-        // get an array of overlapping neighbours (list of nodes)
-        var overlapping = _getOverlappingNeighbours(areaPacket.targetAoI);
-
-        // array of node IDs that have already received the message (not always complete)
-        var recipients = Object.values(areaPacket.recipients);
-
-        var chain = Object.values(areaPacket.chain); // "source" of nodes the message came from
-
-        var newNeighbours = [];  // array of overlapping neighbours who don't have the message yet 
-        var recNeighbours = []; // array of my neighbours that are already recipients
-
-        var id, targetNode, targetPos, tempNode, minDist, tempDist, minID;
-        
-        // For each overlapping neighbour
-        for (var i = 0; i < overlapping.length; i++){
-            id = overlapping[i];
-
-            // The neighbour has already received the message
-            if (recipients.includes(id)){
-                recNeighbours.push(id);
-            }
-            // The neighbour has not received the message.
-            else{
-                newNeighbours.push(id);
-                recipients.push(id);
-            }
-        }
-
-        chain.push(_self.id);
-        areaPacket.chain = chain;
-        areaPacket.recipients = recipients;
-
-        // pass updated packet back
-        if (typeof callback == 'function'){
-            callback(areaPacket);   
-        }
-
-        var VON_pack = new VAST.pack(VON_Message.MATCHER_AREA, areaPacket, VAST.priority.HIGHEST)
-    
-        // for each new neighbour, see if we should forward it
-        for (var j = 0; j < newNeighbours.length; j++){
-            targetNode = _getNode(newNeighbours[j]);
-            targetPos = targetNode.aoi.center;
-            // distance to myself
-            minDist = targetPos.distance(_self.aoi.center);
-            minID = _self.id;
-
-            // For each received neighbour, check distance
-            for (var k = 0; k < recNeighbours.length; k++){
-                tempNode = _getNode(recNeighbours[k]);
-                tempDist = targetPos.distance(tempNode.aoi.center);
-                if (tempDist === minDist){
-                    minID = tempNode.id < minID ? tempNode.id : minID;
-                }
-                else if (tempDist < minDist){
-                    minDist = tempDist;
-                    minID = tempNode.id;
-                }
-            }
-
-            // Am I the closest common neighbour?
-            if(minID === _self.id){
-                VON_pack.targets.push(targetNode.id);
-            }
-        }
-
-        // send the packet to the targets
-        //console.log('ID: ' + _self.id + ' fowarding area packet: ');
-        //console.log(areaPacket);
-        //console.log('Targets: ', VON_pack.targets);
-        
-        _sendPack(VON_pack, true);
-    }
-    */

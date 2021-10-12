@@ -75,7 +75,8 @@
 
             var matchers = {};
             var clients = {};
-            var sites = {};
+            var subscriptions = {};
+            var publications = {};
             var voronoi = new VAST_Voronoi();
             var voro = new VAST_Voronoi(); // FOR LOCALISED VIEW
             var diagram, diagram2;
@@ -100,6 +101,7 @@
                     matchers = data.matchers;
                     clients = data.clients;
                     subscriptions = data.subscriptions;
+                    publications = data.publications;
                     recalculate();
                 });
 
@@ -192,8 +194,8 @@
 
                     //clients
                     for (var j in clients[key]){
-                        console.log(j, key);
-                        console.log(clients[key]);
+                        //console.log(j, key);
+                        //console.log(clients[key]);
                         c = clients[key][j];
                         idx = 'C['+ c.id +']';
 
@@ -230,6 +232,28 @@
                     }
                 }
 
+                //publications
+                for(var k in publications){
+                    var pub = publications[k];
+                    var aoi = pub.aoi;
+                    idx = 'C['+ pub.clientID +'] published'
+
+                    ctx.beginPath();
+                    ctx.globalAlpha = 0.3;
+                    ctx.fillStyle = 'red';
+                    ctx.arc(aoi.center.x, aoi.center.y, aoi.radius, 0, 2*Math.PI);
+                    ctx.fill();
+                    
+
+                    ctx.beginPath();
+                    ctx.globalAlpha = 1;
+                    ctx.font = "15px Verdana";
+                    ctx.fillText(idx, aoi.center.x/SCALING_FACTOR-20,(aoi.center.y+aoi.radius)/SCALING_FACTOR+7);
+                    ctx.stroke();
+                    ctx.fill();
+                }
+
+                //local render
                 if (renderLocal === true){
                     
                     // edges
