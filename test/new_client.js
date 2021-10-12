@@ -1,4 +1,5 @@
 const client = require('../lib/client');
+require('../lib/common.js');
 
 var sub_x = process.argv[2] || 500;
 var sub_y = process.argv[3] || 500;
@@ -13,17 +14,25 @@ var aoi_radius = process.argv[10] || Math.random()*100;
 
 var _id;
 
+var GW_addr; // Address of first matcher we establish socket connection with
 
-var C = new client('127.0.0.1', 20000, x, y, 1, function(id){
-    console.log('Client: ' + id + ' subscribing around themself at {x: '+x+'; y: '+y+'; radius: '+aoi_radius+'}');
-    C.subscribe(x, y, aoi_radius, 1);
+var C;
 
-    //console.log('Client: ' + id + ' subscribing at {x: '+sub_x+'; y: '+sub_y+'; radius: '+sub_radius+'}');
-    //C.subscribe(sub_x, sub_y, sub_radius, 1);
+// get GW address before attempting init
+UTIL.lookupIP('Matcher_GW', function(addr){
+    GW_addr = addr;
 
-    _id = id;    
-});
+    C = new client(GW_addr, 20000, x, y, 1, function(id){
+        console.log('Client: ' + id + ' subscribing around themself at {x: '+x+'; y: '+y+'; radius: '+aoi_radius+'}');
+        C.subscribe(x, y, aoi_radius, 1);
+    
+        //console.log('Client: ' + id + ' subscribing at {x: '+sub_x+'; y: '+sub_y+'; radius: '+sub_radius+'}');
+        //C.subscribe(sub_x, sub_y, sub_radius, 1);
+    
+        _id = id;    
+    });
 
+})
 
 function publishMessage(){
     console.log('I am publishing');
