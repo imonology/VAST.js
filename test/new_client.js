@@ -19,7 +19,7 @@ var GW_addr; // Address of first matcher we establish socket connection with
 var C;
 
 // get GW address before attempting init
-UTIL.lookupIP('Matcher_GW', function(addr){
+UTIL.lookupIP('MatcherGW.local', function(addr){
     GW_addr = addr;
 
     C = new client(GW_addr, 20000, x, y, 1, function(id){
