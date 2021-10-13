@@ -32,7 +32,7 @@ UTIL.lookupIP('Matcher_GW', function(addr){
         _id = id;    
     });
 
-})
+});
 
 function publishMessage(){
     console.log('I am publishing');
