@@ -63,6 +63,7 @@
     <script src="../voronoi/rhill-voronoi-core.js"></script>
     <script src="../common/logger.js"></script>
     <script src="../voronoi/vast_voro.js"></script>
+    <script src="../common.js"></script>
 
     <script src="../../node_modules/socket.io-client/dist/socket.io.js"></script>
     <script src="../../node_modules/jquery/dist/jquery.js"></script>
@@ -197,7 +198,7 @@
                         //console.log(j, key);
                         //console.log(clients[key]);
                         c = clients[key][j];
-                        idx = 'C['+ c.id +']';
+                        idx = c.id;
 
                         ctx.beginPath();
                         ctx.font = "15px Verdana";
