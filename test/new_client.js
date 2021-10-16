@@ -48,10 +48,12 @@ function publishMessage(){
 
 function sendPINGs(){
     console.log('I am pinging');
+    C.sendPING(500, 500, 2000, 1);
+
 
     setInterval(function(){
         C.sendPING(500, 500, 2000, 1);
-    }, ping_refresh_time)
+    }, ping_refresh_time);
 }
 
 function clearSubscriptions(){
