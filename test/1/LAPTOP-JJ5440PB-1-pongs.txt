@@ -1,0 +1,14 @@
+{"sendTime":1634465256520,"ids":["LAPTOP-JJ5440PB-1"],"totLat":1963,"minLat":1963,"maxLat":1963,"avgLat":1963}
+{"sendTime":1634465261649,"ids":["LAPTOP-JJ5440PB-2","LAPTOP-JJ5440PB-1","LAPTOP-JJ5440PB-3"],"totLat":3509,"minLat":832.5,"maxLat":1706.5,"avgLat":1169.6666666666667}
+{"sendTime":1634465266657,"ids":["LAPTOP-JJ5440PB-2","LAPTOP-JJ5440PB-1","LAPTOP-JJ5440PB-5","LAPTOP-JJ5440PB-6"],"totLat":8208,"minLat":1468.5,"maxLat":2404.5,"avgLat":2052}
+{"sendTime":1634465271662,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}
+{"sendTime":1634465276668,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}
+{"sendTime":1634465281668,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}
+{"sendTime":1634465286674,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}
+{"sendTime":1634465291678,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}
+{"sendTime":1634465296687,"ids":["LAPTOP-JJ5440PB-2","LAPTOP-JJ5440PB-3","LAPTOP-JJ5440PB-9","LAPTOP-JJ5440PB-12","LAPTOP-JJ5440PB-15"],"totLat":10208,"minLat":1998,"maxLat":2117,"avgLat":2041.6}
+{"sendTime":1634465301693,"ids":["LAPTOP-JJ5440PB-2","LAPTOP-JJ5440PB-3","LAPTOP-JJ5440PB-9","LAPTOP-JJ5440PB-12","LAPTOP-JJ5440PB-15","LAPTOP-JJ5440PB-11","LAPTOP-JJ5440PB-1"],"totLat":9738.5,"minLat":923,"maxLat":1559.5,"avgLat":1391.2142857142858}
+{"sendTime":1634465306704,"ids":["LAPTOP-JJ5440PB-2","LAPTOP-JJ5440PB-3","LAPTOP-JJ5440PB-9","LAPTOP-JJ5440PB-12","LAPTOP-JJ5440PB-15"],"totLat":5783.5,"minLat":928,"maxLat":1325.5,"avgLat":1156.7}
+{"sendTime":1634465311709,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}
+{"sendTime":1634465316715,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}
+{"sendTime":1634465321717,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}

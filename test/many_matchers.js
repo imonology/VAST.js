@@ -1,25 +1,27 @@
-const matcher = require('../lib/matcher.js');
-
 var matcherCount = 3;
-var matchers = [];
 
-function random(){
-    return Math.random()*1000;
-}
+const { spawn } = require('child_process');
+
+const { exec } = require("child_process");
+exec("start node test/random_GW.js", (error, data, getter) => {
+	if(error){
+		console.log("error",error.message);
+		return;
+	}
+	if(getter){
+		console.log("data",data);
+		return;
+	}
+	console.log("data",data);
+
+});
+
+
 
 //GW first
-matchers.push(new matcher(true, '0.0.0.0', 8000, random(), random(), 100));
+//spawn('echo "hello"');
 
-function addMatcher(){
-    if(matchers.length < matcherCount){
-        matchers.push(new matcher(false, '0.0.0.0', 8000, random(), random(), 100));
-    }else{
-        console.log('MATCHERS COMPLETE');
-    }
-}
-
-for (var i = 0; i < matcherCount; i++){
-    setTimeout(addMatcher, 200);
+for (var i = 1; i < matcherCount; i++){
 }
 
 
