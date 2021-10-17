@@ -1,0 +1,8 @@
+{"sendTime":1634465293806,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}
+{"sendTime":1634465298810,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}
+{"sendTime":1634465303816,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}
+{"sendTime":1634465308821,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}
+{"sendTime":1634465313834,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}
+{"sendTime":1634465318849,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}
+{"sendTime":1634465323856,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}
+{"sendTime":1634465328875,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}

@@ -1,0 +1,6 @@
+{"sendTime":1634465302518,"ids":["LAPTOP-JJ5440PB-1","LAPTOP-JJ5440PB-1","LAPTOP-JJ5440PB-1","LAPTOP-JJ5440PB-1","LAPTOP-JJ5440PB-1","LAPTOP-JJ5440PB-1","LAPTOP-JJ5440PB-1","LAPTOP-JJ5440PB-1"],"totLat":19789.5,"minLat":2451,"maxLat":2483.5,"avgLat":2473.6875}
+{"sendTime":1634465307529,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}
+{"sendTime":1634465312529,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}
+{"sendTime":1634465317538,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}
+{"sendTime":1634465322558,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}
+{"sendTime":1634465327564,"ids":[],"totLat":0,"minLat":0,"maxLat":0,"avgLat":0}

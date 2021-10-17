@@ -6,7 +6,7 @@ var y = Math.random()*1000;
 
 var M;
 
-UTIL.lookupIP('MatcherGW.local', function(addr){
+UTIL.lookupIP('LAPTOP-JJ5440PB.local', function(addr){
 
     M = new matcher(false, addr, 8000, x, y, 100, function(id){
         console.log('I have joined with id: ' + id);
