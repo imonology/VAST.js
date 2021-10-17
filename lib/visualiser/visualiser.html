@@ -99,6 +99,7 @@
                 });
 
                 socket.on('update', function(data){
+                    console.log('update ', data);
                     matchers = data.matchers;
                     clients = data.clients;
                     subscriptions = data.subscriptions;
@@ -122,6 +123,8 @@
                 }else if (matchers.hasOwnProperty(localID)){
                     renderLocal = true;              
                 }
+
+                renderLocal = false; // disable localised views
 
                 //Localised
                 if ((renderLocal === true) && (matchers.hasOwnProperty(localID))){
@@ -255,6 +258,9 @@
                 }
 
                 //local render
+
+                renderLocal = false;
+
                 if (renderLocal === true){
                     
                     // edges
