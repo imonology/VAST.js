@@ -3,14 +3,20 @@ require('../lib/common.js');
 
 var sub_x = process.argv[2] || 500;
 var sub_y = process.argv[3] || 500;
-var sub_radius = process.argv[4] || 300;
-var wait_to_ping = process.argv[5] || 1000;
-var ping_refresh_time = process.argv[6] || 1000;
-var wait_to_unsubscribe = process.argv[7] || 0;
+var sub_radius = process.argv[4] || 20;
+
+var pub_x = process.argv[5] || 500;
+var pub_y = process.argv[6] || 500;
+var pub_radius = process.argv[7] || 20;
 
 var x = process.argv[8] || Math.random()*1000;
 var y = process.argv[9] || Math.random()*1000;
-var aoi_radius = process.argv[10] || Math.random()*100;
+var aoi_radius = process.argv[10] || 10;
+
+var wait_to_ping =  1000;
+var ping_refresh_time = 100;
+var wait_to_unsubscribe = process.argv[7] || 0;
+var randomisation = Math.pow(Math.random()*5, 3); // higher powers increases variability (apparently)
 
 var _id;
 
@@ -22,7 +28,7 @@ var C;
 UTIL.lookupIP('LAPTOP-JJ5440PB', function(addr){
     GW_addr = addr;
 
-    C = new client(GW_addr, 20000, x, y, 1, function(id){
+    C = new client(GW_addr, 20000, x, y, aoi_radius, function(id){
         console.log('Client: ' + id + ' subscribing around themself at {x: '+x+'; y: '+y+'; radius: '+aoi_radius+'}');
         C.subscribe(x, y, aoi_radius, 2);
     
@@ -47,12 +53,15 @@ function publishMessage(){
 }
 
 function sendPINGs(){
-    console.log('I am pinging');
-    C.sendPING(500, 500, 2000, 1);
-
+    console.log('I am pinging to random location');
+    var xx = Math.random()*1000;
+    var yy = Math.random()*1000;
+    C.sendPING(330,330, 100, 1);
 
     setInterval(function(){
-        C.sendPING(500, 500, 2000, 1);
+        xx = Math.random()*1000;
+        yy = Math.random()*1000;
+        C.sendPING(xx,yy, 500, 1);
     }, ping_refresh_time);
 }
 

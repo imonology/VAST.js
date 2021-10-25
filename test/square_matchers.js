@@ -28,7 +28,7 @@ function createM4(){
     });
 }
 function createM5(){
-    var M5 = new matcher(false, '127.0.0.1', 8000, 520, 500, 100, function(){
+    var M5 = new matcher(false, '127.0.0.1', 8000, 520, 500, 500, function(){
         matcherCount++;
     });
 }
