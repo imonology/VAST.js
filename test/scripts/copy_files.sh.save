@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# D:\Documents\VAST.js\test\Testing Scripts
+
+PASSWORD="raspberry"
+USERNAME="pi"
+DIR_NAME="Documents"
+TIME_BETWEEN_HOSTS=1
+
+for HOST in `cat hosts.txt`; do
+
+    	echo "Making directory on $HOST";
+    	sshpass -p $PASSWORD ssh  $USERNAME@$HOST "mkdir $DIR_NAME"
+	echo "Attempting SCP on $HOST"
+	sshpass -p $PASSWORD scp test.txt $USERNAME@$HOST:home/pi/Documents
+
+    	sleep $TIME_BETWEEN_HOSTS
+
+    done

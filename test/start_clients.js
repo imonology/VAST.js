@@ -1,19 +1,18 @@
-var matcherCount = 10;
+// Starts "count" number of random matchers as child processes (seperate node instances)
 
-const { spawn } = require('child_process');
 
 const { exec } = require("child_process");
 
 // KEEP SIZE 1000
 const SIZE = 1000;
 
-const count = parseInt(process.argv[2]) || 1;
+const count = parseInt(process.argv[2]) || 5;
 const aoi = parseInt(process.argv[3]) || 100;
 
 // Declare funtions
 
-var _addMatcher = function(x, y, radius){
-    var cmd = "start node test/random_matcher.js" + " " + x + " " + y + " " + radius;
+var _addClient = function(x, y, radius){
+    var cmd = "node test/random_matcher.js" + " " + aoi;
 
     exec(cmd, (error, data, getter) => {
         if(error){
@@ -35,13 +34,13 @@ setTimeout(function(){
     // must use while loop and setIntervalin order to pause
     var i = 1;
     var generate = setInterval(function(){
-        if(i >= x.length || i >= y.length || i >= count){
+        if(i > count){
             clearInterval(generate);
         }else{
 
             var x = Math.random()*SIZE;
             var y = Math.random()*SIZE;
-            _addMatcher(x, y, aoi);
+            _addClient(x, y, aoi);
             i++;
         }
     }, 1500);
