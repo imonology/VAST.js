@@ -1,22 +1,24 @@
 const client = require('../lib/client');
 require('../lib/common.js');
 
-var sub_x = process.argv[2] || 500;
-var sub_y = process.argv[3] || 500;
-var sub_radius = process.argv[4] || 20;
+const SIZE = 1000; // world size
 
-var pub_x = process.argv[5] || 500;
-var pub_y = process.argv[6] || 500;
-var pub_radius = process.argv[7] || 20;
+// my position and AoI to subscribe for PONG messages
+var x = process.argv[2] || Math.random()*SIZE;
+var y = process.argv[3] || Math.random()*SIZE;
+var r = process.argv[4] || 10;
 
-var x = process.argv[8] || Math.random()*1000;
-var y = process.argv[9] || Math.random()*1000;
-var aoi_radius = process.argv[10] || 10;
+// secondary aoi for subs / or pubs
+var x2 = process.argv[5] || SIZE/2;
+var y2 = process.argv[6] || SIZE/2;
+var r2 = process.argv[7] || SIZE;
 
-var wait_to_ping =  1000;
-var ping_refresh_time = 100;
-var wait_to_unsubscribe = process.argv[7] || 0;
-var randomisation = Math.pow(Math.random()*5, 3); // higher powers increases variability (apparently)
+// Publisher? aoi2 used for pubs. Otherwise, for subs
+var boolStr = process.argv[8] || 'false';
+var specifyPublishing = boolStr == 'true' ? true : false;
+
+var wait_to_ping =  parseInt(process.argv[9]) || 60000; // wait 1 min for all clients to finish joining
+var ping_refresh_time = parseInt(process.argv[10]) || 1000; // time between pings
 
 var _id;
 
@@ -24,45 +26,22 @@ var GW_addr; // Address of first matcher we establish socket connection with
 
 var C;
 
-// get GW address before attempting init
-UTIL.lookupIP('LAPTOP-JJ5440PB', function(addr){
-    GW_addr = addr;
-
-    C = new client(GW_addr, 20000, x, y, aoi_radius, function(id){
-        console.log('Client: ' + id + ' subscribing around themself at {x: '+x+'; y: '+y+'; radius: '+aoi_radius+'}');
-        C.subscribe(x, y, aoi_radius, 2);
-    
-        console.log('Client: ' + id + ' subscribing at {x: '+sub_x+'; y: '+sub_y+'; radius: '+sub_radius+'}');
-        C.subscribe(sub_x, sub_y, sub_radius, 1);
-    
-        _id = id;    
-    });
-
-});
-
-function publishMessage(){
-    console.log('I am publishing');
-
-    //C.publish(x, y, 1,'Client: '  + _id + ' published with small radius around themself', 1);
-
-    //C.publish(sub_x, sub_y, sub_radius,'Client: '  + _id + ' published with equal radius', 1);
-    //C.publish(sub_x, sub_y, 1,'Client: '  + _id + ' published at center of subsciption', 1);
-    C.publish(1, 1, 1000, 'Client: '  + _id + ' published at corner with huge radius', 1)
-
-    //setTimeout(publishMessage, pub_refresh_time);
-}
-
 function sendPINGs(){
-    console.log('I am pinging to random location');
-    var xx = Math.random()*1000;
-    var yy = Math.random()*1000;
-    C.sendPING(330,330, 100, 1);
-
-    setInterval(function(){
-        xx = Math.random()*1000;
-        yy = Math.random()*1000;
-        C.sendPING(xx,yy, 500, 1);
-    }, ping_refresh_time);
+    // aoi2 specifies publications
+    if (specifyPublishing === true){
+        console.log(_id + ' is pinging to specified location: [x:'+x2+'; y:'+y2+'; r2:'+r2);
+    
+        setInterval(function(){
+            C.sendPING(x2, y2, r2, 'PING');
+        }, ping_refresh_time);
+    }
+    else{
+        // ping around my local aoi
+        console.log(_id + ' is pinging to local aoi');
+        setInterval(function(){
+            C.sendPING(x, y, r, 'PING');
+        }, ping_refresh_time);
+    }
 }
 
 function clearSubscriptions(){
@@ -70,11 +49,34 @@ function clearSubscriptions(){
     C.clearSubscriptions();
 }
 
-// give time for clients to join and subscribe first
-setTimeout(sendPINGs, wait_to_ping);
+// init
+// get GW address before attempting init
+UTIL.lookupIP('supernode.local', function(addr){
+    GW_addr = addr;
 
-if (wait_to_unsubscribe > 1000){
-    //setTimeout(clearSubscriptions, wait_to_unsubscribe);
-}
+    C = new client(GW_addr, 20000, x, y, r, function(id){
+        _id = id;    
+
+        // subscribe to receive pongs (ping responses) around my aoi
+        // use id as channel so that only I can receive these responses 
+        console.log(_id + ' is subscribing for PONGS around themself at:{x: '+x+'; y: '+y+'; radius: '+r+'}');
+        C.subscribe(x, y, r, _id);
+    
+        // subscribe to receive pings on the PING channel
+        if (specifyPublishing === false){
+            console.log('Client: ' + id + ' subscribing for pings at {x: '+x2+'; y: '+y2+'; radius: '+r2+'}');
+            C.subscribe(x2, y2, r2, 'PING');
+        }
+        else {
+            console.log('Client: ' + id + ' subscribing at for pings at {x: '+x+'; y: '+y+'; radius: '+r+'}');
+            C.subscribe(x, y, r, 'PING');
+        }
+
+        // give time for clients to join and subscribe first
+        setTimeout(sendPINGs, wait_to_ping);
+    });
+
+});
+
 
 
