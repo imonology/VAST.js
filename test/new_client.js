@@ -17,7 +17,7 @@ var r2 = process.argv[7] || SIZE;
 var boolStr = process.argv[8] || 'false';
 var specifyPublishing = boolStr == 'true' ? true : false;
 
-var wait_to_ping =  parseInt(process.argv[9]) || 60000; // wait 1 min for all clients to finish joining
+var wait_to_ping =  parseInt(process.argv[9]) || 1000; // wait 1 min for all clients to finish joining
 var ping_refresh_time = parseInt(process.argv[10]) || 1000; // time between pings
 
 var _id;
@@ -32,14 +32,14 @@ function sendPINGs(){
         console.log(_id + ' is pinging to specified location: [x:'+x2+'; y:'+y2+'; r2:'+r2);
     
         setInterval(function(){
-            C.sendPING(x2, y2, r2, 'PING');
+            C.sendPING(x2, y2, r2, 256, 'PING');
         }, ping_refresh_time);
     }
     else{
         // ping around my local aoi
         console.log(_id + ' is pinging to local aoi');
         setInterval(function(){
-            C.sendPING(x, y, r, 'PING');
+            C.sendPING(x, y, r, 256, 'PING');
         }, ping_refresh_time);
     }
 }
