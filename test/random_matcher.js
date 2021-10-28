@@ -1,8 +1,8 @@
 const matcher = require('../lib/matcher.js');
 
-var x = Math.random()*1000;
-var y = Math.random()*1000;
-var radius = parseFloat(process.argv[2]) || 100;
+var x = parseFloat(process.argv[2]) || Math.random()*1000;
+var y = parseFloat(process.argv[3]) || Math.random()*1000;
+var radius = parseFloat(process.argv[4]) || 100;
 
 var M;
 
