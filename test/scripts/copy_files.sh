@@ -7,7 +7,7 @@ USERNAME="pi"
 DIR_NAME="Documents"
 TIME_BETWEEN_HOSTS=1
 
-for HOST in `cat hosts.txt`; do
+for HOST in `cat /home/pi/Documents/VAST.js/test/scripts/hosts.txt`; do
 
 	if [ "$HOST" != "localhost" ]; then
     	echo "Starting script on $HOST";
@@ -16,7 +16,7 @@ for HOST in `cat hosts.txt`; do
 			sudo rm -r Documents/VAST.js
 		"
 
-		sshpass -p $PASSWORD scp -o StrictHostKeyChecking=no -r ../../../VAST.js $USERNAME@$HOST:Documents
+		sshpass -p $PASSWORD scp -o StrictHostKeyChecking=no -r /home/pi/Documents/VAST.js $USERNAME@$HOST:Documents
 	fi
 
     	sleep $TIME_BETWEEN_HOSTS

@@ -14,8 +14,15 @@ var y2 = process.argv[6] || SIZE/2;
 var r2 = process.argv[7] || SIZE;
 
 // Publisher? aoi2 used for pubs. Otherwise, for subs
-var bool = process.argv[8] || false;
-var specifyPublishing = bool;
+var bool = process.argv[8];
+if (typeof(bool) != 'undefined'){
+    if (bool.toString === 'true'){
+        specifyPublishing = true;
+    }
+}
+else{
+    specifyPublishing = false;
+}
 
 var wait_to_ping =  parseInt(process.argv[9]) || 1000; // wait 1 min for all clients to finish joining
 var ping_refresh_time = parseInt(process.argv[10]) || 1000; // time between pings
@@ -63,13 +70,13 @@ UTIL.lookupIP('supernode.local', function(addr){
         C.subscribe(x, y, r, _id);
     
         // subscribe to receive pings on the PING channel
-        if (specifyPublishing === false){
-            console.log('Client: ' + id + ' subscribing for pings at {x: '+x2+'; y: '+y2+'; radius: '+r2+'}');
-            C.subscribe(x2, y2, r2, 'PING');
+        if (specifyPublishing === true){
+            console.log('Client: ' + id + ' subscribing for pings at {x: '+x+'; y: '+y+'; radius: '+r+'}');
+            C.subscribe(x, y, r, 'PING');
         }
         else {
-            console.log('Client: ' + id + ' subscribing at for pings at {x: '+x+'; y: '+y+'; radius: '+r+'}');
-            C.subscribe(x, y, r, 'PING');
+            console.log('Client: ' + id + ' subscribing for pings at {x: '+x2+'; y: '+y2+'; radius: '+r2+'}');
+            C.subscribe(x2, y2, r2, 'PING');
         }
 
         // give time for clients to join and subscribe first
