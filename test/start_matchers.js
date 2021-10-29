@@ -6,13 +6,13 @@ const { exec } = require("child_process");
 // KEEP SIZE 1000
 const SIZE = 1000;
 
-const count = parseInt(process.argv[2]) || 5;
+const count = parseInt(process.argv[2]) || 3;
 const aoi = parseInt(process.argv[3]) || 100;
 
 // Declare funtions
 
 var _addMatcher = function(x, y, radius){
-    var cmd = "node test/random_matcher.js" + " " + aoi;
+    var cmd = "node test/random_matcher.js" + " " + x + " " + y + " " + aoi;
 
     exec(cmd, (error, data, getter) => {
         if(error){

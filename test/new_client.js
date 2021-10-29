@@ -14,8 +14,8 @@ var y2 = process.argv[6] || SIZE/2;
 var r2 = process.argv[7] || SIZE;
 
 // Publisher? aoi2 used for pubs. Otherwise, for subs
-var boolStr = process.argv[8] || 'false';
-var specifyPublishing = boolStr == 'true' ? true : false;
+var bool = process.argv[8] || false;
+var specifyPublishing = bool;
 
 var wait_to_ping =  parseInt(process.argv[9]) || 1000; // wait 1 min for all clients to finish joining
 var ping_refresh_time = parseInt(process.argv[10]) || 1000; // time between pings
@@ -32,14 +32,14 @@ function sendPINGs(){
         console.log(_id + ' is pinging to specified location: [x:'+x2+'; y:'+y2+'; r2:'+r2);
     
         setInterval(function(){
-            C.sendPING(x2, y2, r2, 256, 'PING');
+            C.sendPING(x2, y2, r2, 2048, 'PING');
         }, ping_refresh_time);
     }
     else{
-        // ping around my local aoi
         console.log(_id + ' is pinging to local aoi');
+        C.sendPING(x, y, r, 2048, 'PING');
         setInterval(function(){
-            C.sendPING(x, y, r, 256, 'PING');
+            C.sendPING(x, y, r, 2048, 'PING');
         }, ping_refresh_time);
     }
 }
@@ -51,7 +51,7 @@ function clearSubscriptions(){
 
 // init
 // get GW address before attempting init
-UTIL.lookupIP('supernode.local', function(addr){
+UTIL.lookupIP('LAPTOP-JJ5440PB', function(addr){
     GW_addr = addr;
 
     C = new client(GW_addr, 20000, x, y, r, function(id){

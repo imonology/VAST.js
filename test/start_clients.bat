@@ -1,1 +1,8 @@
-start node new_client.js 500 500 1000 1000 500 0
+start node new_client.js 100 500 20
+start node new_client.js 900 100 20
+start node new_client.js 900 900 20
+start node new_client.js
+start node new_client.js
+start node new_client.js
+start node new_client.js
+start node new_client.js

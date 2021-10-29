@@ -1,6 +1,6 @@
 const matcher = require('../lib/matcher.js');
 
-var matcherCount = 12;
+var matcherCount = 3;
 var matchers = [];
 
 function random(){
