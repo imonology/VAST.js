@@ -51,7 +51,7 @@ function clearSubscriptions(){
 
 // init
 // get GW address before attempting init
-UTIL.lookupIP('LAPTOP-JJ5440PB', function(addr){
+UTIL.lookupIP('supernode.local', function(addr){
     GW_addr = addr;
 
     C = new client(GW_addr, 20000, x, y, r, function(id){
