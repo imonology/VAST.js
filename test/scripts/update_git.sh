@@ -9,15 +9,16 @@ TIME_BETWEEN_HOSTS=1
 
 for HOST in `cat /home/pi/Documents/VAST.js/test/scripts/hosts.txt`; do
 
-    	echo "SHUTTING DOWN $HOST";
+    	echo "STARTING ON $HOST";
 	echo "------------------------------------------------------"
-    	sshpass -p $PASSWORD ssh -o StrictHostKeyChecking=no $USERNAME@$HOST "
-		sudo shutdown -h now
+    	if [ "$HOST" != "localhost" ]; then	
+		sshpass -p $PASSWORD ssh -o StrictHostKeyChecking=no $USERNAME@$HOST "	
+		echo "Pulling Git VAST.js"
+		cd /home/pi/Documents/VAST.js
+		git pull
 		"
+	fi
 
-    	sleep $TIME_BETWEEN_HOSTS
+   	sleep $TIME_BETWEEN_HOSTS
 
 done
-
-echo "shut down supernode"
-sudo shutdown -h now
