@@ -219,7 +219,7 @@
                                 var aoi = sub.aoi;
 
                                 ctx.beginPath();
-                                ctx.globalAlpha = 0.3;
+                                ctx.globalAlpha = 0.1;
                                 ctx.fillStyle = 'green';
                                 ctx.arc(aoi.center.x, aoi.center.y, aoi.radius, 0, 2*Math.PI);
                                 ctx.fill();
@@ -243,7 +243,7 @@
                     idx = 'C['+ pub.clientID +'] published'
 
                     ctx.beginPath();
-                    ctx.globalAlpha = 0.3;
+                    ctx.globalAlpha = 0.1;
                     ctx.fillStyle = 'red';
                     ctx.arc(aoi.center.x, aoi.center.y, aoi.radius, 0, 2*Math.PI);
                     ctx.fill();
