@@ -23,7 +23,7 @@ else{
 }
 
 
-var wait_to_ping =  parseInt(process.argv[9]) || 1000; // wait 1 min for all clients to finish joining
+var wait_to_ping =  parseInt(process.argv[9]) || 5000; // wait 1 min for all clients to finish joining
 var ping_refresh_time = parseInt(process.argv[10]) || 1000; // time between pings
 
 var _id;
@@ -33,16 +33,23 @@ var GW_addr; // Address of first matcher we establish socket connection with
 var C;
 
 function sendPINGs(){
+
+    // only begin measurements once client is actually active
+    C.startRecordingPONGs();
+    C.startRecordingBandwidth();
+
     // aoi2 specifies publications
     if (specifyPublishing === true){
         console.log(_id + ' is pinging to specified location: [x:'+x2+'; y:'+y2+'; r2:'+r2);
     
+        C.sendPING(x2, y2, r2, 64, 'PING');
         setInterval(function(){
             C.sendPING(x2, y2, r2, 64, 'PING');
         }, ping_refresh_time);
     }
     else{
         console.log(_id + ' is pinging to local aoi');
+
         C.sendPING(x, y, r, 64, 'PING');
         setInterval(function(){
             C.sendPING(x, y, r, 64, 'PING');
