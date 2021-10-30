@@ -38,14 +38,14 @@ function sendPINGs(){
         console.log(_id + ' is pinging to specified location: [x:'+x2+'; y:'+y2+'; r2:'+r2);
     
         setInterval(function(){
-            C.sendPING(x2, y2, r2, 2048, 'PING');
+            C.sendPING(x2, y2, r2, 64, 'PING');
         }, ping_refresh_time);
     }
     else{
         console.log(_id + ' is pinging to local aoi');
-        C.sendPING(x, y, r, 2048, 'PING');
+        C.sendPING(x, y, r, 64, 'PING');
         setInterval(function(){
-            C.sendPING(x, y, r, 2048, 'PING');
+            C.sendPING(x, y, r, 64, 'PING');
         }, ping_refresh_time);
     }
 }
