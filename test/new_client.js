@@ -34,9 +34,12 @@ var C;
 
 function sendPINGs(){
 
-    // only begin measurements once client is actually active
-    C.startRecordingPONGs();
-    C.startRecordingBandwidth();
+    // only start recording once we start pinging, and give some extra time for all other clients to join as well
+    setTimeout(function(){
+        C.startRecordingPONGs();
+        C.startRecordingBandwidth();
+    }, 10000);
+
 
     // aoi2 specifies publications
     if (specifyPublishing === true){
