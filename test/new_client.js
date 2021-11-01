@@ -40,7 +40,7 @@ function sendPINGs(){
     setTimeout(function(){
         C.startRecordingPONGs();
         C.startRecordingBandwidth();
-    }, 10000);
+    }, 3000);
 
 
     // aoi2 specifies publications
