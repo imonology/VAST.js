@@ -37,10 +37,8 @@ var isStarted = false; //started performig tests?
 function sendPINGs(){
 
     // only start recording once we start pinging, and give some extra time for all other clients to join as well
-    setTimeout(function(){
-        C.startRecordingPONGs();
-        C.startRecordingBandwidth();
-    }, 3000);
+    C.startRecordingPONGs();
+    C.startRecordingBandwidth();
 
 
     // aoi2 specifies publications
