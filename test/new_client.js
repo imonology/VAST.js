@@ -96,6 +96,3 @@ UTIL.lookupIP('supernode.local', function(addr){
     });
 
 });
-
-
-
