@@ -16,7 +16,7 @@ This documentation is not exhaustive and may not conform to current code 100%.
 <img src="./docs/images/VAST_Layers.png" alt="drawing" width="400"/>
 
 ## Matchers
-[Clients](./docs/client.md) establish connections to [matchers](./docs/matcher.md) based on their position in the environment. Matchers act as "spatial message brokers", i.e. they are responsible for handling subscription requests from their own clients and for matching publications to subscriptions.
+Clients establish connections to [matchers](./docs/matcher.md) based on their position in the environment. Matchers act as "spatial message brokers", i.e. they are responsible for handling subscription requests from their own clients and for matching publications to subscriptions.
 Each matcher keeps a list of all subscriptions of its own clients as well as copies of "ovelapping" subscriptions for clients connected to other matchers.  
   
 Matchers are not "aware" of each other and do not have direct connections, instead each matcher has an underlying [VON Peer](./docs/VON.md), which can be used to send any matcher-to-matcher packets with the newly implemented spatial forwarding functions in the VON peer. 
