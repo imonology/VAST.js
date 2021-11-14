@@ -109,7 +109,7 @@ var VoronoiDemo = {
 		ctx.fillStyle = 'white';
 		ctx.fill();
 		ctx.strokeStyle = '#888';
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 5;
 		ctx.stroke();
 		// voronoi
 		if (!this.diagram) {return;}
@@ -128,20 +128,20 @@ var VoronoiDemo = {
 			}
 		ctx.stroke();
 		// sites
-		ctx.beginPath();
+		
 		ctx.fillStyle = '#44f';
 		var sites = this.sites,
 			iSite = sites.length;
 		while (iSite--) {
+            ctx.beginPath();
 			v = sites[iSite];
             //var idx = sites[iSite].id;
-			ctx.rect(v.x-2/3,v.y-2/3,2,2);
+			ctx.arc(v.x,v.y,6, 0, 2*Math.PI);
+            ctx.fill();
             //ctx.fillText(idx,v.x,v.y);
 			}
         // draw a center point
         //ctx.rect(500-2/3, 500-2/3, 5, 5);
-
-		ctx.fill();
 		},
 
     // get voronoi object

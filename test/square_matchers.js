@@ -1,3 +1,7 @@
+// This file sets up 9 matchers in a 3x3 grid, with each matcher slightly offset to avoid right-angled region boundaries.
+// All matchers are instantiated within a single node process, so performance will not be very good (everything runs on a single thread) but
+// was useful for prelimenary bug fixing and SPS verification.
+
 const matcher = require('../lib/matcher.js');
 
 var matcherCount = 0;
@@ -53,60 +57,6 @@ function createM9(){
         console.log('Matchers are set up');
     });
 }
-
-
-
-
-
-// square grid
-/*
-function createGW(){
-    var GW = new matcher(true, '127.0.0.1', 8000, 166.5, 832.5, 100, function(){
-        matcherCount++;
-    });
-}
-function createM2(){
-    var M2 = new matcher(false, '127.0.0.1', 8000, 500, 832.5, 100, function(){
-        matcherCount++;
-    });
-}
-function createM3(){
-    var M3 = new matcher(false, '127.0.0.1', 8000, 832.5, 832.5, 100, function(){
-        matcherCount++;
-    });
-}
-function createM4(){
-    var M4 = new matcher(false, '127.0.0.1', 8000, 166.5, 500, 100, function(){
-        matcherCount++;
-    });
-}
-function createM5(){
-    var M5 = new matcher(false, '127.0.0.1', 8000, 500, 500, 100, function(){
-        matcherCount++;
-    });
-}
-function createM6(){
-    var M6 = new matcher(false, '127.0.0.1', 8000, 832.5, 500, 100, function(){
-        matcherCount++;
-    });
-}
-function createM7(){
-    var M7 = new matcher(false, '127.0.0.1', 8000, 166.5, 166.5, 100, function(){
-        matcherCount++;
-    });
-}
-function createM8(){
-    var M8 = new matcher(false, '127.0.0.1', 8000, 500, 166.5, 100, function(){
-        matcherCount++;
-    });
-}
-function createM9(){
-    var M9 = new matcher(false, '127.0.0.1', 8000, 832.5, 166.5, 100, function(){
-        matcherCount++;
-        console.log('Matchers are set up');
-    });
-}
-*/
 
 createGW();
 setTimeout(createM2, 200);
