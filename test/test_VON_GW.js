@@ -1,6 +1,6 @@
 // flags
 var AUTOMATIC_LEAVE_PERIOD = 3;     // number of seconds 
-
+require('dotenv').config()
 
 require('../lib/common.js');
 

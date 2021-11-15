@@ -1,5 +1,5 @@
 const matcher = require('../lib/matcher.js');
-
+require('dotenv').config()
 var x = parseFloat(process.argv[2]) || Math.random()*1000;
 var y = parseFloat(process.argv[3]) || Math.random()*1000;
 var radius = parseFloat(process.argv[4]) || 100;
