@@ -1,6 +1,6 @@
 const client = require('../lib/client');
 require('../lib/common.js');
-
+require('dotenv').config()
 const SIZE = 1000; // world size
 
 // my position and AoI to subscribe for PONG messages
