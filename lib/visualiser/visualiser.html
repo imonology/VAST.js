@@ -1,0 +1,326 @@
+<!doctype html>
+<html>
+<head>
+    <title>Global Visualiser</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { height: 800px; }
+        body { font: 13px Helvetica, Arial; height: 100%; margin: 0px; }
+        form { background: #000; padding: 3px; flex-flow: auto; display:flex;}
+        form button { width: auto; background: rgb(130, 224, 255); border: none; padding: 10px; }
+        form input { border: 5px; border-color: #f00; border-radius: 4px; background-color: #ccc; padding: 10px; width: 90%; margin-right: .5%; margin: 5px 5px 5px 0px; }
+        form input[type="radio"] { padding: 0px; border: 0px; margin: 0px 5px 0px 0px; width: auto;}
+        form label {width: auto; background: #000; border: none; padding: 10px; color: #eee;}
+        span{ flex: 1 1 auto; }
+        #forms { position: fixed; bottom: 0; height: auto; display: flex; flex-direction: column; width: 100%; }
+        #coords-form { flex: auto;  }
+        #message { flex-flow: row; }
+        #publish { flex:auto; }
+        div { flex-flow: row nowrap; flex-wrap: nowrap; height: 100%; display:flex;}
+        #key { min-height: 150px; position: absolute;  flex-direction: column;  top: 5px; right:5px; height: 15%; border-radius: 5px; background: #9595ea;}
+        #key:active { visibility: hidden; }
+        .key {   font-weight: bold; padding: 5px 5px 5px 5px;}
+        #voronoiCanvas { width: 1000; height: 1000; justify-content: center; align-items: center;}
+        #flex-container { display: flex; }
+        #text { flex: 25%; min-width: 300px; flex-direction: column;}
+        #visual { flex: 75%; }
+        #coords { border: 5px; }
+        #select { flex:3%; padding: 5px 5px 5px 5px;  }
+        #radio { min-width: 110px; flex:15%; display:flex; flex-flow: column; background-color: #ccc; border-radius: 4px; margin: 5px 5px 5px 5px; padding: 5px 5px 5px 5px; justify-content: center; }
+        #input { flex: 70%; }
+        #messages { list-style-type: none; margin: 0; padding: 0; }
+        #messages li { padding: 5px 10px; }
+        #messages li:nth-child(odd) { background: #eee; }
+        #information { list-style-type: none; margin: 0; padding: 0; }
+        #information li { padding: 5px 10px; color: #55e }
+        </style>
+</head>
+<body>
+    <div id="flex-container">
+        <div id="text">
+            <ul id="information"></ul>
+            <ul id="messages"></ul>
+        </div>
+        <div id="visual">
+            <div id="key">
+
+            </div>
+            <canvas id="voronoiCanvas" width=1000 height=1000></canvas>
+        </div>
+    </div>
+    <div id="forms">
+        <form id="local-voro">
+            Display Type: <br>
+            <input type="radio" id="global-voro" name="disp-type" value="global-disp">
+            <label for="global-voro">Global View</label><br>
+            <input type="radio" id="local-voro" name="disp-type" value="local-disp">
+            <label for="local-voro">Local View</label><br>
+        </form>   
+    </div>
+    <script src="../voronoi/point2d.js"></script>
+    <script src="../voronoi/segment.js"></script>
+    <script src="../voronoi/line2d.js"></script>
+    <script src="../voronoi/rhill-voronoi-core.js"></script>
+    <script src="../common/logger.js"></script>
+    <script src="../voronoi/vast_voro.js"></script>
+    <script src="../common.js"></script>
+
+    <script src="../../node_modules/socket.io-client/dist/socket.io.js"></script>
+    <script src="../../node_modules/jquery/dist/jquery.js"></script>
+
+    <script>
+        $(function(){
+
+            //initialise
+            console.log('visualiser started');
+
+            var matchers = {};
+            var clients = {};
+            var subscriptions = {};
+            var publications = {};
+            var voronoi = new VAST_Voronoi();
+            var voro = new VAST_Voronoi(); // FOR LOCALISED VIEW
+            var diagram, diagram2;
+            
+            var localID;
+            var renderLocal = false;
+
+            var SCALING_FACTOR = 1;
+
+            //Create references to canvas
+            var canvas = document.getElementById('voronoiCanvas');
+            var ctx = canvas.getContext("2d");
+
+            var init = function(){
+                socket = io('http://127.0.0.1:7777');
+                socket.on('connect', function(){
+                    socket.emit('visualiser_connected');
+                    $('#information').append($('<li>').text('Connected to server'));
+                });
+
+                socket.on('update', function(data){
+                    console.log('update ', data);
+                    matchers = data.matchers;
+                    clients = data.clients;
+                    subscriptions = data.subscriptions;
+                    publications = data.publications;
+                    recalculate();
+                });
+
+            }
+
+            var recalculate = function(){
+                voronoi.clear();
+                var k, sites;
+                for (var key in matchers){
+                    k = matchers[key];
+                    voronoi.insert(k.id, k.pos);
+                }
+                diagram = voronoi.get_result();
+
+                if(document.getElementById('global-voro').checked){
+                    renderLocal = false;
+                }else if (matchers.hasOwnProperty(localID)){
+                    renderLocal = true;              
+                }
+
+                renderLocal = false; // disable localised views
+
+                //Localised
+                if ((renderLocal === true) && (matchers.hasOwnProperty(localID))){
+                    voro.clear();
+                    sites = matchers[localID]['neighbours'];
+                    for (var key in sites){
+                    k = sites[key];
+                    voro.insert(key, k);
+                }
+                    diagram2 = voro.get_result();
+
+                }
+
+                render();
+            }
+
+            var render = function(){
+                //console.log("matchers: ");
+                //console.log(matchers);
+
+                // background
+                ctx.globalAlpha = 1;
+                ctx.beginPath();
+                ctx.rect(0,0,canvas.width,canvas.height);
+                ctx.fillStyle = 'white';
+                ctx.fill();
+                ctx.strokeStyle = '#888';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // voronoi
+                if (!diagram) {return;}
+
+                // edges
+                if (renderLocal === false){
+                    ctx.beginPath();
+                    ctx.strokeStyle='#000';
+                    var edges = diagram.edges,
+                        iEdge = edges.length,
+                        edge, v, c;
+                    while (iEdge--) {
+                        edge = edges[iEdge];
+                        v = edge.va;
+                        ctx.moveTo(v.x,v.y);
+                        v = edge.vb;
+                        ctx.lineTo(v.x,v.y);
+                        }
+                    ctx.stroke();
+                }
+                
+                // Matchers
+                for (var key in matchers) {
+                    // sites
+                    v = matchers[key];
+                    if (v == undefined) {
+                        delete matchers[key]
+                        continue;
+                    }
+                    var idx = v.id;
+
+                    if (renderLocal === false){
+                        ctx.beginPath();
+                        ctx.font = "15px Verdana";
+                        ctx.fillStyle = '#44f';
+                        ctx.strokeStyle = '#44f';
+                        ctx.rect(v.pos.x/SCALING_FACTOR,v.pos.y/SCALING_FACTOR,6,6);
+                        ctx.fillText(idx, v.pos.x/SCALING_FACTOR+7,v.pos.y/SCALING_FACTOR+7);
+                        ctx.stroke();
+                        ctx.fill();
+                    }
+
+                    //clients
+                    for (var j in clients[key]){
+                        //console.log(j, key);
+                        //console.log(clients[key]);
+                        c = clients[key][j];
+                        idx = c.id;
+
+                        ctx.beginPath();
+                        ctx.font = "15px Verdana";
+                        ctx.fillStyle = '#ff0f15';
+                        ctx.strokeStyle = '#ff0f15';
+                        ctx.rect(c.pos.x/SCALING_FACTOR,c.pos.y/SCALING_FACTOR,6,6);
+                        ctx.fillText(idx, c.pos.x/SCALING_FACTOR+7,c.pos.y/SCALING_FACTOR+7);
+                        ctx.stroke();
+                        ctx.fill();
+
+                        //subscriptions (for each sub linked to current client id)
+                        if(subscriptions.hasOwnProperty(key)){
+                            for(var k in subscriptions[key][j]){
+                                var sub = subscriptions[key][j][k];
+                                var aoi = sub.aoi;
+
+                                ctx.beginPath();
+                                ctx.globalAlpha = 0.1;
+                                ctx.fillStyle = 'green';
+                                ctx.arc(aoi.center.x, aoi.center.y, aoi.radius, 0, 2*Math.PI);
+                                ctx.fill();
+                                
+
+                                ctx.beginPath();
+                                ctx.globalAlpha = 1;
+                                ctx.font = "15px Verdana";
+                                ctx.fillText(sub.subID, aoi.center.x/SCALING_FACTOR-20,(aoi.center.y+aoi.radius)/SCALING_FACTOR+7);
+                                ctx.stroke();
+                                ctx.fill();
+                            }
+                        }       
+                    }
+                }
+
+                //publications
+                for(var k in publications){
+                    var pub = publications[k];
+                    var aoi = pub.aoi;
+                    idx = 'C['+ pub.clientID +'] published'
+
+                    ctx.beginPath();
+                    ctx.globalAlpha = 0.1;
+                    ctx.fillStyle = 'red';
+                    ctx.arc(aoi.center.x, aoi.center.y, aoi.radius, 0, 2*Math.PI);
+                    ctx.fill();
+                    
+
+                    ctx.beginPath();
+                    ctx.globalAlpha = 1;
+                    ctx.font = "15px Verdana";
+                    ctx.fillText(idx, aoi.center.x/SCALING_FACTOR-20,(aoi.center.y+aoi.radius)/SCALING_FACTOR+7);
+                    ctx.stroke();
+                    ctx.fill();
+                }
+
+                //local render
+
+                renderLocal = false;
+
+                if (renderLocal === true){
+                    
+                    // edges
+                    ctx.beginPath();
+                    ctx.strokeStyle='#cd00b7';
+                    ctx.fillStyle='#cd00b7';
+                    ctx.lineWidth = 5;
+                    var edges = diagram2.edges,
+                        iEdge = edges.length,
+                        edge, v, c;
+                    while (iEdge--) {
+                        edge = edges[iEdge];
+                        v = edge.va;
+                        ctx.moveTo(v.x,v.y);
+                        v = edge.vb;
+                        ctx.lineTo(v.x,v.y);
+                        }
+                    ctx.stroke();
+
+                    //sites
+                    var sites = matchers[localID]['neighbours'];
+                    for (var id in sites){
+                        var pos = sites[id];
+
+                        ctx.beginPath();
+                        ctx.font = "15px Verdana";
+                        ctx.rect(pos.x/SCALING_FACTOR,pos.y/SCALING_FACTOR,6,6);
+                        ctx.fillText(id, pos.x/SCALING_FACTOR+10,pos.y/SCALING_FACTOR+10);
+                        ctx.stroke();
+                        ctx.fill();
+                    }
+
+                    //aoi
+                    var aoi = matchers[localID]['aoi'];
+                    ctx.beginPath();
+                    ctx.arc(aoi.center.x, aoi.center.y, aoi.radius, 0, 2*Math.PI);
+                    ctx.stroke();
+                }
+            }
+
+            //  RENDER LOCALISED VIEW
+            $("#voronoiCanvas").click(function(e){
+                var mouseX = e.clientX - ctx.canvas.offsetLeft;
+                var mouseY = e.clientY - ctx.canvas.offsetTop;
+                var canvasPos = {
+                    x: mouseX * canvas.width / canvas.clientWidth, 
+                    y: mouseY * canvas.height / canvas.clientHeight
+                }
+
+                localID = voronoi.closest_to(canvasPos);
+                socket.emit('request_update', localID);
+                recalculate();
+
+                $('#information').append($('<li>').text('clicked at: [x: '+ JSON.stringify(canvasPos)));
+                $('#information').append($('<li>').text('nearest site: '+ localID));
+            })
+
+            init();
+
+        });
+    </script>
+</body>
+</html>
