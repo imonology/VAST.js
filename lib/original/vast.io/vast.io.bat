@@ -1,1 +1,0 @@
-node vast.io-server

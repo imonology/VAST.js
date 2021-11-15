@@ -1,9 +1,0 @@
-
-Dependency
-==========
-
-to run vast.js, socket.io is required to reside under the
-vast.js directory. Install by go into the vast.js directory
-and type:
-
-npm install socket.io 
