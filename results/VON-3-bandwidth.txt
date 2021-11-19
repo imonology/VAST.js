@@ -1,0 +1,6 @@
+{"time":1637063633799,"bpsReceived":169.68316882340756,"bpsSent":165.69531526704074,"mpsReceived":1.3957487447283816,"mpsSent":1.1963560669100415}
+{"time":1637063638814,"bpsReceived":0,"bpsSent":0,"mpsReceived":0,"mpsSent":0}
+{"time":1637063643830,"bpsReceived":0,"bpsSent":0,"mpsReceived":0,"mpsSent":0}
+{"time":1637063648830,"bpsReceived":0,"bpsSent":0,"mpsReceived":0,"mpsSent":0}
+{"time":1637063653839,"bpsReceived":0,"bpsSent":0,"mpsReceived":0,"mpsSent":0}
+{"time":1637063658841,"bpsReceived":141.32718540753433,"bpsSent":105.14582676713304,"mpsReceived":0.9994850453149529,"mpsSent":0.9994850453149529}

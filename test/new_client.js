@@ -12,7 +12,14 @@ var r = process.argv[4] || 10;
 var x2 = process.argv[5] || SIZE/2;
 var y2 = process.argv[6] || SIZE/2;
 var r2 = process.argv[7] || SIZE;
-
+//WORKING HERE
+var type=process.argv[8]
+if(type=='sub'){
+    console.log("Sub req made");
+}else if(type=='pub'){
+    console.log("pub req made");
+}
+console.log(type)
 // Publisher? aoi2 used for pubs. Otherwise, for subs
 var bool = process.argv[8];
 if (typeof(bool) != 'undefined' && bool.toString() === 'true'){
