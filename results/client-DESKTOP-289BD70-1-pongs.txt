@@ -1,0 +1,5 @@
+{"sendTime":1637332439432,"ids":["DESKTOP-289BD70-1"],"totLat":4.5,"minLat":4.5,"maxLat":4.5,"avgLat":4.5}
+{"sendTime":1637332440434,"ids":["DESKTOP-289BD70-1"],"totLat":1.5,"minLat":1.5,"maxLat":1.5,"avgLat":1.5}
+{"sendTime":1637332441447,"ids":["DESKTOP-289BD70-1"],"totLat":3.5,"minLat":3.5,"maxLat":3.5,"avgLat":3.5}
+{"sendTime":1637332442448,"ids":["DESKTOP-289BD70-1"],"totLat":1.5,"minLat":1.5,"maxLat":1.5,"avgLat":1.5}
+{"sendTime":1637332443458,"ids":["DESKTOP-289BD70-1"],"totLat":1.5,"minLat":1.5,"maxLat":1.5,"avgLat":1.5}

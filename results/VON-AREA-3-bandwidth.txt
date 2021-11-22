@@ -1,0 +1,6 @@
+{"time":1637063633799,"bpsReceived":0,"bpsSent":0,"mpsReceived":0,"mpsSent":0}
+{"time":1637063638814,"bpsReceived":0,"bpsSent":0,"mpsReceived":0,"mpsSent":0}
+{"time":1637063643830,"bpsReceived":0,"bpsSent":0,"mpsReceived":0,"mpsSent":0}
+{"time":1637063648830,"bpsReceived":0,"bpsSent":0,"mpsReceived":0,"mpsSent":0}
+{"time":1637063653839,"bpsReceived":0,"bpsSent":0,"mpsReceived":0,"mpsSent":0}
+{"time":1637063658842,"bpsReceived":0,"bpsSent":0,"mpsReceived":0,"mpsSent":0}
