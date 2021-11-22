@@ -13,6 +13,16 @@ var x2 = process.argv[5] || SIZE/2;
 var y2 = process.argv[6] || SIZE/2;
 var r2 = process.argv[7] || SIZE;
 
+// Argument for request type
+var type = process.argv[8] || "";
+console.log (type)
+
+
+// if type == sub:
+//     {
+//         //do something
+//     }
+
 // Publisher? aoi2 used for pubs. Otherwise, for subs
 var bool = process.argv[8];
 if (typeof(bool) != 'undefined' && bool.toString() === 'true'){
