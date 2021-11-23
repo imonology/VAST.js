@@ -1,3 +1,0 @@
-{"time":1637332573895,"matcher":1,"bpsReceived":0,"bpsSent":471.050610909584,"mpsReceived":0,"mpsSent":0.9967215634989082}
-{"time":1637332578908,"matcher":1,"bpsReceived":0,"bpsSent":471.4438217426818,"mpsReceived":0,"mpsSent":0.9975535796501943}
-{"time":1637332583918,"matcher":1,"bpsReceived":0,"bpsSent":468.62924389385876,"mpsReceived":0,"mpsSent":0.9979328021589837}
