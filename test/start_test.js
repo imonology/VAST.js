@@ -19,11 +19,11 @@ const { exec } = require("child_process");
 var _addMatcher = function(x, y, radius){
     var cmd = "start node test/start_matcher.js" + " " + x + " " + y + " " + radius;
     exec(cmd, (error, data, getter) => {
-        if(error){
+        if (error) {
             console.log("error",error.message);
             return;
         }
-        if(getter){
+        if (getter) {
             console.log("data",data);
             return;
         }
@@ -33,11 +33,11 @@ var _addMatcher = function(x, y, radius){
 
 //  First start the global server
 exec("start node test/global_server_starter.js", (error, data, getter) => {
-	if(error){
+	if (error) {
 		console.log("error",error.message);
 		return;
 	}
-	if(getter){
+	if (getter) {
 		console.log("data",data);
 		return;
 	}
@@ -50,11 +50,11 @@ var xx = Math.random() * worldSize;
 var yy = Math.random() * worldSize;
 var cmd = "start node test/start_GW.js" + " " + xx + " " + yy + " " + aoi;
 exec(cmd, (error, data, getter) => {
-	if(error){
+	if (error) {
 		console.log("error",error.message);
 		return;
 	}
-	if(getter){
+	if (getter) {
 		console.log("data",data);
 		return;
 	}
@@ -68,9 +68,9 @@ setTimeout(function(){
 
     // must use while loop and setInterval in order to pause properly
     var generate = setInterval(function(){
-        if(i >= matcherCount){
+        if (i >= matcherCount) {
             clearInterval(generate);
-        }else{
+        } els e{
             var xx = Math.random() * worldSize;
             var yy = Math.random() * worldSize;
             _addMatcher(xx, yy, aoi);
