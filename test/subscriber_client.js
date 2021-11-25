@@ -8,6 +8,7 @@ var x = process.argv[2] || Math.random()*SIZE;
 var y = process.argv[3] || Math.random()*SIZE;
 var r = process.argv[4] || 10;
 var type=process.argv[5]
+
 if(type=='subscribe'){
     UTIL.lookupIP(process.env.COMPUTER_NAME, function(addr){
         GW_addr = addr;
