@@ -17,7 +17,7 @@ if(type=='subscribe'){
             _id = id;       
             
             C.subscribe(x, y, r, 'PING');
-            // console.log('Client: ' + id + ' subscribing for pings at {x: '+x2+'; y: '+y2+'; radius: '+r2+'}');        
+            console.log('Client: ' + id + ' subscribing for pings at {x: '+x2+'; y: '+y2+'; radius: '+r2+'}'); //log to a txt or csv       
         });
     
     });
