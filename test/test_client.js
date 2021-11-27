@@ -48,7 +48,7 @@ if (type == "subscribe") {
           console.table(data);
           // TODO: SAVE users data to another file
         });
-      data.push({time, x, y, r, type,  });
+      data.push({timestamp, x, y, r, type,  });
       const filename = "output.csv";
       fs.writeFile(filename, extractAsCSV(), (err) => {
         if (err) {
