@@ -73,6 +73,11 @@ npm install socket.io-client
 ```
 
 <br/><br/>
+## CSV-Module
+The VON peer runs on a worker thread of the Matcher. Install in the VAST.js directory using:
+```sh
+$ npm install csv-parser
+``` 
 
 # Getting Started
 ## ./test
