@@ -14,8 +14,10 @@ var y = process.argv[3] || Math.random() * SIZE;
 var r = process.argv[4] || 10;
 var type = process.argv[5];
 
+var channel = 'Channel'
+
 if (type == "subscribe") {
-  UTIL.lookupIP(process.env.COMPUTER_NAME, function (addr) {
+  UTIL.lookupIP(process.env.GATEWAY_HOST, function (addr) {
     GW_addr = addr;
 
     C = new client(GW_addr, 20000, x, y, r, function (id) {
@@ -26,7 +28,8 @@ if (type == "subscribe") {
     });
   });
 } else if (type == "publish") {
-  UTIL.lookupIP(process.env.COMPUTER_NAME, function (addr) {
+  
+    UTIL.lookupIP(process.env.GATEWAY_HOST, function (addr) {
     GW_addr = addr;
     const data = [];
 
@@ -48,7 +51,7 @@ if (type == "subscribe") {
           console.table(data);
           // TODO: SAVE users data to another file
         });
-      data.push({timestamp, x, y, r, type,  });
+      data.push({timestamp, x, y, r, type});
       const filename = "output.csv";
       fs.writeFile(filename, extractAsCSV(), (err) => {
         if (err) {
@@ -62,13 +65,17 @@ if (type == "subscribe") {
     function extractAsCSV() {
       const header = ["time, x, y, r, RequestType"];
 
-      const rows = data.map((d) => `${d.timestamp} ${d.x}, ${d.y}, ${d.r}, ${d.type}`);
+      const rows = data.map((d) => `${d.timestamp}, ${d.x}, ${d.y}, ${d.r}, ${d.type}, ${d.'Channel'}`);
       return header.concat(rows).join("\n");
     }
     writeToCSVFile();
     C = new client(GW_addr, 20000, x, y, r, function (id) {
       _id = id;
-      C.publish(x, y, r, "50", "Channel");
+
+      for (var i = 0; i < 5; i++) {
+        C.publish(x, y, r, "100", channel);
+      }
+
     });
   });
 } 
