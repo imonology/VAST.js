@@ -14,6 +14,8 @@ var y = process.argv[3] || Math.random() * SIZE;
 var r = process.argv[4] || 10;
 var type = process.argv[5];
 
+console.log(type)
+
 var channel = 'Channel'
 
 if (type == "subscribe") {
@@ -68,7 +70,9 @@ if (type == "subscribe") {
       const rows = data.map((d) => `${d.timestamp}, ${d.x}, ${d.y}, ${d.r}, ${d.type}, ${d.channel}`);
       return header.concat(rows).join("\n");
     }
+    
     writeToCSVFile();
+
     C = new client(GW_addr, 20000, x, y, r, function (id) {
       _id = id;
 
@@ -85,7 +89,7 @@ else if (type == "unsubscribe") {
 
     C = new client(GW_addr, 20000, x, y, r, function (id) {
       _id = id;
-      C.unsubscribe("Channel");
+      C.unsubscribe(channel);
     });
   });
 }
