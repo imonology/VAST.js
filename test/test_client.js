@@ -65,7 +65,7 @@ if (type == "subscribe") {
     function extractAsCSV() {
       const header = ["time, x, y, r, RequestType"];
 
-      const rows = data.map((d) => `${d.timestamp}, ${d.x}, ${d.y}, ${d.r}, ${d.type}, ${d.'Channel'}`);
+      const rows = data.map((d) => `${d.timestamp}, ${d.x}, ${d.y}, ${d.r}, ${d.type}, ${d.channel}`);
       return header.concat(rows).join("\n");
     }
     writeToCSVFile();
