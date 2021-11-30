@@ -89,7 +89,7 @@ function clearSubscriptions(){
 
 // init
 // get GW address before attempting init
-UTIL.lookupIP(process.env.COMPUTER_NAME, function(addr){
+UTIL.lookupIP("127.0.0.1", function(addr){
     GW_addr = addr;
 
     C = new client(GW_addr, 20000, x, y, r, function(id){
