@@ -1,8 +1,6 @@
 const client = require("../lib/client");
 require("../lib/common.js");
 
-require('../lib/common/logger.js'); //for logging
-
 var lib = require("../lib/common/logging.js");
 
 require("dotenv").config();
@@ -70,25 +68,6 @@ var payload = 'PING'
 //   return header.concat(rows).join("\n");
 // }
 
-// // ------ 
-
-// writeToCSVFile();
-
-// if (type == "subscribe") {
-//   console.log('true')
-  
-//   UTIL.lookupIP("127.0.0.1", function (addr) {
-//     GW_addr = addr;
-      
-//       C = new client(GW_addr, 20000, x, y, r, function (id) {
-//         _id = id;
-  
-//         C.subscribe(x, y, r, _id);
-//         console.log(_id + ' is subscribing for PONGS around themself at:{x: '+x+'; y: '+y+'; radius: '+r+'}');
-//         // console.log('Client: ' + id + ' subscribing for pings at {x: '+x2+'; y: '+y2+'; radius: '+r2+'}');
-//       });
-//     });
-//   }
 
 if (type == "subscribe") {
   UTIL.lookupIP("127.0.0.1", function (addr) {
@@ -118,7 +97,7 @@ if (type == "subscribe") {
         setTimeout(function timer() {
           var timestamp = Date.now();
           C.publish(x, y, r, "10", channel)
-          pub_data = (''+timestamp+', '+x+', '+y+', '+r+'');
+          pub_data = (''+timestamp+', '+x+', '+y+', '+r+', '+type+' \n');
           // B = new LogToFile(process.env.CLIENT_FILENAME, pub_data);
           // console.log(B)
           console.log(pub_data)
