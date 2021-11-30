@@ -14,24 +14,42 @@ var y = process.argv[3] || Math.random() * SIZE;
 var r = process.argv[4] || 10;
 var type = process.argv[5];
 
-console.log(type)
+// console.log(type)
 
 var channel = 'Channel'
 
+
+// if (type == "subscribe") {
+//   console.log('true')
+  
+//   UTIL.lookupIP("127.0.0.1", function (addr) {
+//     GW_addr = addr;
+      
+//       C = new client(GW_addr, 20000, x, y, r, function (id) {
+//         _id = id;
+  
+//         C.subscribe(x, y, r, _id);
+//         console.log(_id + ' is subscribing for PONGS around themself at:{x: '+x+'; y: '+y+'; radius: '+r+'}');
+//         // console.log('Client: ' + id + ' subscribing for pings at {x: '+x2+'; y: '+y2+'; radius: '+r2+'}');
+//       });
+//     });
+//   }
+
 if (type == "subscribe") {
-  UTIL.lookupIP(process.env.GATEWAY_HOST, function (addr) {
+  UTIL.lookupIP("127.0.0.1", function (addr) {
     GW_addr = addr;
 
     C = new client(GW_addr, 20000, x, y, r, function (id) {
       _id = id;
 
-      C.subscribe(x, y, r, "PING");
+      C.subscribe(x, y, r, _id);
+      console.log(_id + ' is subscribing for PONGS around themself at:{x: '+x+'; y: '+y+'; radius: '+r+'}');
       // console.log('Client: ' + id + ' subscribing for pings at {x: '+x2+'; y: '+y2+'; radius: '+r2+'}');
     });
   });
 } else if (type == "publish") {
   
-    UTIL.lookupIP(process.env.GATEWAY_HOST, function (addr) {
+    UTIL.lookupIP("127.0.0.1", function (addr) {
     GW_addr = addr;
     const data = [];
 
@@ -71,7 +89,7 @@ if (type == "subscribe") {
       return header.concat(rows).join("\n");
     }
     
-    writeToCSVFile();
+    writeToCSVFtaskile();
 
     C = new client(GW_addr, 20000, x, y, r, function (id) {
       _id = id;
@@ -84,7 +102,7 @@ if (type == "subscribe") {
   });
 } 
 else if (type == "unsubscribe") {
-  UTIL.lookupIP(process.env.COMPUTER_NAME, function (addr) {
+  UTIL.lookupIP("127.0.0.1", function (addr) {
     GW_addr = addr;
 
     C = new client(GW_addr, 20000, x, y, r, function (id) {

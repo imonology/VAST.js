@@ -18,3 +18,10 @@ console.log(timestamp)
 // for (var i = 0; i < 5; i++) {
 //     console.log("Hi");
 //   }
+
+// Returns a random integer from 0 to 9:
+random = Math.floor(Math.random() * 26);
+console.log("random is : ", random);
+
+var random2 = Math.floor(Math.random() * (50 - 26 + 1)) + 26;
+console.log("random is : ", random2);
