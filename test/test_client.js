@@ -25,7 +25,7 @@ var x2 = process.argv[6] || Math.random() * SIZE;
 var y2 = process.argv[7] || Math.random() * SIZE;
 var r2 = process.argv[8] || 10;
 
-var channel = 'temperature';
+var channel = 'temp';
 
 var client_data_header = ('timestamp, x2, y2, r2, type, channel, payload \n') //header for file : time, AOI, type, channel (if subscription)
 
