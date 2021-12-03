@@ -1,0 +1,19 @@
+1638543445277, 17, 25, 22, payload, temperature, TowerGroup-VO-1, matcher-1
+1638543446278, 17, 25, 22, payload, temperature, TowerGroup-VO-1, matcher-1
+1638543447278, 17, 25, 22, payload, temperature, TowerGroup-VO-1, matcher-1
+1638543448276, 17, 25, 22, payload, temperature, TowerGroup-VO-1, matcher-1
+1638543449274, 17, 25, 22, payload, temperature, TowerGroup-VO-1, matcher-11638543909177, 17, 25, 22, payload, temperature, TowerGroup-VO-1, matcher-1
+1638543910178, 17, 25, 22, payload, temperature, TowerGroup-VO-1, matcher-1
+1638543911176, 17, 25, 22, payload, temperature, TowerGroup-VO-1, matcher-1
+1638543912182, 17, 25, 22, payload, temperature, TowerGroup-VO-1, matcher-1
+1638543913190, 17, 25, 22, payload, temperature, TowerGroup-VO-1, matcher-1
+1638543923402, 28, 35, 28, payload, temperature, TowerGroup-VO-1, matcher-1
+1638543924410, 28, 35, 28, payload, temperature, TowerGroup-VO-1, matcher-1
+1638543925416, 28, 35, 28, payload, temperature, TowerGroup-VO-1, matcher-1
+1638543926412, 28, 35, 28, payload, temperature, TowerGroup-VO-1, matcher-1
+1638543927402, 28, 35, 28, payload, temperature, TowerGroup-VO-1, matcher-1
+1638543951139, 28, 35, 28, payload, temperature, TowerGroup-VO-2, matcher-1
+1638543952149, 28, 35, 28, payload, temperature, TowerGroup-VO-2, matcher-1
+1638543953143, 28, 35, 28, payload, temperature, TowerGroup-VO-2, matcher-1
+1638543954151, 28, 35, 28, payload, temperature, TowerGroup-VO-2, matcher-1
+1638543955142, 28, 35, 28, payload, temperature, TowerGroup-VO-2, matcher-1
