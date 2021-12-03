@@ -70,7 +70,7 @@ setTimeout(function(){
     var generate = setInterval(function(){
         if (i >= matcherCount) {
             clearInterval(generate);
-        } els e{
+        } else{
             var xx = Math.random() * worldSize;
             var yy = Math.random() * worldSize;
             _addMatcher(xx, yy, aoi);
