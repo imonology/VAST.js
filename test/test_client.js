@@ -26,10 +26,13 @@ var y2 = process.argv[7] || Math.random() * SIZE;
 var r2 = process.argv[8] || 10;
 
 var channel = 'temperature';
-
-var client_data_header = ('timestamp, x2, y2, r2, type, channel, payload \n') //header for file : time, AOI, type, channel (if subscription)
-
-result = lib.LogToFile('./logs/Test_Client_Log.txt', client_data_header)
+fs.readFile('./logs/Test_Client_Log.txt', 'utf8', function(err, data) {
+  if (err) throw err;
+  if(data.length===0){
+    var client_data_header = ('timestamp, x2, y2, r2, type, channel, payload \n') 
+    result = lib.LogToFile('./logs/Test_Client_Log.txt', client_data_header)    
+  }
+});
 
 if (type == "subscribe") {
   UTIL.lookupIP("127.0.0.1", function (addr) {
