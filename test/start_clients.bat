@@ -5,13 +5,15 @@
 @REM @REM start node new_client.js aoi=(x=10, y=15, r=100), RequestType=(pub)
 
 start node start_GW.js
-start node start_matcher.js
+start node start_matcher.js 10 80 5
+start node start_matcher.js 40 50 5
+start node start_matcher.js 90 20 5
 
-start node test_client.js 41 50 35 subscribe
-start node test_client.js 28 35 28 subscribe
+@REM start node test_client.js 10 10 35 subscribe
+@REM start node test_client.js 28 35 28 subscribe
 
-start node test_client.js 17 25 22 publish
-start node test_client.js 12 9 13 publish
+@REM start node test_client.js 17 25 22 publish
+@REM start node test_client.js 12 9 13 publish
 
 @REM start node test_client.js 17 0 8 publish
 @REM start node test_client.js 7 18 1 publish
