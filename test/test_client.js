@@ -78,7 +78,7 @@ if (type == "subscribe") {
     C = new client(GW_addr, 20000, x, y, r,  function (id) { //new client with location data AOI = {x2,y2,r2}
       _id = id;
 
-      C.subscribe(x2, y2, r2, channel); 
+      C.subscribe(x2, y2, r2, channel); //AOI
       console.log('Client' +_id+ + ' is subscribing for PONGS around themself at:{x: '+x+'; y: '+y+'; radius: '+r+'}');
       // console.log('Client: ' + id + ' subscribing for pings at {x: '+x2+'; y: '+y2+'; radius: '+r2+'}');
     });
