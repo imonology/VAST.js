@@ -25,7 +25,6 @@ var x2 = process.argv[6] || Math.random() * SIZE;
 var y2 = process.argv[7] || Math.random() * SIZE;
 var r2 = process.argv[8] || 10;
 
-var channel = 'temperature';
 fs.readFile('./logs/Test_Client_Log.txt', 'utf8', function(err, data) {
   if (err) throw err;
   if(data.length===0){
@@ -70,6 +69,7 @@ if (type == "subscribe") {
           C.publish(x2, y2, r2, payload, channel)
           pub_data = (''+UTIL.getTimestamp()+', '+x2+', '+y2+', '+r2+', '+type+', na, '+payload+' \n');
           result = lib.LogToFile('./logs/Test_Client_Log.txt', pub_data);
+          
           console.log('Client '+_id+' is publishing to area : {x: '+x2+'; y: '+y2+'; radius: '+r2+'}');
         }, i * 1000);
         
@@ -79,8 +79,7 @@ if (type == "subscribe") {
   });
 } 
 
-
-else if (type == "unsubscribe") {
+else if (type == "unsubscribe") { 
 UTIL.lookupIP("127.0.0.1", function (addr) {
     GW_addr = addr;
 
@@ -89,10 +88,6 @@ UTIL.lookupIP("127.0.0.1", function (addr) {
        C.unsubscribe(channel);
     });
    });}
-
-
-//// var payload = 'PING'
-
 
 
 // CSV functions to write and read
