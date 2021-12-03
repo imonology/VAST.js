@@ -1,10 +1,5 @@
-1638543454382, 10, 10, 35, TowerGroup-VO-1, temperature, 1 
-1638543459390, 10, 10, 35, TowerGroup-VO-1, temperature, 1 
-1638543464388, 10, 10, 35, TowerGroup-VO-1, temperature, 1 
-1638543469394, 10, 10, 35, TowerGroup-VO-1, temperature, 1 
-1638543474387, 10, 10, 35, TowerGroup-VO-1, temperature, 1 
-1638543911787, 10, 10, 35, TowerGroup-VO-1, temperature, 1 
-1638543916800, 10, 10, 35, TowerGroup-VO-1, temperature, 1 
-1638543921798, 10, 10, 35, TowerGroup-VO-1, temperature, 1 
-1638543926801, 10, 10, 35, TowerGroup-VO-1, temperature, 1 
-1638543931800, 10, 10, 35, TowerGroup-VO-1, temperature, 1 
+1638545250039, 10, 10, 35, TowerGroup-VO-1, temp, 1 
+1638545255041, 10, 10, 35, TowerGroup-VO-1, temp, 1 
+1638545260041, 10, 10, 35, TowerGroup-VO-1, temp, 1 
+1638545265049, 10, 10, 35, TowerGroup-VO-1, temp, 1 
+1638545270051, 10, 10, 35, TowerGroup-VO-1, temp, 1 
