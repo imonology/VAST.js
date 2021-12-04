@@ -11,12 +11,16 @@
     "url": "git://github.com/Imonology/VAST.js"
   },
   "dependencies": {
+    "connect-flash": "^0.1.1",
+    "cookie-parser": "^1.4.6",
     "csv-parser": "^3.0.0",
     "debug": "0.8.1",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
+    "express-ejs-layouts": "^2.5.1",
     "jquery": "^3.6.0",
     "object-sizeof": "^1.6.1",
+    "path": "^0.12.7",
     "pm2": "^5.1.2",
     "socket.io": "^3.1.2",
     "socket.io-client": "^4.4.0",
