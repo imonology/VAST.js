@@ -15,7 +15,7 @@ require('dotenv').config()
 //Configuring Port
 const PORT = process.env.PORT || 3000
 
-app.set('views', path.join(__dirname, '../views'));
+// app.set('views', path.join(__dirname, '../views'));
 
 app.set('view engine', 'ejs')
 
@@ -32,10 +32,10 @@ app.use(connect_flash())
 
 
 app.get('/', (req, res) => {
-  res.send('Hello World!')
+  res.render('index')
 })
 app.post('/', (req, res) => {
-  //copy vitory
+  //copy vitory sir
   const client = require("../lib/client");
 require("../lib/common.js");
 var lib = require("../lib/common/logging.js");
@@ -53,17 +53,18 @@ if (!fs.existsSync(dir)){
 }
 
 // Node Position
-console.log(req.body)
+console.log(req.body.x)
 var x = req.body.x || Math.random() * SIZE;
 var y = req.body.y || Math.random() * SIZE;
 var r = req.body.r || 10;
 
 // AOI to publish and/or subscribe
 var type = req.body.type;
+//name property in index.ejs should be xx
 var x2 = req.body.xx || Math.random() * SIZE;
 var y2 = req.body.yy || Math.random() * SIZE;
 var r2 = req.body.rr || 10;
-
+var channel="TEMP";
 fs.readFile('./logs/Test_Client_Log.txt', 'utf8', function(err, data) {
   if (err) throw err;
   if(data.length===0){
