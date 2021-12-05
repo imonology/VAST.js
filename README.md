@@ -78,7 +78,21 @@ The VON peer runs on a worker thread of the Matcher. Install in the VAST.js dire
 ```sh
 $ npm install csv-parser
 ``` 
-
+<br/><br/>
+## ejs
+For frontend of simulator:
+```sh
+$ npm i ejs
+``` 
+```sh
+$ npm i express-ejs-layouts
+``` 
+```sh
+$ npm i connect-flash
+```
+```sh
+$ npm i cookie-parser
+```
 # Getting Started
 ## ./test
 The ./test directory contains some basic .js files to start matchers and clients.
