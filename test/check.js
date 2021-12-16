@@ -2,7 +2,7 @@ const client = require("../lib/client");
 require("../lib/common.js");
 var lib = require("../lib/common/logging.js");
 
-
+var channel="PING"
 const SIZE = 1000; 
 
 const fs = require("fs");
