@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <p id="gateway"></p>
+    <p id="client"></p>
+    <p id="file"></p>
+    <br /><br /><br />
+    <button onclick="myFunction()">Start Gateway</button>
+    <br /><br /><br />
+    <form>
+      <label for="client">Number of clients:</label><br />
+      <input type="text" id="client" name="client" /><br />
+      <input type="submit" value="Submit" onclick=" myFunction2()" />
+    </form>
+    <br /><br /><br />
+    <form>
+      <label for="file">Select file to import</label><br />
+      <input type="file" id="file" name="file" /><br />
+      <input type="submit" value="Submit" onclick=" myFunction3()" />
+    </form>
+
+    <script>
+      function myFunction() {
+        document.getElementById("gateway").innerHTML = "Gateway Started";
+      }
+      function myFunction2() {
+        document.getElementById("client").innerHTML = "Clients Created";
+        // console.log(data);
+      }
+      function myFunction3() {
+        document.getElementById("file").innerHTML = "File Imported";
+      }
+    </script>
+  </body>
+</html>
