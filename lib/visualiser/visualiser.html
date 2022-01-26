@@ -92,7 +92,7 @@
             var ctx = canvas.getContext("2d");
 
             var init = function(){
-                socket = io('http://127.0.0.1:7777');
+                socket = io('http://127.0.0.1:7778');
                 socket.on('connect', function(){
                     socket.emit('visualiser_connected');
                     $('#information').append($('<li>').text('Connected to server'));
