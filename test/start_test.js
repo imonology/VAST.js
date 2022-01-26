@@ -2,7 +2,7 @@
 // This file also starts the global server for visualisation purposes
 
 // How many matchers in this test?
-var matcherCount = parseInt(process.argv[2]) || 5;
+var matcherCount = parseInt(process.argv[2]) || 2;
 
 // the desired aoi radius for the matchers
 var aoi = parseInt(process.argv[3]) || 100;
@@ -70,7 +70,7 @@ setTimeout(function(){
     var generate = setInterval(function(){
         if (i >= matcherCount) {
             clearInterval(generate);
-        } els e{
+        } else{
             var xx = Math.random() * worldSize;
             var yy = Math.random() * worldSize;
             _addMatcher(xx, yy, aoi);
