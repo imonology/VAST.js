@@ -93,7 +93,7 @@ while( i<dataFromTextFile.length){
 // instructions.push(new instruction('newClient', {alias: 'C2', host: 'localhost', port: 20000, x: 500, y: 500, radius: 100}));
 
 // //subscribe
-// var list = ['C1', 'C2','C3'];
+var list = ['C1', 'C2','C3'];
 // instructions.push(new instruction('subscribe', {alias: 'C1', x: 150, y: 250, radius: 500, channel: 'test'}));
 
 // //publish
