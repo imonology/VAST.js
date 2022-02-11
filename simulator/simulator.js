@@ -8,9 +8,11 @@ const { instruction } = require('./types.js');
 
 //importing data from text file
 var fs = require('fs');
-var dataFromTextFile=[]
+//function to obtain all the data from a text file
+function dataFromTextFiles(filename){
+    var dataFromTextFile=[]
 try {
-    var data = fs.readFileSync('instruction.txt', 'utf8');
+    var data = fs.readFileSync(filename, 'utf8');
     // console.log(data);
     var cur="";
     for(var d of data){
@@ -22,17 +24,18 @@ try {
         }
     }
     if(cur.length!=0)dataFromTextFile.push(cur);
-    console.log(dataFromTextFile)    
+    return dataFromTextFile   
 
 } catch(e) {
     console.log('Error:', e.stack);
+}
 }
 
 // Data structures to store matchers
 // alias --> matcher{}.
 var matchers = {};
 var clients = {};
-
+var dataFromTextFile=dataFromTextFiles('instruction.txt');
 var instructions = [];
 var i=0;
 while( i<dataFromTextFile.length){
