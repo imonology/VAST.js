@@ -57,47 +57,68 @@ var dataFromTextFile = dataFromTextFiles('instruction.txt').then(dataFromTextFil
     dataFromTextFile.map(dataFromTextFile => {
         console.log("hi", dataFromTextFile)
         if (dataFromTextFile[0] == 'newMatcher') {
-            instructions.push(new instruction(dataFromTextFile[0],
-                {
-                    alias: dataFromTextFile[1],
-                    isGateway: (dataFromTextFile[2] == 'true') ? true : false,
-                    host: dataFromTextFile[3],
-                    port: Number(dataFromTextFile[4]),
-                    x: Number(dataFromTextFile[5]),
-                    y: Number(dataFromTextFile[6]),
-                    radius: Number(dataFromTextFile[7])
-                }));
+            if(dataFromTextFile.length!=8){
+                console.log("wrong input");
+               
+            }
+            else{
+                instructions.push(new instruction(dataFromTextFile[0],
+                    {
+                        alias: dataFromTextFile[1],
+                        isGateway: (dataFromTextFile[2] == 'true') ? true : false,
+                        host: dataFromTextFile[3],
+                        port: Number(dataFromTextFile[4]),
+                        x: Number(dataFromTextFile[5]),
+                        y: Number(dataFromTextFile[6]),
+                        radius: Number(dataFromTextFile[7])
+                    }));
+            }
         }
         else if (dataFromTextFile[0] == 'newClient') {
-            instructions.push(new instruction(dataFromTextFile[0],
-                {
-                    alias: dataFromTextFile[1],
-                    host: dataFromTextFile[2],
-                    port: Number(dataFromTextFile[3]),
-                    x: Number(dataFromTextFile[4]),
-                    y: Number(dataFromTextFile[5]),
-                    radius: Number(dataFromTextFile[6])
-                }));
+            if(dataFromTextFile.length!=7){
+                console.log("wrong input");
+            }
+            else{
+                instructions.push(new instruction(dataFromTextFile[0],
+                    {
+                        alias: dataFromTextFile[1],
+                        host: dataFromTextFile[2],
+                        port: Number(dataFromTextFile[3]),
+                        x: Number(dataFromTextFile[4]),
+                        y: Number(dataFromTextFile[5]),
+                        radius: Number(dataFromTextFile[6])
+                    }));
+            }
         }
         else if (dataFromTextFile[0] == 'subscribe') {
-            instructions.push(new instruction(dataFromTextFile[0],
-                {
-                    alias: dataFromTextFile[1],
-                    x: Number(dataFromTextFile[2]),
-                    y: Number(dataFromTextFile[3]),
-                    radius: Number(dataFromTextFile[4]),
-                    channel: dataFromTextFile[5]
-                }));
+            if(dataFromTextFile.length!=6){
+                console.log("wrong input");
+            }
+            else{
+                instructions.push(new instruction(dataFromTextFile[0],
+                    {
+                        alias: dataFromTextFile[1],
+                        x: Number(dataFromTextFile[2]),
+                        y: Number(dataFromTextFile[3]),
+                        radius: Number(dataFromTextFile[4]),
+                        channel: dataFromTextFile[5]
+                    }));
+            }
         } else if (dataFromTextFile[0] == 'publish') {
-            instructions.push(new instruction(dataFromTextFile[0],
-                {
-                    alias: dataFromTextFile[1],
-                    x: Number(dataFromTextFile[2]),
-                    y: Number(dataFromTextFile[3]),
-                    radius: Number(dataFromTextFile[4]),
-                    payload: dataFromTextFile[5],
-                    channel: dataFromTextFile[6]
-                }));
+            if(dataFromTextFile.length!=7){
+                console.log("wrong input");
+            }
+            else{
+                instructions.push(new instruction(dataFromTextFile[0],
+                    {
+                        alias: dataFromTextFile[1],
+                        x: Number(dataFromTextFile[2]),
+                        y: Number(dataFromTextFile[3]),
+                        radius: Number(dataFromTextFile[4]),
+                        payload: dataFromTextFile[5],
+                        channel: dataFromTextFile[6]
+                    }));
+            }
         }
     })
 
