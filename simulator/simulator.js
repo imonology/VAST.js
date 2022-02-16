@@ -3,90 +3,109 @@
 
 // imports
 const matcher = require('../lib/matcher.js');
-const client = require('../lib/client.js'); 
+const client = require('../lib/client.js');
 const { instruction } = require('./types.js');
-
-//importing data from text file
-var fs = require('fs');
-//function to obtain all the data from a text file
-function dataFromTextFiles(filename){
-    var dataFromTextFile=[]
-try {
-    var data = fs.readFileSync(filename, 'utf8');
-    // console.log(data);
-    var cur="";
-    for(var d of data){
-        if((d>='a'&&d<='z')||(d>='A'&&d<='Z')||(d>='0'&&d<='9')){
-            cur+=d;
-        }else{
-            if(cur.length!=0)dataFromTextFile.push(cur);
-            cur=""
-        }
-    }
-    if(cur.length!=0)dataFromTextFile.push(cur);
-    return dataFromTextFile   
-
-} catch(e) {
-    console.log('Error:', e.stack);
-}
-}
-
 // Data structures to store matchers
 // alias --> matcher{}.
 var matchers = {};
 var clients = {};
-var dataFromTextFile=dataFromTextFiles('instruction.txt');
 var instructions = [];
-var i=0;
-while( i<dataFromTextFile.length){
-    if(dataFromTextFile[i]=='newMatcher'){
-        instructions.push(new instruction(dataFromTextFile[i], 
-            {
-                alias: dataFromTextFile[i+1], 
-                isGateway: (dataFromTextFile[i+2]=='true')?true:false, 
-                host: dataFromTextFile[i+3], 
-                port: Number(dataFromTextFile[i+4]), 
-                x: Number(dataFromTextFile[i+5]), 
-                y: Number(dataFromTextFile[i+6]), 
-                radius: Number(dataFromTextFile[i+7])
-            }));
-        i=i+8;
-    }
-    else if(dataFromTextFile[i]=='newClient'){
-        instructions.push(new instruction(dataFromTextFile[i], 
-            {
-                alias: dataFromTextFile[i+1], 
-                host: dataFromTextFile[i+2], 
-                port: Number(dataFromTextFile[i+3]), 
-                x: Number(dataFromTextFile[i+4]), 
-                y: Number(dataFromTextFile[i+5]), 
-                radius: Number(dataFromTextFile[i+6])
-            }));
-        i=i+7;
-    }
-    else if(dataFromTextFile[i]=='subscribe'){
-        instructions.push(new instruction(dataFromTextFile[i], 
-            {
-                alias: dataFromTextFile[i+1], 
-                x: Number(dataFromTextFile[i+2]), 
-                y: Number(dataFromTextFile[i+3]), 
-                radius: Number(dataFromTextFile[i+4]),
-                channel:dataFromTextFile[i+5]
-            }));
-        i=i+6;
-    }else if(dataFromTextFile[i]=='publish'){
-        instructions.push(new instruction(dataFromTextFile[i], 
-            {
-                alias: dataFromTextFile[i+1], 
-                x: Number(dataFromTextFile[i+2]), 
-                y: Number(dataFromTextFile[i+3]), 
-                radius: Number(dataFromTextFile[i+4]),
-                payload:dataFromTextFile[i+5],
-                channel:dataFromTextFile[i+6]
-            }));
-        i=i+7;
+//importing data from text file
+var fs = require('fs');
+const readline = require('readline');
+//function to obtain all the data from a text file
+var dataFromTextFiles = async (filename) => {
+    try {
+        var dataFromTextFile = []
+        const fileStream = fs.createReadStream(filename);
+
+        const rl = readline.createInterface({
+            input: fileStream,
+            crlfDelay: Infinity
+        });
+        // Note: we use the crlfDelay option to recognize all instances of CR LF
+        // ('\r\n') in input.txt as a single line break.
+
+        for await (const data of rl) {
+            var dataLine = []
+            var cur = "";
+            for (var d of data) {
+                if ((d >= 'a' && d <= 'z') || (d >= 'A' && d <= 'Z') || (d >= '0' && d <= '9')) {
+                    cur += d;
+                } else {
+                    if (cur.length != 0) dataLine.push(cur);
+                    cur = ""
+                }
+            }
+            if (cur.length != 0) dataLine.push(cur);
+            dataFromTextFile.push(dataLine)
+        }
+
+        // console.log(dataFromTextFile);
+        // console.log(dataFromTextFile.map(data=>data));
+        return dataFromTextFile
+
+    } catch (e) {
+        console.log('Error:', e.stack);
     }
 }
+
+var dataFromTextFile = dataFromTextFiles('instruction.txt').then(dataFromTextFile => {
+    console.log("debo:", dataFromTextFile)
+    var i = 0;
+    while (i < dataFromTextFile.length) {
+        if (dataFromTextFile[i][0] == 'newMatcher') {
+            instructions.push(new instruction(dataFromTextFile[i][0],
+                {
+                    alias: dataFromTextFile[i][1],
+                    isGateway: (dataFromTextFile[i][2] == 'true') ? true : false,
+                    host: dataFromTextFile[i][3],
+                    port: Number(dataFromTextFile[i][4]),
+                    x: Number(dataFromTextFile[i][5]),
+                    y: Number(dataFromTextFile[i][6]),
+                    radius: Number(dataFromTextFile[i][7])
+                }));
+        }
+        else if (dataFromTextFile[i][0] == 'newClient') {
+            instructions.push(new instruction(dataFromTextFile[i],
+                {
+                    alias: dataFromTextFile[i][1],
+                    host: dataFromTextFile[i][2],
+                    port: Number(dataFromTextFile[i][3]),
+                    x: Number(dataFromTextFile[i][4]),
+                    y: Number(dataFromTextFile[i][5]),
+                    radius: Number(dataFromTextFile[i][6])
+                }));
+        }
+        else if (dataFromTextFile[i][0] == 'subscribe') {
+            instructions.push(new instruction(dataFromTextFile[i],
+                {
+                    alias: dataFromTextFile[i][1],
+                    x: Number(dataFromTextFile[i][2]),
+                    y: Number(dataFromTextFile[i][3]),
+                    radius: Number(dataFromTextFile[i][4]),
+                    channel: dataFromTextFile[i][5]
+                }));
+        } else if (dataFromTextFile[i][0] == 'publish') {
+            instructions.push(new instruction(dataFromTextFile[i],
+                {
+                    alias: dataFromTextFile[i][1],
+                    x: Number(dataFromTextFile[i][2]),
+                    y: Number(dataFromTextFile[i][3]),
+                    radius: Number(dataFromTextFile[i][4]),
+                    payload: dataFromTextFile[i][5],
+                    channel: dataFromTextFile[i][6]
+                }));
+        }
+        i = i + 1;
+    }
+    
+console.log(instructions);
+    execute();
+})
+dataFromTextFile;
+
+
 // // start matchers
 // instructions.push(new instruction('newMatcher', {alias: 'GW', isGateway: true, host: 'localhost', port: 8000, x: 100, y: 100, radius: 100}));
 // instructions.push(new instruction('newMatcher', {alias: 'M1', isGateway: false, host: 'localhost', port: 8000, x: 500, y: 500, radius: 100}));
@@ -96,87 +115,86 @@ while( i<dataFromTextFile.length){
 // instructions.push(new instruction('newClient', {alias: 'C2', host: 'localhost', port: 20000, x: 500, y: 500, radius: 100}));
 
 // //subscribe
-var list = ['C1', 'C2','C3'];
+var list = ['C1', 'C2', 'C3'];
 // instructions.push(new instruction('subscribe', {alias: 'C1', x: 150, y: 250, radius: 500, channel: 'test'}));
 
 // //publish
 // instructions.push(new instruction('publish', {alias: 'C2', x: 100, y: 200, radius: 500, payload: 'hello?', channel: 'test'}));
 
-console.log(instructions);
 
 
 // Interpret and execute instruction
-var executeInstruction = function(instruction, step, successCallback, failCallback){   
+var executeInstruction = function (instruction, step, successCallback, failCallback) {
     var opts = instruction.opts;
     var type = instruction.type;
-    
-    switch (type){
-        case 'newMatcher' : {
 
-            if (!matchers.hasOwnProperty(opts.alias)){       
+    switch (type) {
+        case 'newMatcher': {
 
-                matchers[opts.alias]= new matcher(opts.isGateway, opts.host, opts.port, opts.x, opts.y, opts.radius, function(id){
+            if (!matchers.hasOwnProperty(opts.alias)) {
+
+                matchers[opts.alias] = new matcher(opts.isGateway, opts.host, opts.port, opts.x, opts.y, opts.radius, function (id) {
                     connected = true;
                     successCallback('Matcher: ' + opts.alias + ' created with ID: ' + id);
                 });
             }
-            else{
+            else {
                 failCallback('Matcher already exists with alias: ' + opts.alias);
             }
         }
-        break;
+            break;
 
-        case 'newClient' : {
-            if(!clients.hasOwnProperty(opts.alias)){
-                
-                clients[opts.alias] = new client(opts.host, opts.port, opts.x, opts.y, opts.radius, function(id){
+        case 'newClient': {
+            if (!clients.hasOwnProperty(opts.alias)) {
+
+                clients[opts.alias] = new client(opts.host, opts.port, opts.x, opts.y, opts.radius, function (id) {
                     successCallback('Client ' + opts.alias + ' assigned to matcher: ' + clients[opts.alias]._matcherID);
                 });
             }
-            else{
+            else {
                 failCallback('client already exists with alias: ' + alias);
             }
         }
-        break;
+            break;
 
-        case 'subscribe' : {
+        case 'subscribe': {
 
-            if(clients.hasOwnProperty(opts.alias)){
+            if (clients.hasOwnProperty(opts.alias)) {
                 clients[opts.alias].subscribe(opts.x, opts.y, opts.radius, opts.channel);
                 successCallback(opts.alias + ': added subscription:', opts.x, opts.y, opts.radius, opts.channel);
             }
-            else{
+            else {
                 failCallback('Invalid client alias for subscription: ' + opts.alias);
             }
 
-            
+
         }
-        break;
+            break;
 
-        case 'publish' : {
+        case 'publish': {
 
-            if(clients.hasOwnProperty(opts.alias)){
+            if (clients.hasOwnProperty(opts.alias)) {
                 clients[opts.alias].publish(opts.x, opts.y, opts.radius, opts.payload, opts.channel);
                 successCallback(opts.alias + ' published:', opts.payload, 'on channel: ' + opts.channel)
             }
-            else{
+            else {
                 failCallback('client with alias "' + alias + '" does not exist');
             }
 
 
             // sub each client in list if they are known
-            for( var i = 0; i < clientList.length; i++){
-                if(clients.hasOwnProperty(clientList[i])){
+            for (var i = 0; i < clientList.length; i++) {
+                if (clients.hasOwnProperty(clientList[i])) {
                     clients[clientList[opts.alias]].subscribe(x, y, radius, channel);
                 }
-                else{
+                else {
                     console.log('Invalid client alias for subscription: ' + clientList[i]);
                 }
             }
 
             successCallback('subscription instruction complete')
         }
-        break;
+            break;
 
         default: {
             failCallback('instruction at step ' + step + 'is not valid');
@@ -185,34 +203,34 @@ var executeInstruction = function(instruction, step, successCallback, failCallba
 }
 
 // A function wrapper used to execute steps synchronously using a promise
-var executeInstructionWrapper = function(instruction, step){
-    return new Promise(function(resolve, reject){
-        
-        executeInstruction(instruction, step, 
-            function(successResponse){
+var executeInstructionWrapper = function (instruction, step) {
+    return new Promise(function (resolve, reject) {
+
+        executeInstruction(instruction, step,
+            function (successResponse) {
                 resolve(successResponse);
             },
-            
-            function(failResponse){
+
+            function (failResponse) {
                 reject(failResponse);
             });
     });
 }
 
-async function execute(){
-    for (var step = 0; step < instructions.length; step++){
+async function execute() {
+    for (var step = 0; step < instructions.length; step++) {
         console.log('executing step ' + step);
-    
+
         try {
             var result = await executeInstructionWrapper(instructions[step], step);
             console.log(result);
         }
-        catch(error){
+        catch (error) {
             console.log(error);
         }
     }
 }
 
-execute();
+
 
 
