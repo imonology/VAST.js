@@ -13,6 +13,7 @@ var instructions = [];
 //importing data from text file
 var fs = require('fs');
 const readline = require('readline');
+const { map } = require('jquery');
 //function to obtain all the data from a text file
 var dataFromTextFiles = async (filename) => {
     try {
@@ -51,56 +52,57 @@ var dataFromTextFiles = async (filename) => {
 }
 
 var dataFromTextFile = dataFromTextFiles('instruction.txt').then(dataFromTextFile => {
-    console.log("debo:", dataFromTextFile)
+    // console.log("debo:", dataFromTextFile)
     var i = 0;
-    while (i < dataFromTextFile.length) {
-        if (dataFromTextFile[i][0] == 'newMatcher') {
-            instructions.push(new instruction(dataFromTextFile[i][0],
+    dataFromTextFile.map(dataFromTextFile => {
+        console.log("hi", dataFromTextFile)
+        if (dataFromTextFile[0] == 'newMatcher') {
+            instructions.push(new instruction(dataFromTextFile[0],
                 {
-                    alias: dataFromTextFile[i][1],
-                    isGateway: (dataFromTextFile[i][2] == 'true') ? true : false,
-                    host: dataFromTextFile[i][3],
-                    port: Number(dataFromTextFile[i][4]),
-                    x: Number(dataFromTextFile[i][5]),
-                    y: Number(dataFromTextFile[i][6]),
-                    radius: Number(dataFromTextFile[i][7])
+                    alias: dataFromTextFile[1],
+                    isGateway: (dataFromTextFile[2] == 'true') ? true : false,
+                    host: dataFromTextFile[3],
+                    port: Number(dataFromTextFile[4]),
+                    x: Number(dataFromTextFile[5]),
+                    y: Number(dataFromTextFile[6]),
+                    radius: Number(dataFromTextFile[7])
                 }));
         }
-        else if (dataFromTextFile[i][0] == 'newClient') {
-            instructions.push(new instruction(dataFromTextFile[i],
+        else if (dataFromTextFile[0] == 'newClient') {
+            instructions.push(new instruction(dataFromTextFile[0],
                 {
-                    alias: dataFromTextFile[i][1],
-                    host: dataFromTextFile[i][2],
-                    port: Number(dataFromTextFile[i][3]),
-                    x: Number(dataFromTextFile[i][4]),
-                    y: Number(dataFromTextFile[i][5]),
-                    radius: Number(dataFromTextFile[i][6])
+                    alias: dataFromTextFile[1],
+                    host: dataFromTextFile[2],
+                    port: Number(dataFromTextFile[3]),
+                    x: Number(dataFromTextFile[4]),
+                    y: Number(dataFromTextFile[5]),
+                    radius: Number(dataFromTextFile[6])
                 }));
         }
-        else if (dataFromTextFile[i][0] == 'subscribe') {
-            instructions.push(new instruction(dataFromTextFile[i],
+        else if (dataFromTextFile[0] == 'subscribe') {
+            instructions.push(new instruction(dataFromTextFile[0],
                 {
-                    alias: dataFromTextFile[i][1],
-                    x: Number(dataFromTextFile[i][2]),
-                    y: Number(dataFromTextFile[i][3]),
-                    radius: Number(dataFromTextFile[i][4]),
-                    channel: dataFromTextFile[i][5]
+                    alias: dataFromTextFile[1],
+                    x: Number(dataFromTextFile[2]),
+                    y: Number(dataFromTextFile[3]),
+                    radius: Number(dataFromTextFile[4]),
+                    channel: dataFromTextFile[5]
                 }));
-        } else if (dataFromTextFile[i][0] == 'publish') {
-            instructions.push(new instruction(dataFromTextFile[i],
+        } else if (dataFromTextFile[0] == 'publish') {
+            instructions.push(new instruction(dataFromTextFile[0],
                 {
-                    alias: dataFromTextFile[i][1],
-                    x: Number(dataFromTextFile[i][2]),
-                    y: Number(dataFromTextFile[i][3]),
-                    radius: Number(dataFromTextFile[i][4]),
-                    payload: dataFromTextFile[i][5],
-                    channel: dataFromTextFile[i][6]
+                    alias: dataFromTextFile[1],
+                    x: Number(dataFromTextFile[2]),
+                    y: Number(dataFromTextFile[3]),
+                    radius: Number(dataFromTextFile[4]),
+                    payload: dataFromTextFile[5],
+                    channel: dataFromTextFile[6]
                 }));
         }
-        i = i + 1;
-    }
-    
-console.log(instructions);
+    })
+
+
+    console.log(instructions);
     execute();
 })
 dataFromTextFile;
