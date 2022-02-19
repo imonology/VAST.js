@@ -57,11 +57,11 @@ var dataFromTextFile = dataFromTextFiles('instruction.txt').then(dataFromTextFil
     dataFromTextFile.map(dataFromTextFile => {
         console.log("hi", dataFromTextFile)
         if (dataFromTextFile[0] == 'newMatcher') {
-            if(dataFromTextFile.length!=8){
+            if (dataFromTextFile.length != 8) {
                 console.log("wrong input");
-               
+
             }
-            else{
+            else {
                 instructions.push(new instruction(dataFromTextFile[0],
                     {
                         alias: dataFromTextFile[1],
@@ -75,10 +75,10 @@ var dataFromTextFile = dataFromTextFiles('instruction.txt').then(dataFromTextFil
             }
         }
         else if (dataFromTextFile[0] == 'newClient') {
-            if(dataFromTextFile.length!=7){
+            if (dataFromTextFile.length != 7) {
                 console.log("wrong input");
             }
-            else{
+            else {
                 instructions.push(new instruction(dataFromTextFile[0],
                     {
                         alias: dataFromTextFile[1],
@@ -91,10 +91,10 @@ var dataFromTextFile = dataFromTextFiles('instruction.txt').then(dataFromTextFil
             }
         }
         else if (dataFromTextFile[0] == 'subscribe') {
-            if(dataFromTextFile.length!=6){
+            if (dataFromTextFile.length != 6) {
                 console.log("wrong input");
             }
-            else{
+            else {
                 instructions.push(new instruction(dataFromTextFile[0],
                     {
                         alias: dataFromTextFile[1],
@@ -105,10 +105,10 @@ var dataFromTextFile = dataFromTextFiles('instruction.txt').then(dataFromTextFil
                     }));
             }
         } else if (dataFromTextFile[0] == 'publish') {
-            if(dataFromTextFile.length!=7){
+            if (dataFromTextFile.length != 7) {
                 console.log("wrong input");
             }
-            else{
+            else {
                 instructions.push(new instruction(dataFromTextFile[0],
                     {
                         alias: dataFromTextFile[1],
