@@ -56,7 +56,10 @@ var dataFromTextFile = dataFromTextFiles('instruction.txt').then(dataFromTextFil
     var i = 0;
     dataFromTextFile.map(dataFromTextFile => {
         console.log("hi", dataFromTextFile)
-        if (dataFromTextFile[0] == 'newMatcher') {
+        if(dataFromTextFile[0] == '//'){
+            console.log(dataFromTextFile);
+        }
+        else if (dataFromTextFile[0] == 'newMatcher') {
             if (dataFromTextFile.length != 8) {
                 console.log("wrong input");
 
