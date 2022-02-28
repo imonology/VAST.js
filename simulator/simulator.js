@@ -56,72 +56,81 @@ var dataFromTextFile = dataFromTextFiles('instruction.txt').then(dataFromTextFil
     var i = 0;
     dataFromTextFile.map(dataFromTextFile => {
         console.log("hi", dataFromTextFile)
-        if(dataFromTextFile[0] == '//'){
-            console.log(dataFromTextFile);
-        }
-        else if (dataFromTextFile[0] == 'newMatcher') {
-            if (dataFromTextFile.length != 8) {
-                console.log("wrong input");
+        switch (dataFromTextFile[0]) {
+            case '//':
+                console.log(dataFromTextFile);
+                i++;
+                break;
+            case 'newMatcher':
+                if (dataFromTextFile.length != 8) {
+                    console.log(`wrong input in line number ${i}`);
 
-            }
-            else {
-                instructions.push(new instruction(dataFromTextFile[0],
-                    {
-                        alias: dataFromTextFile[1],
-                        isGateway: (dataFromTextFile[2] == 'true') ? true : false,
-                        host: dataFromTextFile[3],
-                        port: Number(dataFromTextFile[4]),
-                        x: Number(dataFromTextFile[5]),
-                        y: Number(dataFromTextFile[6]),
-                        radius: Number(dataFromTextFile[7])
-                    }));
-            }
-        }
-        else if (dataFromTextFile[0] == 'newClient') {
-            if (dataFromTextFile.length != 7) {
-                console.log("wrong input");
-            }
-            else {
-                instructions.push(new instruction(dataFromTextFile[0],
-                    {
-                        alias: dataFromTextFile[1],
-                        host: dataFromTextFile[2],
-                        port: Number(dataFromTextFile[3]),
-                        x: Number(dataFromTextFile[4]),
-                        y: Number(dataFromTextFile[5]),
-                        radius: Number(dataFromTextFile[6])
-                    }));
-            }
-        }
-        else if (dataFromTextFile[0] == 'subscribe') {
-            if (dataFromTextFile.length != 6) {
-                console.log("wrong input");
-            }
-            else {
-                instructions.push(new instruction(dataFromTextFile[0],
-                    {
-                        alias: dataFromTextFile[1],
-                        x: Number(dataFromTextFile[2]),
-                        y: Number(dataFromTextFile[3]),
-                        radius: Number(dataFromTextFile[4]),
-                        channel: dataFromTextFile[5]
-                    }));
-            }
-        } else if (dataFromTextFile[0] == 'publish') {
-            if (dataFromTextFile.length != 7) {
-                console.log("wrong input");
-            }
-            else {
-                instructions.push(new instruction(dataFromTextFile[0],
-                    {
-                        alias: dataFromTextFile[1],
-                        x: Number(dataFromTextFile[2]),
-                        y: Number(dataFromTextFile[3]),
-                        radius: Number(dataFromTextFile[4]),
-                        payload: dataFromTextFile[5],
-                        channel: dataFromTextFile[6]
-                    }));
-            }
+                }
+                else {
+                    instructions.push(new instruction(dataFromTextFile[0],
+                        {
+                            alias: dataFromTextFile[1],
+                            isGateway: (dataFromTextFile[2] == 'true') ? true : false,
+                            host: dataFromTextFile[3],
+                            port: Number(dataFromTextFile[4]),
+                            x: Number(dataFromTextFile[5]),
+                            y: Number(dataFromTextFile[6]),
+                            radius: Number(dataFromTextFile[7])
+                        }));
+                }
+                i++;
+                break;
+            case 'newClient':
+                if (dataFromTextFile.length != 7) {
+                    console.log(`wrong input in line number ${i}`);
+                }
+                else {
+                    instructions.push(new instruction(dataFromTextFile[0],
+                        {
+                            alias: dataFromTextFile[1],
+                            host: dataFromTextFile[2],
+                            port: Number(dataFromTextFile[3]),
+                            x: Number(dataFromTextFile[4]),
+                            y: Number(dataFromTextFile[5]),
+                            radius: Number(dataFromTextFile[6])
+                        }));
+                }
+                i++;
+                break;
+            case 'subscribe':
+                if (dataFromTextFile.length != 6) {
+                    console.log(`wrong input in line number ${i}`);
+                }
+                else {
+                    instructions.push(new instruction(dataFromTextFile[0],
+                        {
+                            alias: dataFromTextFile[1],
+                            x: Number(dataFromTextFile[2]),
+                            y: Number(dataFromTextFile[3]),
+                            radius: Number(dataFromTextFile[4]),
+                            channel: dataFromTextFile[5]
+                        }));
+                }
+                i++;
+                break;
+            case 'publish':
+                if (dataFromTextFile.length != 7) {
+                    console.log(`wrong input in line number ${i}`);
+                }
+                else {
+                    instructions.push(new instruction(dataFromTextFile[0],
+                        {
+                            alias: dataFromTextFile[1],
+                            x: Number(dataFromTextFile[2]),
+                            y: Number(dataFromTextFile[3]),
+                            radius: Number(dataFromTextFile[4]),
+                            payload: dataFromTextFile[5],
+                            channel: dataFromTextFile[6]
+                        }));
+                }
+                i++;
+                break;
+                
         }
     })
 
