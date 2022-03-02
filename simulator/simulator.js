@@ -14,6 +14,13 @@ var instructions = [];
 var fs = require('fs');
 const readline = require('readline');
 const { map } = require('jquery');
+//taking values from the terminal
+var filename = process.argv[2]||'instruction.txt';
+if(filename.length>4&&filename.slice(-4)!='.txt'){
+    console.log("Please Provide A Text File")
+    return;
+}
+
 //function to obtain all the data from a text file
 var dataFromTextFiles = async (filename) => {
     try {
@@ -56,12 +63,14 @@ var dataFromTextFiles = async (filename) => {
     }
 }
 
-var dataFromTextFile = dataFromTextFiles('instruction.txt').then(dataFromTextFile => {
+var dataFromTextFile = dataFromTextFiles(filename).then(dataFromTextFile => {
     // console.log("debo:", dataFromTextFile)
     var i = 0;
     dataFromTextFile.map(dataFromTextFile => {
         console.log("hi", dataFromTextFile)
         switch (dataFromTextFile[0]) {
+            case '':
+                break;//for empty line
             case '//':
                 console.log(dataFromTextFile);
                 i++;
