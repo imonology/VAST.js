@@ -3,4 +3,4 @@ newMatcher M1 false localhost 8000 500 500 100
 newClient C1 localhost 20000 100 100 100 
 newClient C2 localhost 20000 500 500 100
 subscribe C1 150 250 500 test
-publish C2 100 200 500 hello test
+publish C2 100 200 500 "hello???" test

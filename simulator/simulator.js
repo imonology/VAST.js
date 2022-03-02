@@ -30,8 +30,13 @@ var dataFromTextFiles = async (filename) => {
         for await (const data of rl) {
             var dataLine = []
             var cur = "";
+            var isString=0;
             for (var d of data) {
-                if ((d >= 'a' && d <= 'z') || (d >= 'A' && d <= 'Z') || (d >= '0' && d <= '9')) {
+                if(d=='"'){
+                    isString=1-isString;
+                }else if(isString==1){
+                    cur+=d;
+                }else if ((d >= 'a' && d <= 'z') || (d >= 'A' && d <= 'Z') || (d >= '0' && d <= '9')) {
                     cur += d;
                 } else {
                     if (cur.length != 0) dataLine.push(cur);
