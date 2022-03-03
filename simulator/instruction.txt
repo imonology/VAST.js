@@ -1,6 +1,37 @@
-newMatcher GW true localhost 8000 100 100 100
-newMatcher M1 false localhost 8000 500 500 100
-newClient C1 localhost 20000 100 100 100 
-newClient C2 localhost 20000 500 500 100
-subscribe C1 150 250 500 test
-publish C2 100 200 500 hello test
+//Start Gateway matcher
+newMatcher GW true localhost 8000 500 500 100
+wait 100
+
+//Start other matchers
+newMatcher M2 false localhost 8000 200 300 100
+wait 100
+newMatcher M3 false localhost 8000 300 100 100
+wait 100
+newMatcher M4 false localhost 8000 900 400 100
+wait 100
+newMatcher M5 false localhost 8000 700 700 100
+wait 100  
+
+// Start clients and subscribe
+newClient C1 localhost 20000 100 100 100
+subscribe C1 100 100 100 test
+wait 100
+newClient C2 localhost 20000 200 200 100                    
+subscribe C2 200 200 100 test
+wait 100
+newClient C3 localhost 20000 300 300 100 
+subscribe C3 300 300 100 test
+wait 100
+
+// subscriptions that are far away are also supported
+newClient C4 localhost 20000 700 300 100
+subscribe C4 600 600 100 test
+
+wait 2000
+
+//publish some messages
+publish C1 100 100 10 hello_from_C1 test
+publish C2 200 200 10 hi_from_C2 test
+
+// messages may also be far away
+publish C3 650 650 10 hi_from_C3_to_C4_only test
