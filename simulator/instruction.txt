@@ -2,6 +2,8 @@
 newMatcher GW true localhost 8000 500 500 100
 wait 100
 
+unrecognised input at line 5
+
 //Start other matchers
 newMatcher M2 false localhost 8000 200 300 100
 wait 100
@@ -30,8 +32,11 @@ subscribe C4 600 600 100 test
 wait 2000
 
 //publish some messages
-publish C1 100 100 10 hello_from_C1 test
-publish C2 200 200 10 hi_from_C2 test
+publish C1 100 100 10 "hello from C1" test
+publish C2 200 200 10 "hi from C2" test
 
 // messages may also be far away
-publish C3 650 650 10 hi_from_C3_to_C4_only test
+publish C3 650 650 10 "From C3 to C4. Lets test some special characters: !@#$%||{}" test
+
+//End of simulation
+end

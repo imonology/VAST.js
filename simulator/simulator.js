@@ -20,7 +20,13 @@ var instructions = [];
 //importing data from text file
 var fs = require('fs');
 const readline = require('readline');
-const { map } = require('jquery');
+const { map, data } = require('jquery');
+
+var filename = process.argv[2] || "./simulator/instruction.txt";
+if (filename.length > 4 && filename.slice(-4) != ".txt") {
+  console.log("Please Provide A Text File");
+  return;
+}
 
 // Interpret and execute instruction
 async function executeInstruction(instruction, step, success, fail){   
@@ -149,133 +155,173 @@ async function delay(m, callback) {
 //function to obtain all the data from a text file
 var dataFromTextFiles = async (filename) => {
     try {
-        var dataFromTextFile = []
-        const fileStream = fs.createReadStream(filename);
+      var dataFromTextFile = [];
+      const fileStream = fs.createReadStream(filename);
+  
+      const rl = readline.createInterface({
+        input: fileStream,
+        crlfDelay: Infinity,
+      });
+      // Note: we use the crlfDelay option to recognize all instances of CR LF
+      // ('\r\n') in input.txt as a single line break.
+  
+      for await (const data of rl) {
+        var dataLine = [];
+        var cur = "";
+        var isString = 0;
 
-        const rl = readline.createInterface({
-            input: fileStream,
-            crlfDelay: Infinity
-        });
-        // Note: we use the crlfDelay option to recognize all instances of CR LF
-        // ('\r\n') in input.txt as a single line break.
+        for (var d of data) {
+          if (d == '"') {
+            isString = 1 - isString;
+          } 
+          
+          else if (isString == 1) {
+            cur += d;
+          } 
+          
+          else if (
+            (d >= "a" && d <= "z") || (d >= "A" && d <= "Z") ||
+            (d >= "0" && d <= "9") || (d == "/")) {
+            cur += d;
+          } 
+          
+          else {
+            if (cur.length != 0) 
+                dataLine.push(cur);
 
-        for await (const data of rl) {
-            var dataLine = []
-            var cur = "";
-            for (var d of data) {
-                if ((d >= 'a' && d <= 'z') || (d >= 'A' && d <= 'Z') || (d >= '0' && d <= '9') || (d >= '_')) {
-                    cur += d;
-                } else {
-                    if (cur.length != 0) dataLine.push(cur);
-                    cur = ""
-                }
-            }
-            if (cur.length != 0) dataLine.push(cur);
-            dataFromTextFile.push(dataLine)
+            cur = "";
+          }
         }
-
-        // console.log(dataFromTextFile);
-        // console.log(dataFromTextFile.map(data=>data));
-        return dataFromTextFile
-
-    } catch (e) {
-        console.log('Error:', e.stack);
-    }
-}
-
-var dataFromTextFile = dataFromTextFiles('./simulator/instruction.txt').then(dataFromTextFile => {
-    dataFromTextFile.map(dataFromTextFile => {
+        if (cur.length != 0) 
+            dataLine.push(cur);
         
-        if(dataFromTextFile[0] == '//'){
-            console.log(dataFromTextFile);
-        }
+        dataFromTextFile.push(dataLine);
+      }
+  
+      return dataFromTextFile;
+    } catch (e) {
+      log.error("Error:", e.stack);
+    }
+  };
+  
+  var dataFromTextFile = dataFromTextFiles(filename).then((dataFromTextFile) => {
+    
+    var i = 1;  // line counter
+    
+    dataFromTextFile.map((dataFromTextFile) => {
+        switch (dataFromTextFile[0]) {
 
-        else if (dataFromTextFile[0] == 'wait'){
-            if (dataFromTextFile.length != 2) {
-                console.log("wrong input");
+            case "wait" :{
+                if (dataFromTextFile.length != 2) {
+                    log.debug(`wrong input in line number ${i}`);
+                }
+                else {
+                    instructions.push(new instruction(dataFromTextFile[0],
+                        {
+                            waitTime: dataFromTextFile[1]
+                        }
+                    ));
+                }
+                i++;
             }
-            else {
-                instructions.push(new instruction(dataFromTextFile[0],
-                    {
-                        waitTime: dataFromTextFile[1]
-                    }
-                ));
-            }
-        }
+            break;
 
-        else if (dataFromTextFile[0] == 'newMatcher') {
-            if (dataFromTextFile.length != 8) {
-                console.log("wrong input");
-
-            }
-            else {
-                instructions.push(new instruction(dataFromTextFile[0],
-                    {
+            case "newMatcher" :{
+                if (dataFromTextFile.length != 8) {
+                    log.debug(`wrong input in line number ${i}`);
+                } else {
+                    instructions.push(
+                    new instruction(dataFromTextFile[0], {
                         alias: dataFromTextFile[1],
-                        isGateway: (dataFromTextFile[2] == 'true') ? true : false,
+                        isGateway: dataFromTextFile[2] == "true" ? true : false,
                         host: dataFromTextFile[3],
                         port: Number(dataFromTextFile[4]),
                         x: Number(dataFromTextFile[5]),
                         y: Number(dataFromTextFile[6]),
-                        radius: Number(dataFromTextFile[7])
+                        radius: Number(dataFromTextFile[7]),
                     })
-                );
+                    );
+                }
+                i++;
             }
-        }
-        else if (dataFromTextFile[0] == 'newClient') {
-            if (dataFromTextFile.length != 7) {
-                console.log("wrong input");
-            }
-            else {
-                instructions.push(new instruction(dataFromTextFile[0],
-                    {
+            break;
+
+            case "newClient" :{
+                if (dataFromTextFile.length != 7) {
+                    log.debug(`wrong input in line number ${i}`);
+                } else {
+                    instructions.push(
+                    new instruction(dataFromTextFile[0], {
                         alias: dataFromTextFile[1],
                         host: dataFromTextFile[2],
                         port: Number(dataFromTextFile[3]),
                         x: Number(dataFromTextFile[4]),
                         y: Number(dataFromTextFile[5]),
-                        radius: Number(dataFromTextFile[6])
-                    }));
+                        radius: Number(dataFromTextFile[6]),
+                    })
+                    );
+                }
+                i++;
             }
-        }
-        else if (dataFromTextFile[0] == 'subscribe') {
-            if (dataFromTextFile.length != 6) {
-                console.log("wrong input");
-            }
-            else {
-                instructions.push(new instruction(dataFromTextFile[0],
-                    {
+            break;
+
+            case "subscribe" :{
+                if (dataFromTextFile.length != 6) {
+                    log.debug(`wrong input in line number ${i}`);
+                } else {
+                    instructions.push(
+                    new instruction(dataFromTextFile[0], {
                         alias: dataFromTextFile[1],
                         x: Number(dataFromTextFile[2]),
                         y: Number(dataFromTextFile[3]),
                         radius: Number(dataFromTextFile[4]),
-                        channel: dataFromTextFile[5]
-                    }));
-            }
-        } else if (dataFromTextFile[0] == 'publish') {
-            if (dataFromTextFile.length != 7) {
-                console.log("wrong input");
-            }
-            else {
-                instructions.push(new instruction(dataFromTextFile[0],
-                    {
+                        channel: dataFromTextFile[5],
+                    })
+                    );
+                }
+                i++;
+            } 
+            break;
+
+            case "publish" :{
+                if (dataFromTextFile.length != 7) {
+                    log.debug(`wrong input in line number ${i}`);
+                } else {
+                    instructions.push(
+                    new instruction(dataFromTextFile[0], {
                         alias: dataFromTextFile[1],
                         x: Number(dataFromTextFile[2]),
                         y: Number(dataFromTextFile[3]),
                         radius: Number(dataFromTextFile[4]),
                         payload: dataFromTextFile[5],
-                        channel: dataFromTextFile[6]
-                    }));
+                        channel: dataFromTextFile[6],
+                    })
+                    );
+                }
+                i++;
             }
+            break;
+
+            // instruction to end simulation
+            case "end" :{
+                return;
+            }
+            break;
+
+            default :{
+                // NOT a comment or empty line, alert user
+                if (dataFromTextFile.length > 0 && !dataFromTextFile[0].startsWith('//')){
+                    log.debug(`Unrecognised Input in line number ${i}`)
+                }
+                i++;
+                break;
+            }         
         }
-    })
+    });
 
-
-    console.log(instructions);
+    // start executing once all instructions loaded
     execute();
-});
-
-dataFromTextFile;
-  
+  });
 
 
+  dataFromTextFile;
