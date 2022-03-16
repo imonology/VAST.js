@@ -304,6 +304,8 @@ var dataFromTextFiles = async (filename) => {
 
             // instruction to end simulation
             case "end" :{
+                log.debug(`Process Ended`)
+                process.exit(0);
                 return;
             }
             break;
