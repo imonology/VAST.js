@@ -18,7 +18,7 @@
     "object-sizeof": "^1.6.1",
     "pm2": "^5.1.2",
     "socket.io": "^3.1.2",
-    "socket.io-client": "^4.3.2",
+    "socket.io-client": "^4.4.1",
     "worker-threads": "^1.0.0"
   },
   "keywords": [
