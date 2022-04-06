@@ -80,13 +80,13 @@
 
 
 
-    <script src="../voronoi/point2d.js"></script>
-    <script src="../voronoi/segment.js"></script>
-    <script src="../voronoi/line2d.js"></script>
-    <script src="../voronoi/rhill-voronoi-core.js"></script>
-    <script src="../voronoi/vast_voro.js"></script>
-    <script src="../common.js"></script>
-    <script src="../../node_modules/jquery/dist/jquery.js"></script>
+    <script src="../lib/voronoi/point2d.js"></script>
+    <script src="../lib/voronoi/segment.js"></script>
+    <script src="../lib/voronoi/line2d.js"></script>
+    <script src="../lib/voronoi/rhill-voronoi-core.js"></script>
+    <script src="../lib/voronoi/vast_voro.js"></script>
+    <script src="../lib/common.js"></script>
+    <script src="../node_modules/jquery/dist/jquery.js"></script>
 
     <script>
         $(function(){
@@ -393,7 +393,11 @@
 
                     // TODO: Fix for client migration
                     case Matcher_Event.CLIENT_LEAVE :{
-                        delete clients[data.id];
+                        var client = data.client;
+                        // ONLY DELETE IF CLIENT DISCONNECTED FROM ITS HOST MATCHER
+                        if (clients[data.client.id].matcherID === data.id){
+                            delete clients[data.client.id];
+                        }
                     }
                     break;
 

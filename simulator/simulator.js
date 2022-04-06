@@ -4,9 +4,8 @@
 // imports
 const matcher = require('../lib/matcher.js');
 const client = require('../lib/client.js'); 
-const { instruction } = require('./types.js');
 
-var log = LOG.newLayer('simulator', 'simulator', 'logs_and_events', 5, 5);
+var log = LOG.newLayer('Simulator_logs', 'Simulator_logs', 'logs_and_events', 5, 5);
 
 // Data structures to store matchers
 // alias --> matcher{}.
@@ -22,10 +21,9 @@ var fs = require('fs');
 const readline = require('readline');
 const { map, data } = require('jquery');
 
-var filename = process.argv[2] || "./simulator/instruction.txt";
+var filename = process.argv[2] || "./simulator/example_script.txt";
 if (filename.length > 4 && filename.slice(-4) != ".txt") {
-  console.log("Please Provide A Text File");
-  return;
+  error("Please Provide A Text File");
 }
 
 // Interpret and execute instruction
@@ -49,9 +47,17 @@ async function executeInstruction(instruction, step, success, fail){
                 matchers[opts.alias]= new matcher(opts.x, opts.y, opts.radius, 
                     {
                         isGateway: opts.isGateway, 
-                        host: opts.host, 
-                        port: opts.port,
-                        alias: opts.alias
+                        GW_host: opts.GW_host, 
+                        GW_port: opts.GW_port,
+                        VON_port: opts.VON_port,
+                        client_port: opts.client_port,
+                        alias: opts.alias,
+                        //logLayer: 'Matcher_' + opts.alias,
+                        //logFile: 'Matcher_' + opts.alias,
+                        logDisplayLevel : 3,
+                        logRecordLevel : 4,
+                        eventDisplayLevel : 0,
+                        eventRecordLevel : 5
                     },
                     function(id){
                         matcherIDs2alias[id] = opts.alias;
@@ -68,7 +74,7 @@ async function executeInstruction(instruction, step, success, fail){
         case 'newClient' : {
             if(!clients.hasOwnProperty(opts.alias)){
                 
-                clients[opts.alias] = new  client(opts.host, opts.port, opts.x, opts.y, opts.radius, function(id){
+                clients[opts.alias] = new  client(opts.host, opts.port, opts.alias, opts.x, opts.y, opts.radius, function(id){
                     clientIDs2alias[id] = opts.alias;
                     clients[opts.alias].setAlias = opts.alias;
                     let m = clients[opts.alias].getMatcherID();
@@ -105,6 +111,24 @@ async function executeInstruction(instruction, step, success, fail){
         }
         break;
 
+        case 'moveClient' : {
+
+            if(clients.hasOwnProperty(opts.alias)){
+                clients[opts.alias].move(opts.x, opts.y);
+                success(opts.alias + ' request move to ['+ opts.x + '; ' + opts.y + ']');
+            }
+            else{
+                fail('client with alias "' + alias + '" does not exist');
+            }
+        }
+        break;
+
+        case 'end' : {
+            log.debug('Ending Simulation');
+            process.exit(0);
+        }
+        break;
+
         default: {
             fail('instruction at step ' + step + 'is not valid');
         }
@@ -135,7 +159,7 @@ async function execute(step){
     }
 
     try {
-        log.debug('Executing instruction ' + step);
+        log.debug('Executing instruction ' + step + '. Type: ' + instructions[step].type);
         var result = await executeInstructionWrapper(instructions[step], step);
         log.debug(result);
     }
@@ -202,9 +226,9 @@ var dataFromTextFiles = async (filename) => {
     } catch (e) {
       log.error("Error:", e.stack);
     }
-  };
+};
   
-  var dataFromTextFile = dataFromTextFiles(filename).then((dataFromTextFile) => {
+var dataFromTextFile = dataFromTextFiles(filename).then((dataFromTextFile) => {
     
     var i = 1;  // line counter
     
@@ -213,7 +237,7 @@ var dataFromTextFiles = async (filename) => {
 
             case "wait" :{
                 if (dataFromTextFile.length != 2) {
-                    log.debug(`wrong input in line number ${i}`);
+                    error(`wrong input in line number ${i}`);
                 }
                 else {
                     instructions.push(new instruction(dataFromTextFile[0],
@@ -227,18 +251,20 @@ var dataFromTextFiles = async (filename) => {
             break;
 
             case "newMatcher" :{
-                if (dataFromTextFile.length != 8) {
-                    log.debug(`wrong input in line number ${i}`);
+                if (dataFromTextFile.length != 10) {
+                    error(`wrong input in line number ${i}`);
                 } else {
                     instructions.push(
                     new instruction(dataFromTextFile[0], {
                         alias: dataFromTextFile[1],
-                        isGateway: dataFromTextFile[2] == "true" ? true : false,
-                        host: dataFromTextFile[3],
-                        port: Number(dataFromTextFile[4]),
-                        x: Number(dataFromTextFile[5]),
-                        y: Number(dataFromTextFile[6]),
-                        radius: Number(dataFromTextFile[7]),
+                        isGateway: dataFromTextFile[2] == "true" ? true : false,             
+                        GW_host: dataFromTextFile[3], 
+                        GW_port: Number(dataFromTextFile[4]),
+                        VON_port: Number(dataFromTextFile[5]),
+                        client_port: Number(dataFromTextFile[6]),
+                        x: Number(dataFromTextFile[7]),
+                        y: Number(dataFromTextFile[8]),
+                        radius: Number(dataFromTextFile[9]),
                     })
                     );
                 }
@@ -248,7 +274,7 @@ var dataFromTextFiles = async (filename) => {
 
             case "newClient" :{
                 if (dataFromTextFile.length != 7) {
-                    log.debug(`wrong input in line number ${i}`);
+                    error(`wrong input in line number ${i}`);
                 } else {
                     instructions.push(
                     new instruction(dataFromTextFile[0], {
@@ -267,7 +293,7 @@ var dataFromTextFiles = async (filename) => {
 
             case "subscribe" :{
                 if (dataFromTextFile.length != 6) {
-                    log.debug(`wrong input in line number ${i}`);
+                    error(`wrong input in line number ${i}`);
                 } else {
                     instructions.push(
                     new instruction(dataFromTextFile[0], {
@@ -285,7 +311,7 @@ var dataFromTextFiles = async (filename) => {
 
             case "publish" :{
                 if (dataFromTextFile.length != 7) {
-                    log.debug(`wrong input in line number ${i}`);
+                    error(`wrong input in line number ${i}`);
                 } else {
                     instructions.push(
                     new instruction(dataFromTextFile[0], {
@@ -293,8 +319,24 @@ var dataFromTextFiles = async (filename) => {
                         x: Number(dataFromTextFile[2]),
                         y: Number(dataFromTextFile[3]),
                         radius: Number(dataFromTextFile[4]),
-                        payload: dataFromTextFile[5],
-                        channel: dataFromTextFile[6],
+                        channel: dataFromTextFile[5],
+                        payload: dataFromTextFile[6],
+                    })
+                    );
+                }
+                i++;
+            }
+            break;
+
+            case "moveClient" :{
+                if (dataFromTextFile.length != 4) {
+                    error(`wrong input in line number ${i}`);
+                } else {
+                    instructions.push(
+                    new instruction(dataFromTextFile[0], {
+                        alias: dataFromTextFile[1],
+                        x: Number(dataFromTextFile[2]),
+                        y: Number(dataFromTextFile[3])
                     })
                     );
                 }
@@ -304,16 +346,14 @@ var dataFromTextFiles = async (filename) => {
 
             // instruction to end simulation
             case "end" :{
-                log.debug(`Process Ended`)
-                process.exit(0);
+                instructions.push(new instruction(dataFromTextFile[0]));
                 return;
             }
-            break;
 
             default :{
-                // NOT a comment or empty line, alert user
+                // NOT a comment or empty line, alert user and end process
                 if (dataFromTextFile.length > 0 && !dataFromTextFile[0].startsWith('//')){
-                    log.debug(`Unrecognised Input in line number ${i}`)
+                    error(`Unrecognised Input in line number ${i}`);
                 }
                 i++;
                 break;
@@ -323,7 +363,17 @@ var dataFromTextFiles = async (filename) => {
 
     // start executing once all instructions loaded
     execute();
-  });
+});
+
+var error = function(message){
+    log.error(message);  
+    process.exit();
+}
+
+var instruction  = function (type, opts) {
+    this.type = type;
+    this.opts = opts;
+}
 
 
-  dataFromTextFile;
+dataFromTextFile;
