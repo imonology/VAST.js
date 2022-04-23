@@ -1,2 +1,6 @@
 node_modules
 doc
+Client_logs.txt
+Matcher_logs.txt
+Simulator_logs.txt
+Matcher_events.txt
