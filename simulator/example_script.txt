@@ -99,6 +99,7 @@ publish C2 200 200 100 channel1 "C2 also says hello!"
 wait 100
 publish C3 250 250 50 channel1 "C3 sending a message far way"
 wait 100
+wait 500
 publish C2 200 200 5 channel2 "C2 publishing on channel2. Only C3 should receive this pub."
 
 //End of simulation; wait a bit for any pending publications and control messages

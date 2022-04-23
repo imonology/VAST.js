@@ -1,0 +1,41 @@
+{"time":1650299039272,"msg":"Matcher[1]: useMQTT: false"}
+{"time":1650299039285,"msg":"Matcher[1]: VON peer joined successfully"}
+{"time":1650299039285,"msg":"Matcher[1]: listening on 20000"}
+{"time":1650299039394,"msg":"Matcher[0]: useMQTT: false"}
+{"time":1650299039423,"msg":"Matcher[2]: VON peer joined successfully"}
+{"time":1650299039423,"msg":"Matcher[2]: listening on 20010"}
+{"time":1650299039425,"msg":"Matcher[0]: useMQTT: false"}
+{"time":1650299039435,"msg":"Matcher[3]: VON peer joined successfully"}
+{"time":1650299039436,"msg":"Matcher[3]: listening on 20020"}
+{"time":1650299039537,"msg":"Matcher[1]: a new client has joined"}
+{"time":1650299039539,"msg":"Matcher[2]: FOUND MATCHER => Sending ID & address back to source"}
+{"time":1650299039539,"msg":"Matcher[1]: assigning client[C1] to matcher[2]"}
+{"time":1650299039545,"msg":"Matcher[1] disconnected from Client[C1]"}
+{"time":1650299039558,"msg":"Matcher[2]: client[C1] has joined. Find matcher."}
+{"time":1650299039664,"msg":"Matcher[2]: Received subscribe message from client[C1]"}
+{"time":1650299039665,"msg":"Matcher[2]: New Sub from Matcher[2]"}
+{"time":1650299039667,"msg":"Matcher[1]: New Sub from Matcher[2]"}
+{"time":1650299039676,"msg":"Matcher[1]: a new client has joined"}
+{"time":1650299039677,"msg":"Matcher[2]: FOUND MATCHER => Sending ID & address back to source"}
+{"time":1650299039678,"msg":"Matcher[1]: assigning client[C2] to matcher[2]"}
+{"time":1650299039685,"msg":"Matcher[1] disconnected from Client[C2]"}
+{"time":1650299039709,"msg":"Matcher[2]: client[C2] has joined. Find matcher."}
+{"time":1650299039832,"msg":"Matcher[2]: Received subscribe message from client[C2]"}
+{"time":1650299039833,"msg":"Matcher[2]: New Sub from Matcher[2]"}
+{"time":1650299039854,"msg":"Matcher[1]: a new client has joined"}
+{"time":1650299039971,"msg":"Matcher[1]: Received subscribe message from client[C3]"}
+{"time":1650299039972,"msg":"Matcher[1]: New Sub from Matcher[1]"}
+{"time":1650299039972,"msg":"Matcher[1]: Received subscribe message from client[C3]"}
+{"time":1650299039973,"msg":"Matcher[1]: New Sub from Matcher[1]"}
+{"time":1650299039973,"msg":"Matcher[2]: New Sub from Matcher[1]"}
+{"time":1650299039974,"msg":"Matcher[2]: New Sub from Matcher[1]"}
+{"time":1650299039974,"msg":"Matcher[3]: New Sub from Matcher[1]"}
+{"time":1650299039974,"msg":"Matcher[3]: New Sub from Matcher[1]"}
+{"time":1650299040080,"msg":"Matcher[2]: Received Publication from Matcher[2]"}
+{"time":1650299040081,"msg":"Matcher[1]: Matched Publication from Matcher[2]from Client[C1]"}
+{"time":1650299040188,"msg":"Matcher[2]: Received Publication from Matcher[2]"}
+{"time":1650299040190,"msg":"Matcher[1]: Matched Publication from Matcher[2]from Client[C2]"}
+{"time":1650299040299,"msg":"Matcher[2]: Received Publication from Matcher[1]"}
+{"time":1650299040301,"msg":"Matcher[1]: Matched Publication from Matcher[2]from Client[C3]"}
+{"time":1650299040910,"msg":"Matcher[2]: Received Publication from Matcher[2]"}
+{"time":1650299040911,"msg":"Matcher[1]: Matched Publication from Matcher[2]from Client[C2]"}
