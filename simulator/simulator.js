@@ -377,4 +377,3 @@ var instruction  = function (type, opts) {
 
 
 dataFromTextFile;
-  
