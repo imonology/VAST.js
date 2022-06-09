@@ -115,3 +115,10 @@ Example: To start 5 matchers (including the gateway), each with an aoi of 100, a
 ```sh
 node ./test/start_test.js 5 100 2000
 ``` 
+## start_simulator.js
+This file is used to get the matchers,clients on the logs file. 
+```sh
+node ./simulator/simulator
+``` 
+Then the whole data can visulaized on visualiser.html.
+We have to choose the appropiate file that needs to be visualized.

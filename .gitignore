@@ -1,3 +1,10 @@
 node_modules
 doc
+<<<<<<< HEAD
 results
+=======
+Client_logs.txt
+Matcher_logs.txt
+Simulator_logs.txt
+Matcher_events.txt
+>>>>>>> 03ee812c23058e9073880b6bb57645a98c44db5b

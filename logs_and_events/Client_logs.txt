@@ -1,0 +1,36 @@
+{"time":1650299039531,"msg":"Client[C1]: socket connected"}
+{"time":1650299039540,"msg":"Client[C1]: being migrated to Matcher[2]"}
+{"time":1650299039541,"msg":"Client[C1]: disconnected from matcher[0]"}
+{"time":1650299039555,"msg":"Client[C1]: socket connected"}
+{"time":1650299039559,"msg":"Client[C1]: assigned to matcher[2]"}
+{"time":1650299039662,"msg":"Client[C1]: subscribing to channel[channel1] at AoI[300; 100; 100]"}
+{"time":1650299039667,"msg":"Client[C1]: added a subscription:"}
+{"time":1650299039667,"msg":{"hostID":2,"hostPos":{"x":167,"y":500},"clientID":"C1","subID":"C1-JgP4O","channel":"channel1","aoi":{"center":{"x":300,"y":100},"radius":100},"recipients":[2,1]}}
+{"time":1650299039673,"msg":"Client[C2]: socket connected"}
+{"time":1650299039680,"msg":"Client[C2]: being migrated to Matcher[2]"}
+{"time":1650299039681,"msg":"Client[C2]: disconnected from matcher[0]"}
+{"time":1650299039701,"msg":"Client[C2]: socket connected"}
+{"time":1650299039718,"msg":"Client[C2]: assigned to matcher[2]"}
+{"time":1650299039830,"msg":"Client[C2]: subscribing to channel[channel1] at AoI[200; 200; 100]"}
+{"time":1650299039834,"msg":"Client[C2]: added a subscription:"}
+{"time":1650299039834,"msg":{"hostID":2,"hostPos":{"x":167,"y":500},"clientID":"C2","subID":"C2-Bp28p","channel":"channel1","aoi":{"center":{"x":200,"y":200},"radius":100},"recipients":[2]}}
+{"time":1650299039850,"msg":"Client[C3]: socket connected"}
+{"time":1650299039856,"msg":"Client[C3]: assigned to matcher[1]"}
+{"time":1650299039969,"msg":"Client[C3]: subscribing to channel[channel1] at AoI[500; 500; 500]"}
+{"time":1650299039970,"msg":"Client[C3]: subscribing to channel[channel2] at AoI[500; 500; 500]"}
+{"time":1650299039975,"msg":"Client[C3]: added a subscription:"}
+{"time":1650299039975,"msg":{"hostID":1,"hostPos":{"x":500,"y":500},"clientID":"C3","subID":"C3-vEg92","channel":"channel1","aoi":{"center":{"x":500,"y":500},"radius":500},"recipients":[1,2,3]}}
+{"time":1650299039975,"msg":"Client[C3]: added a subscription:"}
+{"time":1650299039975,"msg":{"hostID":1,"hostPos":{"x":500,"y":500},"clientID":"C3","subID":"C3-Zjq27","channel":"channel2","aoi":{"center":{"x":500,"y":500},"radius":500},"recipients":[1,2,3]}}
+{"time":1650299040078,"msg":"Client[C1]: publishing to channel[channel1] with payload: hello from C1!"}
+{"time":1650299040081,"msg":"Client[C1]: received publication from Client[C1] with payload: hello from C1!"}
+{"time":1650299040082,"msg":"Client[C3]: received publication from Client[C1] with payload: hello from C1!"}
+{"time":1650299040186,"msg":"Client[C2]: publishing to channel[channel1] with payload: C2 also says hello!"}
+{"time":1650299040189,"msg":"Client[C1]: received publication from Client[C2] with payload: C2 also says hello!"}
+{"time":1650299040189,"msg":"Client[C2]: received publication from Client[C2] with payload: C2 also says hello!"}
+{"time":1650299040190,"msg":"Client[C3]: received publication from Client[C2] with payload: C2 also says hello!"}
+{"time":1650299040297,"msg":"Client[C3]: publishing to channel[channel1] with payload: C3 sending a message far way"}
+{"time":1650299040300,"msg":"Client[C2]: received publication from Client[C3] with payload: C3 sending a message far way"}
+{"time":1650299040301,"msg":"Client[C3]: received publication from Client[C3] with payload: C3 sending a message far way"}
+{"time":1650299040909,"msg":"Client[C2]: publishing to channel[channel2] with payload: C2 publishing on channel2. Only C3 should receive this pub."}
+{"time":1650299040911,"msg":"Client[C3]: received publication from Client[C2] with payload: C2 publishing on channel2. Only C3 should receive this pub."}

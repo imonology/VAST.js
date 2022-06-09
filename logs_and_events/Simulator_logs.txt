@@ -1,0 +1,48 @@
+{"time":1650299039186,"msg":"Executing instruction 0. Type: newMatcher"}
+{"time":1650299039287,"msg":"Matcher: GW created with ID: 1"}
+{"time":1650299039287,"msg":"Executing instruction 1. Type: wait"}
+{"time":1650299039393,"msg":"waited for 100 milliseconds"}
+{"time":1650299039394,"msg":"Executing instruction 2. Type: newMatcher"}
+{"time":1650299039424,"msg":"Matcher: M2 created with ID: 2"}
+{"time":1650299039425,"msg":"Executing instruction 3. Type: newMatcher"}
+{"time":1650299039437,"msg":"Matcher: M3 created with ID: 3"}
+{"time":1650299039437,"msg":"Executing instruction 4. Type: newClient"}
+{"time":1650299039560,"msg":"Client C1 assigned to matcher: M2"}
+{"time":1650299039560,"msg":"Executing instruction 5. Type: wait"}
+{"time":1650299039660,"msg":"waited for 100 milliseconds"}
+{"time":1650299039661,"msg":"Executing instruction 6. Type: subscribe"}
+{"time":1650299039662,"msg":"C1: added subscription:"}
+{"time":1650299039663,"msg":"Executing instruction 7. Type: newClient"}
+{"time":1650299039718,"msg":"Client C2 assigned to matcher: M2"}
+{"time":1650299039719,"msg":"Executing instruction 8. Type: wait"}
+{"time":1650299039829,"msg":"waited for 100 milliseconds"}
+{"time":1650299039829,"msg":"Executing instruction 9. Type: subscribe"}
+{"time":1650299039830,"msg":"C2: added subscription:"}
+{"time":1650299039831,"msg":"Executing instruction 10. Type: newClient"}
+{"time":1650299039857,"msg":"Client C3 assigned to matcher: GW"}
+{"time":1650299039857,"msg":"Executing instruction 11. Type: wait"}
+{"time":1650299039969,"msg":"waited for 100 milliseconds"}
+{"time":1650299039969,"msg":"Executing instruction 12. Type: subscribe"}
+{"time":1650299039970,"msg":"C3: added subscription:"}
+{"time":1650299039970,"msg":"Executing instruction 13. Type: subscribe"}
+{"time":1650299039970,"msg":"C3: added subscription:"}
+{"time":1650299039971,"msg":"Executing instruction 14. Type: wait"}
+{"time":1650299040077,"msg":"waited for 100 milliseconds"}
+{"time":1650299040077,"msg":"Executing instruction 15. Type: publish"}
+{"time":1650299040078,"msg":"C1 published:"}
+{"time":1650299040078,"msg":"Executing instruction 16. Type: wait"}
+{"time":1650299040186,"msg":"waited for 100 milliseconds"}
+{"time":1650299040186,"msg":"Executing instruction 17. Type: publish"}
+{"time":1650299040187,"msg":"C2 published:"}
+{"time":1650299040187,"msg":"Executing instruction 18. Type: wait"}
+{"time":1650299040297,"msg":"waited for 100 milliseconds"}
+{"time":1650299040297,"msg":"Executing instruction 19. Type: publish"}
+{"time":1650299040298,"msg":"C3 published:"}
+{"time":1650299040298,"msg":"Executing instruction 20. Type: wait"}
+{"time":1650299040405,"msg":"waited for 100 milliseconds"}
+{"time":1650299040405,"msg":"Executing instruction 21. Type: wait"}
+{"time":1650299040908,"msg":"waited for 500 milliseconds"}
+{"time":1650299040908,"msg":"Executing instruction 22. Type: publish"}
+{"time":1650299040909,"msg":"C2 published:"}
+{"time":1650299040910,"msg":"Executing instruction 23. Type: wait"}
+{"time":1650299041920,"msg":"waited for 1000 milliseconds"}
