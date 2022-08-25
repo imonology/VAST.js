@@ -75,16 +75,16 @@ newMatcher M3 false localhost 8000 8020 20020 833 500 100
 
 // Start a few clients with localised subscriptions
 newClient C1 localhost 20000 300 100 100
-wait 100
+wait 200
 subscribe C1 300 100 100 channel1
 
 newClient C2 localhost 20000 200 200 100                    
-wait 100
+wait 300
 subscribe C2 200 200 100 channel1
 
 // start a client with a huge subscription
 newClient C3 localhost 20000 500 200 100
-wait 100
+wait 400
 subscribe C3 500 500 500 channel1
 
 // add a subscription on a different channel
