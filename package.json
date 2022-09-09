@@ -11,17 +11,15 @@
     "url": "git://github.com/Imonology/VAST.js"
   },
   "dependencies": {
-    "appdynamics": "^4.5.2",
-    "bson": "^3.0.2",
-    "debug": "^2.6.9",
-    "event-stream": "^4.0.1",
-    "express": "^4.15.2",
-    "hash": "^0.2.0",
-    "heapdump": "^0.3.12",
-    "object-sizeof": "^1.3.0",
-    "package.json": "^2.0.1",
-    "socket.io": "^2.1.0",
-    "socket.io-client": "^2.1.1"
+    "bootstrap": "^5.1.3",
+    "debug": "0.8.1",
+    "express": "^4.17.1",
+    "jquery": "^3.6.0",
+    "object-sizeof": "^1.6.1",
+    "pm2": "^5.1.2",
+    "socket.io": "^3.1.2",
+    "socket.io-client": "^4.4.1",
+    "worker-threads": "^1.0.0"
   },
   "keywords": [
     "peer-to-peer",

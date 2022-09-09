@@ -1,0 +1,119 @@
+//  Instruction Overview for VAST.js simulator scripts
+//  ___________________________________________________________________
+
+// instructions take the form "Command Arg1 Arg2 Ag3...."
+
+//  START NEW MATCHER:
+//  --------------------------------------------------------------------
+//  Command:    "newMatcher"    
+//  Arg1:       "alias"         --> This is the name of the matcher, and how to refer to it in other commands 
+//  Arg2:       "isGateway"     --> Sets whether the matcher to create is the gateway or not. (only single gateway is currently supported)
+//  Arg3:       "GW_host"       --> The address of the GW peer to connect to
+//  Arg4:       "GW_port"       --> The port the GW is listening on for other Matcher connections
+//  Arg5:       "VON_port"      --> The port we are listening on for other matchers. Will automatically increment if in use.
+//  Arg6:       "client_port"   --> The port the matcher listens on for client connections.
+//  Arg7:       "x_ord"         --> x ordinate of matcher. Currently only 0 <= x <= 1000 is supported.
+//  Arg8:       "y_ord"         --> y ordinate of matcher. Currently only 0 <= y <= 1000 is supported.
+//  Arg9:       "radius"        --> The VON peer will always be aware of enclosing neighbours, but will connect to any additional neighbours that fall in this circle.
+
+//  START NEW CLIENT
+//  --------------------------------------------------------------------
+//  Command:    "newClient"     
+//  Arg1:       "alias"         --> This is the name of the client, and how to refer to it in other commands 
+//  Arg2:       "GW_host"       --> The address of the GW matcher to connect to
+//  Arg3:       "GW_port"       --> The port the GW is listening on for client connections
+//  Arg4:       "x_ord"         --> x ordinate of client. Currently only 0 <= x <= 1000 is supported.
+//  Arg5:       "y_ord"         --> y ordinate of client. Currently only 0 <= y <= 1000 is supported.
+//  Arg6:       "radius"        --> Currently unused.
+
+//  SUBSCRIBE
+//  --------------------------------------------------------------------
+//  Command:    "subscribe"     
+//  Arg1:       "alias"         --> The alias of the client to add a subscription for.
+//  Arg2:       "x_ord"         --> x ordinate of subscription centre. Currently only 0 <= x <= 1000 is supported.
+//  Arg3:       "y_ord"         --> y ordinate of subscription centre. Currently only 0 <= y <= 1000 is supported.
+//  Arg4:       "radius"        --> Radius of subscription area.
+//  Arg5:       "channel"       --> The channel/topic the subscription is for.
+
+//  PUBLISH 
+//  --------------------------------------------------------------------
+//  Command:    "publish"     
+//  Arg1:       "alias"         --> The alias of the client to publish.
+//  Arg2:       "x_ord"         --> x ordinate of publication centre. Currently only 0 <= x <= 1000 is supported.
+//  Arg3:       "y_ord"         --> y ordinate of publication centre. Currently only 0 <= y <= 1000 is supported.
+//  Arg4:       "radius"        --> Radius of publication area.
+//  Arg5:       "channel"       --> The channel/topic the publication is for.
+//  Arg6:       "payload"       --> The payload of the message. Example: "hello from client 1!".
+
+//  MOVE CLIENT
+//  --------------------------------------------------------------------
+//  Command:    "moveClient"     
+//  Arg1:       "alias"         --> The alias of the client to move.
+//  Arg2:       "x_ord"         --> x ordinate of new position. Currently only 0 <= x <= 1000 is supported.
+//  Arg3:       "y_ord"         --> y ordinate of new position. Currently only 0 <= y <= 1000 is supported.
+
+//  WAIT BEFORE NEXT INSTRUCTION
+//  --------------------------------------------------------------------
+//  Command:    "wait"     
+//  Arg1:       "waitTime"      --> Time to wait for in milliseconds.
+
+//  END SIMULATION 
+//  --------------------------------------------------------------------
+//  Command:    "end"           --> call after last instruction to end node process. Simulator will run indefinately otherwise. 
+
+
+// EXAMPLE INSTRUCTION SCRIPT FOR VAST.js Simulator
+//___________________________________________________________________
+
+//Start the Gateway matcher
+newMatcher GW true localhost 8000 8001 20000 500 500 100
+wait 100
+
+//Start other matchers
+newMatcher M2 false localhost 8000 8010 20010 167 500 100
+newMatcher M3 false localhost 8000 8020 20020 833 500 100
+
+// Start a few clients with localised subscriptions
+newClient C1 localhost 20000 300 100 100
+wait 200
+subscribe C1 300 100 100 channel1
+
+newClient C2 localhost 20000 200 200 100                    
+wait 300
+subscribe C2 200 200 100 channel1
+
+// start a client with a huge subscription
+newClient C3 localhost 20000 500 200 100
+wait 400
+subscribe C3 500 500 500 channel1
+
+// add a subscription on a different channel
+subscribe C3 500 500 500 channel2
+wait 100
+
+
+// publish a few messages
+publish C1 300 100 10 channel1 "hello from C1!"
+wait 100
+publish C2 200 200 100 channel1 "C2 also says hello!"
+wait 100
+publish C3 250 250 50 channel1 "C3 sending a message far way"
+wait 100
+publish C2 200 200 5 channel2 "C2 publishing on channel2. Only C3 should receive this pub."
+wait 100
+
+//move a client
+moveClient C1 350 500
+wait 1000
+moveClient C1 400 600
+
+
+publish C2 400 600 10 channel1 "Hi to C1/C3"
+publish C2 200 200 10 channel1 "C2/C3 hello"
+wait 100
+publish C2 500 500 1000 channel1 "global hello"
+
+
+//End of simulation; wait a bit for any pending publications and control messages
+wait 1000
+end
